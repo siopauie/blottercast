@@ -35,7 +35,7 @@ function computeAge(?string $dob): ?int {
     }
 }
 
-function nextCtrlNo(mysqli $mysqli, string $table, string $prefix): string {
+function nextCtrlNo($mysqli, string $table, string $prefix): string {
     $year = date('Y');
     $stmt = $mysqli->prepare("SELECT ctrl_no FROM $table WHERE ctrl_no LIKE ? ORDER BY ctrl_no DESC LIMIT 1");
     $like = "$prefix-$year-%";
@@ -67,7 +67,7 @@ function nextCtrlNo(mysqli $mysqli, string $table, string $prefix): string {
  * Same highest-existing-number + collision-guard approach as
  * nextSeqNo()/nextCtrlNo() above, just checked across all three tables.
  */
-function nextOrNo(mysqli $mysqli): string {
+function nextOrNo($mysqli): string {
     $orTables = ['barangay_clearance', 'barangay_residency', 'barangay_non_residency'];
     $year = date('Y');
     $like = "OR-$year-%";
@@ -97,11 +97,13 @@ function nextOrNo(mysqli $mysqli): string {
     }
 }
 
-function logAudit(mysqli $mysqli, string $action, string $module, string $details): void {
-    $user = $_SESSION['username'] ?? 'system';
-    $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
-    $stmt->bind_param('ssss', $user, $action, $module, $details);
-    $stmt->execute();
+if (!function_exists('logAudit')) {
+    function logAudit($mysqli, string $action, string $module, string $details): void {
+        $user = $_SESSION['username'] ?? 'system';
+        $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+        $stmt->bind_param('ssss', $user, $action, $module, $details);
+        $stmt->execute();
+    }
 }
 
 // ---------------- O.R. NUMBER PEEK (used by Clearance/Residency/Non-Residency forms) ----------------
@@ -227,7 +229,7 @@ if ($type === 'census') {
         // (not COUNT(*), which shrinks after a delete and reissues an
         // already-used number -> UNIQUE constraint violation on the next add).
         $maxRow = $mysqli->query(
-            "SELECT MAX(CAST(SUBSTRING(resident_no, 5) AS UNSIGNED)) m FROM census_records WHERE resident_no REGEXP '^RES-[0-9]+$'"
+            "SELECT MAX(CAST(SUBSTRING(resident_no, 5) AS INTEGER)) m FROM census_records WHERE resident_no ~ '^RES-[0-9]+$'"
         )->fetch_assoc();
         $nextNum = (int)($maxRow['m'] ?? 0) + 1;
         $residentNo = ($d['residentNo'] ?? '') ?: sprintf('RES-%04d', $nextNum);

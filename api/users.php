@@ -31,11 +31,13 @@ if ($action === 'captain_signature' && $method === 'GET') {
 require __DIR__ . '/permissions.php';
 require_permission('manage_users');
 
-function logAudit(mysqli $mysqli, string $action, string $module, string $details): void {
-    $user = $_SESSION['username'] ?? 'system';
-    $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
-    $stmt->bind_param('ssss', $user, $action, $module, $details);
-    $stmt->execute();
+if (!function_exists('logAudit')) {
+    function logAudit($mysqli, string $action, string $module, string $details): void {
+        $user = $_SESSION['username'] ?? 'system';
+        $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+        $stmt->bind_param('ssss', $user, $action, $module, $details);
+        $stmt->execute();
+    }
 }
 
 if ($action === 'list' && $method === 'GET') {

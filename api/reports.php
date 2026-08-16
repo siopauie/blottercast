@@ -16,7 +16,11 @@ require __DIR__ . '/../vendor/tcpdf/tcpdf.php';
 $mysqli = db();
 $action = $_GET['action'] ?? '';
 $REPORTS_DIR = __DIR__ . '/../generated_reports';
-if (!is_dir($REPORTS_DIR)) mkdir($REPORTS_DIR, 0775, true);
+if (!@is_dir($REPORTS_DIR)) @mkdir($REPORTS_DIR, 0775, true);
+if (!@is_writable($REPORTS_DIR)) {
+    $REPORTS_DIR = sys_get_temp_dir() . '/generated_reports';
+    if (!@is_dir($REPORTS_DIR)) @mkdir($REPORTS_DIR, 0775, true);
+}
 
 // ---------------------------------------------------------------
 // Shared TCPDF setup: letterhead, footer, brand color, base layout.
@@ -114,7 +118,7 @@ function newReportPdf(string $subtitle): BlotterCastPdf {
 // ---------------------------------------------------------------
 // Report builders — each returns raw PDF bytes.
 // ---------------------------------------------------------------
-function buildIncidentSummaryPdf(mysqli $mysqli, string $from, string $to, ?string $zone): string {
+function buildIncidentSummaryPdf($mysqli, string $from, string $to, ?string $zone): string {
     $where = ['incident_date BETWEEN ? AND ?'];
     $params = [$from, $to]; $types = 'ss';
     if ($zone) { $where[] = 'zone_id = ?'; $params[] = $zone; $types .= 's'; }
@@ -151,7 +155,7 @@ function buildIncidentSummaryPdf(mysqli $mysqli, string $from, string $to, ?stri
     return $pdf->Output('', 'S');
 }
 
-function buildSettlementCompliancePdf(mysqli $mysqli): string {
+function buildSettlementCompliancePdf($mysqli): string {
     $rows = $mysqli->query('SELECT * FROM settlements ORDER BY date_filed DESC')->fetch_all(MYSQLI_ASSOC);
     $byStatus = [];
     foreach ($rows as $r) $byStatus[$r['status']] = ($byStatus[$r['status']] ?? 0) + 1;
@@ -170,7 +174,7 @@ function buildSettlementCompliancePdf(mysqli $mysqli): string {
     return $pdf->Output('', 'S');
 }
 
-function buildTrendAnalysisPdf(mysqli $mysqli, string $year): string {
+function buildTrendAnalysisPdf($mysqli, string $year): string {
     $stmt = $mysqli->prepare('SELECT MONTH(incident_date) m, COUNT(*) c FROM incidents WHERE YEAR(incident_date)=? GROUP BY m ORDER BY m');
     $stmt->bind_param('s', $year); $stmt->execute();
     $monthly = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -194,7 +198,7 @@ function buildTrendAnalysisPdf(mysqli $mysqli, string $year): string {
     return $pdf->Output('', 'S');
 }
 
-function buildPredictiveRiskPdf(mysqli $mysqli): string {
+function buildPredictiveRiskPdf($mysqli): string {
     $row = $mysqli->query('SELECT * FROM ml_runs ORDER BY id DESC LIMIT 1')->fetch_assoc();
     $pdf = newReportPdf('Predictive Risk Assessment');
 
@@ -225,7 +229,7 @@ function buildPredictiveRiskPdf(mysqli $mysqli): string {
     return $pdf->Output('', 'S');
 }
 
-function logReport(mysqli $mysqli, string $type, string $from, string $to, string $format, string $filePath): void {
+function logReport($mysqli, string $type, string $from, string $to, string $format, string $filePath): void {
     $user = $_SESSION['full_name'] ?? 'System';
     $stmt = $mysqli->prepare('INSERT INTO generated_reports (report_type, generated_by, period_from, period_to, format, file_path) VALUES (?,?,?,?,?,?)');
     $fromNull = $from ?: null; $toNull = $to ?: null;

@@ -16,7 +16,11 @@ require __DIR__ . '/permissions.php';
 $mysqli = db();
 $action = $_GET['action'] ?? '';
 $BACKUP_DIR = __DIR__ . '/../backup';
-if (!is_dir($BACKUP_DIR)) mkdir($BACKUP_DIR, 0775, true);
+if (!@is_dir($BACKUP_DIR)) @mkdir($BACKUP_DIR, 0775, true);
+if (!@is_writable($BACKUP_DIR)) {
+    $BACKUP_DIR = sys_get_temp_dir() . '/backup';
+    if (!@is_dir($BACKUP_DIR)) @mkdir($BACKUP_DIR, 0775, true);
+}
 
 /**
  * Dump every table in the current database as plain SQL text — full
@@ -28,49 +32,66 @@ if (!is_dir($BACKUP_DIR)) mkdir($BACKUP_DIR, 0775, true);
  * XAMPP installs disable it), and doesn't depend on mysqldump being on
  * the PATH or living at one of a few guessed locations.
  */
-function generateSqlDump(mysqli $mysqli): string {
+function generateSqlDump($mysqli): string {
     $out = "-- BlotterCast database backup\n";
     $out .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
     $out .= "-- Database: " . DB_NAME . "\n\n";
-    $out .= "SET FOREIGN_KEY_CHECKS=0;\n";
-    $out .= "SET NAMES utf8mb4;\n\n";
 
+    // ---- enumerate tables via pg_catalog (works on both MySQL via transformSqlForPg and PG) ----
+    $tablesRes = $mysqli->query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' ORDER BY tablename");
     $tables = [];
-    $res = $mysqli->query('SHOW TABLES');
-    while ($row = $res->fetch_row()) $tables[] = $row[0];
-
-    foreach ($tables as $table) {
-        // ---- schema ----
-        $out .= "-- ----------------------------\n";
-        $out .= "-- Table structure for `$table`\n";
-        $out .= "-- ----------------------------\n";
-        $out .= "DROP TABLE IF EXISTS `$table`;\n";
-        $createRow = $mysqli->query("SHOW CREATE TABLE `$table`")->fetch_row();
-        $out .= $createRow[1] . ";\n\n";
-
-        // ---- data ----
-        $dataRes = $mysqli->query("SELECT * FROM `$table`");
-        if ($dataRes->num_rows > 0) {
-            $out .= "-- ----------------------------\n";
-            $out .= "-- Records of `$table`\n";
-            $out .= "-- ----------------------------\n";
-            $fields = $dataRes->fetch_fields();
-            $colList = implode(', ', array_map(fn($f) => "`{$f->name}`", $fields));
-            while ($row = $dataRes->fetch_assoc()) {
-                $vals = array_map(function ($v) use ($mysqli) {
-                    if ($v === null) return 'NULL';
-                    if (is_int($v) || is_float($v)) return $v;
-                    return "'" . $mysqli->real_escape_string((string)$v) . "'";
-                }, array_values($row));
-                $out .= "INSERT INTO `$table` ($colList) VALUES (" . implode(', ', $vals) . ");\n";
-            }
-            $out .= "\n";
+    if ($tablesRes) {
+        while ($row = $tablesRes->fetch_row()) {
+            $tables[] = is_array($row) ? $row[0] : array_values((array)$row)[0];
         }
     }
+    // Fallback: hard-coded table list if pg_catalog query returns nothing
+    if (empty($tables)) {
+        $tables = ['users','zones','incidents','blotter_records','settlements','audit_logs',
+                   'notifications','notification_reads','ml_runs','generated_reports',
+                   'system_settings','backups','census_residents','documents'];
+    }
 
-    $out .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    foreach ($tables as $table) {
+        $out .= "-- ----------------------------\n";
+        $out .= "-- Records of $table\n";
+        $out .= "-- ----------------------------\n";
+
+        $dataRes = $mysqli->query("SELECT * FROM \"$table\"");
+        if (!$dataRes) continue;
+
+        $rows = $dataRes->fetch_all();
+        if (empty($rows)) { $out .= "\n"; continue; }
+
+        // Use first row keys as column list
+        $firstRow = $dataRes->fetch_assoc() ?? reset($rows);
+        if (!$firstRow) { $out .= "\n"; continue; }
+        // Re-fetch all since fetch_assoc consumed one
+        $dataRes2 = $mysqli->query("SELECT * FROM \"$table\"");
+        if (!$dataRes2) continue;
+
+        $allRows = [];
+        while ($row = $dataRes2->fetch_assoc()) $allRows[] = $row;
+        if (empty($allRows)) { $out .= "\n"; continue; }
+
+        $cols = array_keys($allRows[0]);
+        $colList = implode(', ', array_map(fn($c) => "\"$c\"", $cols));
+
+        foreach ($allRows as $row) {
+            $vals = array_map(function ($v) use ($mysqli) {
+                if ($v === null) return 'NULL';
+                if (is_int($v) || is_float($v)) return $v;
+                $escaped = str_replace("'", "''", (string)$v);
+                return "'$escaped'";
+            }, array_values($row));
+            $out .= "INSERT INTO \"$table\" ($colList) VALUES (" . implode(', ', $vals) . ");\n";
+        }
+        $out .= "\n";
+    }
+
     return $out;
 }
+
 
 /**
  * Run a full schema+data backup, write it to backup/*.sql, log it to
@@ -79,7 +100,7 @@ function generateSqlDump(mysqli $mysqli): string {
  * trigger, so both paths behave identically and show up in the same
  * history list.
  */
-function runDatabaseBackup(mysqli $mysqli, string $backupDir, string $triggeredBy): array {
+function runDatabaseBackup($mysqli, string $backupDir, string $triggeredBy): array {
     $filename = 'blottercast-backup-' . date('Ymd-His') . '.sql';
     $filePath = $backupDir . '/' . $filename;
 
@@ -113,7 +134,7 @@ function runDatabaseBackup(mysqli $mysqli, string $backupDir, string $triggeredB
  * Has enough time passed since the last backup, per the configured
  * frequency, that one is due? Used by the check-on-login auto-trigger.
  */
-function isBackupDue(mysqli $mysqli): bool {
+function isBackupDue($mysqli): bool {
     $settings = $mysqli->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('backup_frequency','backup_time')")->fetch_all(MYSQLI_ASSOC);
     $map = [];
     foreach ($settings as $s) $map[$s['setting_key']] = $s['setting_value'];

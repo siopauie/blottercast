@@ -19,7 +19,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'PUT') require_permission('edit_records');
 if ($method === 'DELETE') require_permission('delete_records');
 
-function zoneCoords(mysqli $mysqli, string $zoneId): array {
+function zoneCoords($mysqli, string $zoneId): array {
     $stmt = $mysqli->prepare('SELECT lat, lng FROM zones WHERE zone_id = ?');
     $stmt->bind_param('s', $zoneId);
     $stmt->execute();

@@ -499,3 +499,16 @@ function getSecuritySettings(): array {
     }
     return $out;
 }
+
+if (!function_exists('logAudit')) {
+    function logAudit($mysqli, string $action, string $module, string $details): void {
+        try {
+            $user = $_SESSION['username'] ?? 'system';
+            $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+            $stmt->bind_param('ssss', $user, $action, $module, $details);
+            $stmt->execute();
+        } catch (Throwable $t) {
+            error_log('logAudit error: ' . $t->getMessage());
+        }
+    }
+}
