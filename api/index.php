@@ -27,7 +27,8 @@ if (!empty($parts)) {
     if (strpos($last, '.php') !== false && $last !== 'index.php') {
         $file = $last;
     } else if (isset($_GET['route']) && $_GET['route'] !== '') {
-        $r = basename(explode('?', $_GET['route'])[0]);
+        $r = explode('&', explode('?', $_GET['route'])[0])[0];
+        $r = basename($r);
         if (!empty($r) && $r !== 'index.php') {
             $file = strpos($r, '.php') !== false ? $r : $r . '.php';
         }
