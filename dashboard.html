@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — BlotterCast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
+            sage:   { 50:'#fdf6e3',100:'#f5e6b8',200:'#ecd37a',300:'#ddb94a',400:'#c9a84c',500:'#b8933a',600:'#9c7a2e',700:'#7d6124',800:'#5c481a',900:'#3d3010' },
+          },
+          fontFamily: {
+            display: ['DM Serif Display','serif'],
+            body:    ['DM Sans','sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link active" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="ml-64 flex flex-col min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-20 bg-white border-b border-forest-100 px-8 py-4 flex items-center justify-between shadow-sm">
+      <div>
+        <h1 class="font-display text-2xl text-forest-800">Dashboard</h1>
+        <p class="text-forest-500 text-sm">Welcome back, Juan. Here's today's overview.</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <input type="text" placeholder="Search records…" class="pl-9 pr-4 py-2 rounded-full border border-forest-200 bg-forest-50 text-sm text-forest-700 placeholder-forest-400 focus:outline-none focus:ring-2 focus:ring-forest-400 w-56"/>
+          <span class="absolute left-3 top-2.5 text-forest-400" data-icon="search" data-icon-size="16"></span>
+        </div>
+        <div class="relative">
+          <button onclick="toggleNotifPanel()" class="relative p-2 rounded-xl bg-forest-50 hover:bg-forest-100 text-forest-600 transition-colors">
+            <span data-icon="bell" data-icon-size="18"></span>
+            <span id="notifBadge" class="hidden absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          <div id="notifPanel" class="hidden absolute right-0 top-full mt-2 w-80 bg-white border border-forest-100 rounded-xl shadow-lg z-30 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-forest-50">
+              <span class="text-sm font-semibold text-forest-800">Notifications</span>
+              <button onclick="markAllNotifsRead()" class="text-xs text-forest-500 hover:text-forest-700">Mark all read</button>
+            </div>
+            <div id="notifList" class="max-h-96 overflow-y-auto"></div>
+          </div>
+        </div>
+        <div class="text-sm text-forest-500" id="currentDate"></div>
+      </div>
+    </header>
+
+    <!-- Dashboard Body -->
+    <main class="flex-1 p-8 space-y-8">
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-4 gap-5">
+        <div class="stat-card-grad plum">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-white/80 text-sm font-medium">Total Blotters</span>
+            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="blotter" data-icon-size="18"></div>
+          </div>
+          <div class="font-display text-3xl" id="statBlotters">—</div>
+          <div class="text-xs text-white/70 mt-1" id="statBlottersSub"></div>
+        </div>
+        <div class="stat-card-grad moss">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-white/80 text-sm font-medium">Incident Reports</span>
+            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="incident" data-icon-size="18"></div>
+          </div>
+          <div class="font-display text-3xl" id="statIncidents">—</div>
+          <div class="text-xs text-white/70 mt-1" id="statIncidentsSub"></div>
+        </div>
+        <div class="stat-card-grad sunset">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-white/80 text-sm font-medium">Pending Settlement</span>
+            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
+          </div>
+          <div class="font-display text-3xl" id="statPending">—</div>
+          <div class="text-xs text-white/70 mt-1">awaiting settlement</div>
+        </div>
+        <div class="stat-card-grad dark">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-white/70 text-sm font-medium">Resolved Cases</span>
+            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+          </div>
+          <div class="font-display text-3xl text-white" id="statResolved">—</div>
+          <div class="text-xs text-white/60 mt-1" id="statResolvedSub"></div>
+        </div>
+      </div>
+
+      <!-- Recent + Side widgets -->
+      <div class="grid grid-cols-3 gap-6">
+
+        <!-- Recent Blotter -->
+        <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-forest-50 flex items-center justify-between">
+            <h2 class="font-display text-lg text-forest-800">Recent Blotter Entries</h2>
+            <a href="blotter.html" class="text-forest-600 text-sm hover:text-forest-800 font-medium transition-colors">View All →</a>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Docket No.</th>
+                <th>Complainant</th>
+                <th>Nature</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardBlotterTable"></tbody>
+          </table>
+        </div>
+
+        <!-- Resolution Rate donut + This Week -->
+        <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+          <h2 class="font-display text-lg text-forest-800 mb-4">Resolution Rate</h2>
+          <div class="donut-wrap">
+            <svg viewBox="0 0 128 128" width="128" height="128">
+              <defs>
+                <linearGradient id="donutGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1a5730"/>
+                  <stop offset="100%" stop-color="#4fa868"/>
+                </linearGradient>
+              </defs>
+              <circle class="donut-track" cx="64" cy="64" r="52"/>
+              <circle id="resolutionDonut" class="donut-fill" cx="64" cy="64" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-value" id="statResolutionPct">—</div>
+              <div class="donut-label">resolved</div>
+            </div>
+          </div>
+          <div class="mt-5 pt-1">
+            <div class="mini-metric-row">
+              <div class="flex items-center gap-3">
+                <div class="mini-metric-icon bg-sage-100 text-sage-600" data-icon="incident" data-icon-size="16"></div>
+                <span class="text-sm text-forest-600">New this week</span>
+              </div>
+              <span class="font-display text-lg text-forest-800" id="statWeekCount">—</span>
+            </div>
+            <div class="mini-metric-row">
+              <div class="flex items-center gap-3">
+                <div class="mini-metric-icon bg-forest-100 text-forest-600" data-icon="clock" data-icon-size="16"></div>
+                <span class="text-sm text-forest-600">Awaiting settlement</span>
+              </div>
+              <span class="font-display text-lg text-forest-800" id="statPendingMini">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions tile grid + Risk Forecast -->
+      <div class="grid grid-cols-3 gap-6">
+        <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+          <h2 class="font-display text-lg text-forest-800 mb-4">Quick Actions</h2>
+          <div class="grid grid-cols-3 gap-4">
+            <a href="blotter.html" class="tile-action tile-plum">
+              <div class="tile-icon" data-icon="blotter" data-icon-size="18"></div>
+              <div class="tile-label">New Blotter<br/>Entry</div>
+            </a>
+            <a href="incident.html" class="tile-action tile-dark">
+              <div class="tile-icon" data-icon="incident" data-icon-size="18"></div>
+              <div class="tile-label">New Incident<br/>Report</div>
+            </a>
+            <a href="settlement.html" class="tile-action tile-sunset">
+              <div class="tile-icon" data-icon="settlement" data-icon-size="18"></div>
+              <div class="tile-label">Monitor<br/>Settlement</div>
+            </a>
+            <a href="reports.html" class="tile-action tile-outline">
+              <div class="tile-icon" data-icon="reports" data-icon-size="18"></div>
+              <div class="tile-label">Generate<br/>Report</div>
+            </a>
+            <a href="census.html" class="tile-action tile-outline">
+              <div class="tile-icon" data-icon="folder" data-icon-size="18"></div>
+              <div class="tile-label">Import<br/>Census CSV</div>
+            </a>
+            <a href="users.html" class="tile-action tile-outline">
+              <div class="tile-icon" data-icon="users" data-icon-size="18"></div>
+              <div class="tile-label">Users &amp;<br/>Roles</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Risk Forecast -->
+        <a href="predictions.html" class="stat-card-grad sunset flex flex-col justify-between p-6 hover:no-underline">
+          <div class="flex items-center justify-between">
+            <div class="stat-icon-badge w-11 h-11 rounded-xl" data-icon="predictions" data-icon-size="20"></div>
+            <span data-icon="play" data-icon-size="16" class="text-white/70"></span>
+          </div>
+          <div class="mt-4">
+            <div class="text-white/80 text-xs uppercase tracking-wide font-semibold mb-1">Risk Forecast</div>
+            <div class="font-display text-xl text-white leading-snug">View This Week's<br/>Zone Risk Rankings</div>
+            <div class="text-white/70 text-xs mt-2">Model-predicted hotspots by zone →</div>
+          </div>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+<script src="api.js"></script>
+  <script src="permissions.js"></script>
+  <script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+  <script>
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+    (async function () {
+      await requireAuth();
+      refreshNotifBadge();
+      // Auto-backup check: only System Admin has system_settings, so this
+      // silently no-ops (403) for every other role — exactly the roles who
+      // shouldn't be the one triggering a database dump anyway.
+      BCApi.autoBackupCheck().catch(() => {});
+      try {
+        const stats = await BCApi.dashboard();
+
+        document.getElementById('statBlotters').textContent = stats.blotterCount;
+        document.getElementById('statBlottersSub').textContent = 'blotter entries on file';
+
+        document.getElementById('statIncidents').textContent = stats.incidentCount;
+        document.getElementById('statIncidentsSub').textContent = '↑ ' + stats.weekCount + ' this week';
+
+        document.getElementById('statPending').textContent = stats.pendingSettlements;
+
+        document.getElementById('statResolved').textContent = Math.round(stats.incidentCount * stats.resolutionRate / 100);
+        document.getElementById('statResolvedSub').textContent = stats.resolutionRate + '% resolution rate';
+
+        // Resolution rate donut (circumference = 2 * PI * r, r=52 -> 326.7)
+        const circumference = 326.7;
+        const pct = Math.max(0, Math.min(100, stats.resolutionRate));
+        const donut = document.getElementById('resolutionDonut');
+        donut.style.strokeDasharray = circumference;
+        donut.style.strokeDashoffset = circumference - (pct / 100) * circumference;
+        document.getElementById('statResolutionPct').textContent = pct + '%';
+
+        document.getElementById('statWeekCount').textContent = stats.weekCount;
+        document.getElementById('statPendingMini').textContent = stats.pendingSettlements;
+
+        // Recent blotter entries
+        const tbody = document.getElementById('dashboardBlotterTable');
+        tbody.innerHTML = '';
+        if (!stats.recentBlotter.length) {
+          tbody.innerHTML = '<tr><td colspan="4">No blotter entries yet.</td></tr>';
+        }
+        stats.recentBlotter.forEach(r => {
+          const statusClass = r.status === 'Resolved' ? 'badge-resolved' : r.status === 'Ongoing' ? 'badge-ongoing' : 'badge-pending';
+          tbody.innerHTML += `
+            <tr>
+              <td class="font-semibold text-forest-700">${r.docket_no}</td>
+              <td>${r.complainant}</td>
+              <td>${r.nature}</td>
+              <td><span class="badge ${statusClass}">${r.status}</span></td>
+            </tr>`;
+        });
+      } catch (err) {
+        showToast('Could not load dashboard: ' + err.message, 'error');
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settlement Monitor — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
+      }, fontFamily: { display:['DM Serif Display','serif'], body:['DM Sans','sans-serif'] } } }
+    }
+  </script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link active" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Monitoring of Compliance to Settlement or Award</h1>
+      <p class="text-forest-500 text-sm">Track and manage settlement agreements and compliance status</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button type="button" onclick="openExportFilter('api/exports.php?action=settlement_monitoring', 'Export Settlement Monitoring')" class="btn-secondary flex items-center gap-2" data-perm="generate_reports">
+        <span data-icon="download" data-icon-size="16"></span> Export to Excel
+      </button>
+      <button onclick="openAddSettlement()" class="btn-primary flex items-center gap-2">
+        <span data-icon="plus" data-icon-size="16"></span> Add Settlement Record
+      </button>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="px-6 pt-6 grid grid-cols-4 gap-4">
+    <div class="stat-card-grad plum">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Total Cases</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="settlement" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="stlTotal">0</div>
+    </div>
+    <div class="stat-card-grad dark">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/70 text-sm font-medium">Complied</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl text-white" id="stlComplied">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Not Complied</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="x" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="stlNotComplied">0</div>
+    </div>
+    <div class="stat-card-grad sunset">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Pending</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="stlPending">0</div>
+    </div>
+  </div>
+
+  <main class="flex-1 p-6">
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+
+      <!-- Table Title -->
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="settlement" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Settlement Records</h2>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <span class="relative flex-1 min-w-48"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="stlSearch" placeholder="Search case no., title…" class="filter-input w-full pl-8" oninput="renderSettlements()"/></span>
+        <select id="stlNatureFilter" class="filter-input" onchange="renderSettlements()">
+          <option value="">All Natures</option>
+          <option>Criminal</option>
+          <option>Civil</option>
+        </select>
+        <select id="stlStatusFilter" class="filter-input" onchange="renderSettlements()">
+          <option value="">All Statuses</option>
+          <option value="Complied">Complied</option>
+          <option value="Not Complied">Not Complied</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Case No.</th>
+              <th>Case Title</th>
+              <th>Complaint Title</th>
+              <th>Nature</th>
+              <th>Date Filed</th>
+              <th>Action Taken</th>
+              <th>Status of Compliance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="settlementTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+        <span class="text-sm text-forest-500" id="stlPaginationInfo"></span>
+        <div class="flex gap-2" id="stlPaginationControls"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="settlementModal">
+  <div class="modal-box" style="width:750px">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-display text-xl text-forest-800" id="stlModalTitle">New Settlement Record</h2>
+      <button onclick="closeModal('settlementModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <form id="settlementForm" class="space-y-4">
+      <div id="sf_blotter_picker_wrap" class="relative">
+        <label class="form-label">Blotter Case <span class="text-red-500">*</span></label>
+        <input type="text" id="sf_blotterSearch" class="form-input" placeholder="Type a docket no. or name to search…" autocomplete="off"/>
+        <input type="hidden" id="sf_blotterId"/>
+        <div id="sf_blotterSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
+        <p class="text-xs text-forest-400 mt-1">A settlement can only be created for a case that's already in the Blotter Book. Case title, complaint title, nature, and date filed are inherited from that record.</p>
+      </div>
+      <div class="grid grid-cols-3 gap-4" id="sf_derived_preview">
+        <div><label class="form-label">Case No.</label><input type="text" id="sf_caseNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/></div>
+        <div><label class="form-label">Case Title</label><input type="text" id="sf_caseTitle" class="form-input" disabled/></div>
+        <div><label class="form-label">Nature of Case</label><input type="text" id="sf_nature_display" class="form-input" disabled/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Date of Initial Confrontation</label><input type="date" id="sf_dateConfrontation" class="form-input" data-no-future/></div>
+        <div>
+          <label class="form-label">Action Taken</label>
+          <select id="sf_actionTaken" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="Mediation (M)">Mediation (M)</option>
+            <option value="Conciliation (C)">Conciliation (C)</option>
+            <option value="Arbitration (A)">Arbitration (A)</option>
+            <option value="w EP">w EP</option>
+            <option value="C46+">C46+</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Date of Settlement or Award</label><input type="date" id="sf_dateSettlement" class="form-input" data-no-future/></div>
+        <div><label class="form-label">Date of Execution</label><input type="date" id="sf_dateExecution" class="form-input"/></div>
+      </div>
+      <div><label class="form-label">Main Point of Agreement</label><textarea id="sf_mainPoint" class="form-input h-20 resize-none" placeholder="Key terms of the agreement…"></textarea></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Status of Compliance</label>
+          <select id="sf_status" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="Complied">Complied</option>
+            <option value="Not Complied">Not Complied</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div><label class="form-label">Remarks</label><input type="text" id="sf_remarks" class="form-input" placeholder="Optional notes"/></div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeModal('settlementModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="saveSettlement()" class="btn-primary">Save Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="stlViewModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Settlement Record Details</h2>
+      <button onclick="closeModal('stlViewModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div id="stlViewContent" class="space-y-2 text-sm"></div>
+    <div class="mt-6 flex justify-end"><button onclick="closeModal('stlViewModal')" class="btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+  const STL_ROWS = 5;
+  let stlPage = 1, stlEditId = null;
+  let settlementData = [];
+
+  function mapSettlement(r) {
+    return {
+      id: Number(r.id), blotterId: Number(r.blotter_id), blotterDocketNo: r.blotter_docket_no,
+      caseNo: r.case_no, caseTitle: r.case_title, complaintTitle: r.complaint_title,
+      nature: r.nature, dateFiled: r.date_filed, dateConfrontation: r.date_confrontation,
+      actionTaken: r.action_taken, dateSettlement: r.date_settlement, dateExecution: r.date_execution,
+      mainPoint: r.main_point, status: r.status, remarks: r.remarks || '',
+      complainant: r.complainant, complainantAddr: r.complainant_addr,
+      respondent: r.respondent, respondentAddr: r.respondent_addr,
+    };
+  }
+
+  async function loadSettlements() {
+    const raw = await BCApi.list('settlements');
+    settlementData = raw.map(mapSettlement);
+    updateStlSummary();
+    renderSettlements();
+  }
+
+  let blotterOptions = []; // cases available to attach a new settlement to
+
+  async function loadBlotterOptionsForPicker() {
+    const raw = await BCApi.list('blotter');
+    const settledBlotterIds = new Set(settlementData.map(s => s.blotterId));
+    // Only offer blotter cases that don't already have a settlement attached —
+    // one settlement per blotter case, matching how the real logbook works.
+    blotterOptions = raw
+      .filter(b => !settledBlotterIds.has(Number(b.id)))
+      .map(b => ({
+        id: Number(b.id), docketNo: b.docket_no, complainant: b.complainant, respondent: b.respondent,
+        nature: b.nature, caseType: b.case_type, dateFiled: b.date_filed,
+      }));
+    _bindBlotterCasePicker();
+  }
+
+  function _bindBlotterCasePicker() {
+    const input = document.getElementById('sf_blotterSearch');
+    if (input.dataset.bound) return;
+    input.dataset.bound = '1';
+    input.addEventListener('input', _filterBlotterCases);
+    input.addEventListener('focus', _filterBlotterCases);
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#sf_blotterSuggestions') && e.target !== input) {
+        document.getElementById('sf_blotterSuggestions').classList.add('hidden');
+      }
+    });
+  }
+
+  function _formatDateFiled(dateStr) {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    return `${m}/${d}/${y}`;
+  }
+
+  function _filterBlotterCases() {
+    const input = document.getElementById('sf_blotterSearch');
+    const list = document.getElementById('sf_blotterSuggestions');
+    const q = input.value.trim().toLowerCase();
+
+    const matches = q === ''
+      ? blotterOptions.slice(0, 20)
+      : blotterOptions.filter(b =>
+          b.docketNo.toLowerCase().includes(q) ||
+          `${b.complainant} vs. ${b.respondent}`.toLowerCase().includes(q)
+        ).slice(0, 20);
+
+    if (matches.length === 0) {
+      list.innerHTML = `<div class="px-3 py-3 text-sm text-forest-400">${q ? 'No matching blotter cases.' : 'No blotter cases available to settle.'}</div>`;
+    } else {
+      list.innerHTML = matches.map(b => `
+        <button type="button" class="w-full text-left px-3 py-2 hover:bg-forest-50 border-b border-forest-50 last:border-0"
+                onclick="chooseBlotterCase(${b.id})">
+          <div class="text-sm font-semibold text-forest-800">${b.docketNo}</div>
+          <div class="text-xs text-forest-500">${b.complainant} vs. ${b.respondent} &middot; Filed ${_formatDateFiled(b.dateFiled)}</div>
+        </button>`).join('');
+    }
+    list.classList.remove('hidden');
+  }
+
+  function chooseBlotterCase(id) {
+    const b = blotterOptions.find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('sf_blotterSearch').value = `${b.docketNo} — ${b.complainant} vs. ${b.respondent}`;
+    document.getElementById('sf_blotterId').value = String(id);
+    document.getElementById('sf_blotterSuggestions').classList.add('hidden');
+    onBlotterPicked();
+  }
+
+  function clearBlotterCasePicker() {
+    document.getElementById('sf_blotterSearch').value = '';
+    document.getElementById('sf_blotterId').value = '';
+    document.getElementById('sf_blotterSuggestions').classList.add('hidden');
+    onBlotterPicked();
+  }
+
+  function onBlotterPicked() {
+    const id = Number(document.getElementById('sf_blotterId').value);
+    const b = blotterOptions.find(x => x.id === id);
+    if (!b) {
+      document.getElementById('sf_caseTitle').value = '';
+      document.getElementById('sf_nature_display').value = '';
+      return;
+    }
+    document.getElementById('sf_caseTitle').value = `${b.complainant} vs. ${b.respondent}`;
+    document.getElementById('sf_nature_display').value = (b.caseType === 'CRIM' ? 'Criminal' : 'Civil') + ' — ' + b.nature;
+  }
+
+  function updateStlSummary() {
+    document.getElementById('stlTotal').textContent = settlementData.length;
+    document.getElementById('stlComplied').textContent = settlementData.filter(r=>r.status==='Complied').length;
+    document.getElementById('stlNotComplied').textContent = settlementData.filter(r=>r.status==='Not Complied').length;
+    document.getElementById('stlPending').textContent = settlementData.filter(r=>r.status==='Pending').length;
+  }
+
+  function getStlFiltered() {
+    const s = document.getElementById('stlSearch').value.toLowerCase();
+    const n = document.getElementById('stlNatureFilter').value;
+    const st = document.getElementById('stlStatusFilter').value;
+    return settlementData.filter(r =>
+      (!s || r.caseNo.toLowerCase().includes(s) || (r.caseTitle||'').toLowerCase().includes(s)) &&
+      (!n || r.nature === n) &&
+      (!st || r.status === st)
+    );
+  }
+
+  function renderSettlements() {
+    const filtered = getStlFiltered();
+    const total = filtered.length;
+    const start = (stlPage-1)*STL_ROWS;
+    const page = filtered.slice(start, start+STL_ROWS);
+
+    const tbody = document.getElementById('settlementTableBody');
+    tbody.innerHTML = page.length === 0
+      ? `<tr><td colspan="8" class="text-center py-10 text-forest-400">No settlement records found.</td></tr>`
+      : page.map(r => `
+        <tr>
+          <td class="font-semibold text-forest-700">${r.caseNo}</td>
+          <td class="font-medium text-sm">${r.caseTitle||''}</td>
+          <td class="text-sm">${r.complaintTitle||''}</td>
+          <td><span class="badge ${r.nature==='Criminal'?'badge-ongoing':'badge-pending'}">${r.nature}</span></td>
+          <td class="text-xs">${r.dateFiled||''}</td>
+          <td class="text-xs font-medium text-forest-700">${r.actionTaken||''}</td>
+          <td><span class="badge ${r.status==='Complied'?'badge-complied':r.status==='Not Complied'?'badge-not-complied':'badge-ongoing'}" style="white-space:nowrap">${r.status}</span></td>
+          <td>
+            <div class="row-actions">
+              <button onclick="viewSettlement(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
+              <button onclick="editSettlement(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
+              <button onclick="deleteSettlement(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+    document.getElementById('stlPaginationInfo').textContent = `Showing ${Math.min(start+1,total)||0}–${Math.min(start+STL_ROWS,total)} of ${total}`;
+    const totalPages = Math.ceil(total/STL_ROWS)||1;
+    bcRenderPagination(document.getElementById('stlPaginationControls'), stlPage, totalPages, (p) => { stlPage = p; renderSettlements(); });
+  }
+
+  async function openAddSettlement() {
+    stlEditId=null; document.getElementById('stlModalTitle').textContent='New Settlement Record';
+    document.getElementById('settlementForm').reset();
+    document.getElementById('sf_blotter_picker_wrap').classList.remove('hidden');
+    clearBlotterCasePicker();
+    document.getElementById('sf_caseNo').value = 'Loading…';
+    try {
+      const { seqNo } = await BCApi.peekSeq('settlements');
+      document.getElementById('sf_caseNo').value = seqNo;
+    } catch (err) {
+      document.getElementById('sf_caseNo').value = '';
+    }
+    try { await loadBlotterOptionsForPicker(); } catch (err) { showToast('Could not load blotter records: ' + err.message, 'error'); }
+    if (blotterOptions.length === 0) {
+      showToast('Every blotter case already has a settlement, or no blotter records exist yet.', 'error');
+    }
+    openModal('settlementModal');
+  }
+
+  function editSettlement(id) {
+    const r=settlementData.find(x=>x.id===id); stlEditId=id;
+    document.getElementById('stlModalTitle').textContent='Edit Settlement Record';
+    // The blotter link is fixed at creation time — show it read-only.
+    document.getElementById('sf_blotter_picker_wrap').classList.add('hidden');
+    document.getElementById('sf_caseNo').value=r.caseNo;
+    document.getElementById('sf_caseTitle').value=r.caseTitle||'';
+    document.getElementById('sf_nature_display').value=r.nature;
+    document.getElementById('sf_dateConfrontation').value=r.dateConfrontation||'';
+    document.getElementById('sf_actionTaken').value=r.actionTaken||'';
+    document.getElementById('sf_dateSettlement').value=r.dateSettlement||'';
+    document.getElementById('sf_dateExecution').value=r.dateExecution||'';
+    document.getElementById('sf_mainPoint').value=r.mainPoint||'';
+    document.getElementById('sf_status').value=r.status;
+    document.getElementById('sf_remarks').value=r.remarks||'';
+    openModal('settlementModal');
+  }
+
+  // Shared by both the edit and create paths below. Date of Execution is
+  // deliberately not restricted to "not future" (a Pending case can have
+  // a compliance date that's still ahead), but it still can't come
+  // before the settlement it's executing, and the two "already happened"
+  // dates can't be in the future or out of order relative to each other.
+  function bcValidateSettlementDates(vals) {
+    if (!vals.actionTaken) return 'Please select the Action Taken.';
+    if (!vals.status) return 'Please select the Status of Compliance.';
+    if (vals.dateConfrontation && bcIsFutureDate(vals.dateConfrontation)) {
+      return 'Date of Initial Confrontation cannot be in the future.';
+    }
+    if (vals.dateSettlement && bcIsFutureDate(vals.dateSettlement)) {
+      return 'Date of Settlement or Award cannot be in the future.';
+    }
+    if (vals.dateSettlement && vals.dateConfrontation && bcIsBeforeDate(vals.dateSettlement, vals.dateConfrontation)) {
+      return 'Date of Settlement or Award cannot be earlier than the Date of Initial Confrontation.';
+    }
+    if (vals.dateExecution && vals.dateSettlement && bcIsBeforeDate(vals.dateExecution, vals.dateSettlement)) {
+      return 'Date of Execution cannot be earlier than the Date of Settlement or Award.';
+    }
+    return null;
+  }
+
+  async function saveSettlement() {
+    if (stlEditId) {
+      const vals = {
+        dateConfrontation: document.getElementById('sf_dateConfrontation').value,
+        actionTaken: document.getElementById('sf_actionTaken').value,
+        dateSettlement: document.getElementById('sf_dateSettlement').value,
+        dateExecution: document.getElementById('sf_dateExecution').value,
+        mainPoint: document.getElementById('sf_mainPoint').value.trim(),
+        status: document.getElementById('sf_status').value,
+        remarks: document.getElementById('sf_remarks').value.trim(),
+      };
+      const dateErr = bcValidateSettlementDates(vals);
+      if (dateErr) { await bcAlert(dateErr); return; }
+      try {
+        await BCApi.update('settlements', stlEditId, vals);
+        showToast('Settlement record updated!');
+        closeModal('settlementModal');
+        await loadSettlements();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+      return;
+    }
+
+    const blotterId = document.getElementById('sf_blotterId').value;
+    if (!blotterId) { await bcAlert('Please select the blotter case this settlement belongs to.'); return; }
+    const vals = {
+      blotterId,
+      caseNo: document.getElementById('sf_caseNo').value.trim(),
+      dateConfrontation: document.getElementById('sf_dateConfrontation').value,
+      actionTaken: document.getElementById('sf_actionTaken').value,
+      dateSettlement: document.getElementById('sf_dateSettlement').value,
+      dateExecution: document.getElementById('sf_dateExecution').value,
+      mainPoint: document.getElementById('sf_mainPoint').value.trim(),
+      status: document.getElementById('sf_status').value,
+      remarks: document.getElementById('sf_remarks').value.trim(),
+    };
+    const dateErr = bcValidateSettlementDates(vals);
+    if (dateErr) { await bcAlert(dateErr); return; }
+    try {
+      await BCApi.create('settlements', vals);
+      showToast('Settlement record added!');
+      closeModal('settlementModal');
+      await loadSettlements();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteSettlement(id) {
+    if (!(await bcConfirm('Delete this settlement record? This cannot be undone.', { title: 'Delete Settlement Record', okLabel: 'Delete', danger: true }))) return;
+    try {
+      await BCApi.remove('settlements', id);
+      showToast('Record deleted.');
+      await loadSettlements();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  function viewSettlement(id) {
+    const r=settlementData.find(x=>x.id===id);
+    const rows=[
+      ['Linked Blotter Case',r.blotterDocketNo],
+      ['Case No.',r.caseNo],['Case Title',r.caseTitle],['Complaint Title',r.complaintTitle],
+      ['Nature',r.nature],['Date Filed',r.dateFiled],['Date of Confrontation',r.dateConfrontation],
+      ['Action Taken',r.actionTaken],['Date of Settlement',r.dateSettlement||'—'],
+      ['Date of Execution',r.dateExecution||'—'],['Main Point of Agreement',r.mainPoint],
+      ['Status of Compliance',r.status],['Remarks',r.remarks||'—'],
+    ];
+    document.getElementById('stlViewContent').innerHTML=rows.map(([k,v])=>`
+      <div class="flex gap-4 py-2 border-b border-forest-50">
+        <span class="w-52 text-forest-500 font-semibold text-xs uppercase tracking-wide flex-shrink-0">${k}</span>
+        <span class="text-forest-800">${v}</span>
+      </div>`).join('');
+    openModal('stlViewModal');
+  }
+
+  (async function () {
+    await requireAuth();
+    try { await loadSettlements(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
+  })();
+</script>
+</body>
+</html>

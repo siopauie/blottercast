@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlotterCast — Barangay Intelligence System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="icons.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green-deep:  #0a2414;
+      --green-dark:  #123d22;
+      --green-mid:   #1a5730;
+      --green-main:  #2f8a4c;
+      --green-light: #4fa868;
+      --green-pale:  #b8e0c0;
+      --cream:       #f5f0e8;
+      --gold:        #c9a84c;
+      --white:       #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--green-deep);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .font-display { font-family: 'Playfair Display', serif; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.25rem 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 0.3s, backdrop-filter 0.3s;
+    }
+    nav.scrolled {
+      background: rgba(10,36,20,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(79,168,104,0.12);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 1px;
+      text-decoration: none;
+    }
+    .nav-logo-mark {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--green-main), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: bold; color: white;
+      box-shadow: 0 0 20px rgba(47,138,76,0.4);
+    }
+    .nav-brand { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: white; letter-spacing: -0.01em; }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; letter-spacing: 0.02em; }
+    .nav-links a:hover { color: var(--green-pale); }
+    .nav-cta {
+      background: var(--green-main); color: white;
+      padding: 10px 22px; border-radius: 8px;
+      text-decoration: none; font-size: 0.875rem; font-weight: 600;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 0 0 0 rgba(47,138,76,0.4);
+    }
+    .nav-cta:hover {
+      background: var(--green-light);
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(47,138,76,0.35);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 0 4rem;
+      position: relative; overflow: hidden;
+      background:
+        linear-gradient(
+          160deg,
+          rgba(8, 30, 16, 0.86) 0%,
+          rgba(5, 18, 10, 0.92) 60%,
+          rgba(7, 25, 14, 0.86) 100%
+        ),
+        url('assets/barangay-hall.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Animated background rings */
+    .hero-rings {
+      position: absolute; right: -100px; top: 50%; transform: translateY(-50%);
+      width: 700px; height: 700px; pointer-events: none;
+    }
+    .ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(79,168,104,0.12);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      animation: pulse-ring 4s ease-in-out infinite;
+    }
+    .ring:nth-child(1) { width: 200px; height: 200px; background: rgba(47,138,76,0.08); animation-delay:0s; }
+    .ring:nth-child(2) { width: 340px; height: 340px; animation-delay:0.5s; }
+    .ring:nth-child(3) { width: 480px; height: 480px; animation-delay:1s; }
+    .ring:nth-child(4) { width: 620px; height: 620px; animation-delay:1.5s; }
+    @keyframes pulse-ring {
+      0%,100% { opacity:0.5; transform: translate(-50%,-50%) scale(1); }
+      50%      { opacity:1;   transform: translate(-50%,-50%) scale(1.03); }
+    }
+
+    /* Center orb */
+    .hero-orb {
+      position: absolute; right: 80px; top: 50%; transform: translateY(-50%);
+      width: 340px; height: 340px; border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, rgba(79,168,104,0.25), rgba(10,36,20,0) 70%);
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .hero-orb-inner {
+      width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, var(--green-mid), var(--green-deep));
+      box-shadow: 0 0 60px rgba(47,138,76,0.3), inset 0 0 40px rgba(79,168,104,0.1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      animation: float 6s ease-in-out infinite;
+      overflow: hidden;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-12px); }
+    }
+    .hero-orb-mark { width: 84px; height: 84px; display: flex; align-items: center; justify-content: center; }
+    .hero-orb-mark img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* Hero content */
+    .hero-content { max-width: 640px; position: relative; z-index: 1; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(47,138,76,0.15); border: 1px solid rgba(79,168,104,0.25);
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 0.75rem; font-weight: 600; color: var(--green-pale);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.75rem; margin-top: 15px;
+      animation: fade-up 0.6s ease both;
+    }
+    .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-light); animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 5vw, 5.2rem);
+      line-height: 1.05; letter-spacing: -0.03em;
+      color: white; margin-bottom: 1.5rem;
+      animation: fade-up 0.6s 0.1s ease both;
+    }
+    .hero-title .accent { color: var(--green-light); font-style: italic; }
+    .hero-title .line2 { display: block; }
+
+    .hero-sub {
+      font-size: 1.1rem; line-height: 1.7; color: rgba(255,255,255,0.6);
+      max-width: 500px; margin-bottom: 2.5rem;
+      font-weight: 300; animation: fade-up 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; gap: 1rem; align-items: center;
+      animation: fade-up 0.6s 0.3s ease both;
+    }
+    .btn-hero-primary {
+      background: var(--green-main); color: white;
+      padding: 14px 32px; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 600; text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s; box-shadow: 0 8px 30px rgba(47,138,76,0.3);
+    }
+    .btn-hero-primary:hover {
+      background: var(--green-light); transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(79,168,104,0.35);
+    }
+    .btn-hero-secondary {
+      color: rgba(255,255,255,0.75);
+      padding: 14px 24px; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 500; text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.2s;
+    }
+    .btn-hero-secondary:hover { color: white; border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); }
+
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-top: 3.5rem;
+      padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08);
+      animation: fade-up 0.6s 0.4s ease both;
+    }
+    .hero-stat-num { font-family:'Playfair Display',serif; font-size: 2rem; font-weight: 700; color: var(--green-pale); }
+    .hero-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── MARQUEE STRIP ── */
+    .marquee-strip {
+      background: var(--green-mid);
+      border-top: 1px solid rgba(79,168,104,0.15);
+      border-bottom: 1px solid rgba(79,168,104,0.15);
+      padding: 14px 0; overflow: hidden; position: relative; z-index: 1;
+    }
+    .marquee-track {
+      display: flex; gap: 0; white-space: nowrap;
+      animation: marquee 28s linear infinite;
+    }
+    .marquee-item {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 0 2.5rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--green-pale);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .marquee-sep { color: var(--green-light); font-size: 1rem; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ── FEATURES ── */
+    .section { padding: 7rem 4rem; position: relative; z-index: 1; }
+    .section-label {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700; color: var(--green-light);
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      line-height: 1.1; letter-spacing: -0.02em;
+      color: white; margin-bottom: 1.25rem;
+    }
+    .section-title .italic { font-style: italic; color: var(--green-pale); }
+    .section-sub { font-size: 1rem; color: rgba(255,255,255,0.5); line-height: 1.7; max-width: 480px; font-weight: 300; }
+
+    /* Feature cards */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px;
+      margin-top: 4rem;
+      border: 1.5px solid rgba(79,168,104,0.12);
+      border-radius: 20px; overflow: hidden;
+    }
+    .feature-card {
+      background: rgba(18,61,34,0.6);
+      padding: 2.25rem 2rem;
+      transition: background 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(47,138,76,0.08), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .feature-card:hover { background: rgba(26,87,48,0.5); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(47,138,76,0.15);
+      border: 1px solid rgba(79,168,104,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #4fa868; margin-bottom: 1.25rem;
+      transition: box-shadow 0.2s;
+    }
+    .feature-card:hover .feature-icon { box-shadow: 0 0 20px rgba(79,168,104,0.25); }
+    .feature-name { font-weight: 600; font-size: 1rem; color: white; margin-bottom: 0.5rem; }
+    .feature-desc { font-size: 0.875rem; color: rgba(255,255,255,0.5); line-height: 1.65; font-weight: 300; }
+
+    /* ── HOW IT WORKS ── */
+    .steps-wrap { display: flex; flex-direction: column; gap: 0; margin-top: 3.5rem; }
+    .step-row {
+      display: grid; grid-template-columns: 80px 1fr;
+      gap: 0 2rem; padding: 2.5rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3.5rem; font-weight: 700;
+      color: rgba(79,168,104,0.2);
+      line-height: 1;
+    }
+    .step-content { padding-top: 4px; }
+    .step-title { font-weight: 600; font-size: 1.1rem; color: white; margin-bottom: 0.5rem; }
+    .step-desc { font-size: 0.9rem; color: rgba(255,255,255,0.5); line-height: 1.65; font-weight: 300; }
+    .step-badge {
+      display: inline-block; font-size: 0.65rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(47,138,76,0.2); color: var(--green-pale);
+      border: 1px solid rgba(79,168,104,0.25);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ── CTA BANNER ── */
+    .cta-banner {
+      margin: 0 4rem 6rem;
+      background: linear-gradient(135deg, var(--green-mid) 0%, #0f2e1a 50%, var(--green-deep) 100%);
+      border: 1px solid rgba(79,168,104,0.2);
+      border-radius: 24px; padding: 4rem 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; overflow: hidden; z-index: 1;
+    }
+    .cta-banner::before {
+      content: '';
+      position: absolute; right: -60px; top: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,168,104,0.12) 0%, transparent 70%);
+    }
+    .cta-banner::after {
+      content: '';
+      position: absolute; right: 2rem; bottom: -2rem;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: url('logo.png') center/cover;
+      opacity: 0.06; filter: grayscale(1) brightness(2);
+    }
+    .cta-banner-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem; line-height: 1.15; color: white; margin-bottom: 0.75rem;
+    }
+    .cta-banner-sub { font-size: 1rem; color: rgba(255,255,255,0.5); font-weight: 300; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 3rem 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1;
+    }
+    .footer-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: rgba(255,255,255,0.7); }
+    .footer-sub { font-size: 0.78rem; color: rgba(255,255,255,0.3); margin-top: 4px; }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a { font-size: 0.8rem; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--green-pale); }
+
+    /* ── SCROLL ANIMATIONS ── */
+    .reveal {
+      opacity: 0; transform: translateY(32px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* Diagonal section divider */
+    .divider-diagonal {
+      height: 80px; overflow: hidden; position: relative; z-index: 1;
+    }
+    .divider-diagonal svg { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a href="index.html" class="nav-logo">
+    <img src="logo.png" alt="BlotterCast Logo" style="width:30px;height:30px;object-fit:contain;"/>
+    <span class="nav-brand">lotterCast</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <a href="login.html" class="nav-cta">Sign In →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <!-- Background rings -->
+  <div class="hero-rings">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+
+  <!-- Floating orb -->
+  <div class="hero-orb">
+    <div class="hero-orb-inner">
+      <span class="hero-orb-mark"><img src="logo.png" alt="BlotterCast seal"/></span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="hero-content">
+    <h1 class="hero-title">
+      Smarter Blotter.<br/>
+      <span class="accent italic">Safer</span>
+      <span class="line2"> Communities.</span>
+    </h1>
+    <p class="hero-sub">
+      BlotterCast transforms raw blotter and incident data into predictive insights — helping barangay officials act before incidents escalate.
+    </p>
+    <div class="hero-actions">
+      <a href="login.html" class="btn-hero-primary">
+        Access System <span>→</span>
+      </a>
+      <a href="#features" class="btn-hero-secondary">
+        <span data-icon="play" data-icon-size="16"></span> See Features
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">247+</div>
+        <div class="hero-stat-label">Blotter Records</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">91%</div>
+        <div class="hero-stat-label">ML Accuracy</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">8</div>
+        <div class="hero-stat-label">Zones Monitored</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE STRIP -->
+<div class="marquee-strip">
+  <div class="marquee-track" aria-hidden="true">
+    <!-- Duplicated for seamless loop -->
+    <span class="marquee-item">Blotter Management <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Incident Tracking <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Predictive Analytics <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Heat Map Visualization <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Settlement Monitoring <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">ML-Powered Forecasting <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Role-Based Access <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Automated Reports <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Blotter Management <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Incident Tracking <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Predictive Analytics <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Heat Map Visualization <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Settlement Monitoring <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">ML-Powered Forecasting <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Role-Based Access <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Automated Reports <span class="marquee-sep">✦</span></span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="reveal">
+    <span class="section-label">Core Capabilities</span>
+    <h2 class="section-title">Everything a Barangay<br/><span class="italic">Needs to Stay Safe</span></h2>
+    <p class="section-sub">From data entry to AI-powered risk forecasting — all in one locally-hosted platform.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal reveal-delay-1">
+      <div class="feature-icon" data-icon="blotter" data-icon-size="24"></div>
+      <div class="feature-name">Blotter Management</div>
+      <div class="feature-desc">Log, search, update, and archive blotter entries with full docket tracking — criminal and civil cases in one place.</div>
+    </div>
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="feature-icon" data-icon="incident" data-icon-size="24"></div>
+      <div class="feature-name">Incident Reporting</div>
+      <div class="feature-desc">Capture detailed incident records with location, time, category, priority level, and responding officer assignments.</div>
+    </div>
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-icon" data-icon="settlement" data-icon-size="24"></div>
+      <div class="feature-name">Settlement Monitoring</div>
+      <div class="feature-desc">Track compliance to settlement awards. Monitor agreed terms, execution dates, and compliance status in real time.</div>
+    </div>
+    <div class="feature-card reveal reveal-delay-4">
+      <div class="feature-icon" data-icon="heatmap" data-icon-size="24"></div>
+      <div class="feature-name">Heat Map Analysis</div>
+      <div class="feature-desc">Visualize incident density across barangay zones with color-coded risk grids and clickable zone breakdowns.</div>
+    </div>
+    <div class="feature-card reveal reveal-delay-5">
+      <div class="feature-icon" data-icon="predictions" data-icon-size="24"></div>
+      <div class="feature-name">ML Predictions</div>
+      <div class="feature-desc">Logistic Regression, Decision Tree, Random Forest, and Gradient Boosting models forecast incident likelihood by zone, time window, and category, trained and evaluated live on your barangay's own records.</div>
+    </div>
+    <div class="feature-card reveal reveal-delay-6">
+      <div class="feature-icon" data-icon="reports" data-icon-size="24"></div>
+      <div class="feature-name">Automated Reports</div>
+      <div class="feature-desc">Generate PDF and Excel reports on demand or on schedule — incident summaries, risk assessments, patrol plans and more.</div>
+    </div>
+  </div>
+</section>
+
+<!-- DIAGONAL DIVIDER -->
+<div class="divider-diagonal">
+  <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
+    <polygon points="0,0 1440,0 1440,80" fill="rgba(18,61,34,0.4)"/>
+  </svg>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works" style="background: rgba(18,61,34,0.3);">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;">
+    <div class="reveal">
+      <span class="section-label">The Process</span>
+      <h2 class="section-title">From Data Entry to<br/><span class="italic">Actionable Insight</span></h2>
+      <p class="section-sub">BlotterCast turns your barangay's records into a living intelligence system — automatically.</p>
+
+      <div class="steps-wrap">
+        <div class="step-row reveal reveal-delay-1">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <div class="step-badge">Data Ingestion</div>
+            <div class="step-title">Log or Import Records</div>
+            <div class="step-desc">Encode blotter entries and incident reports directly, or batch-import legacy CSV and Excel files with automatic data cleaning.</div>
+          </div>
+        </div>
+        <div class="step-row reveal reveal-delay-2">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <div class="step-badge">Feature Extraction</div>
+            <div class="step-title">Spatial & Temporal Analysis</div>
+            <div class="step-desc">The system automatically extracts zone coordinates, time-of-day patterns, seasonal trends, and repeat-offense signals.</div>
+          </div>
+        </div>
+        <div class="step-row reveal reveal-delay-3">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <div class="step-badge">Machine Learning</div>
+            <div class="step-title">Predictive Model Training</div>
+            <div class="step-desc">Multiple ML algorithms compete on your data. The best-performing model is activated and auto-retrained as new records arrive.</div>
+          </div>
+        </div>
+        <div class="step-row reveal reveal-delay-4">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <div class="step-badge">Decision Support</div>
+            <div class="step-title">Act on Forecasts</div>
+            <div class="step-desc">Officials receive risk alerts, patrol recommendations, and exportable reports — enabling proactive community safety decisions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Role cards -->
+    <div class="reveal reveal-delay-2" style="padding-top:3rem;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:1.25rem;">Who Uses BlotterCast</div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="shield" data-icon-size="28"></div>
+          <div>
+            <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Barangay Captain</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Full dashboard access, report generation, patrol deployment oversight.</div>
+          </div>
+        </div>
+        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="edit" data-icon-size="28"></div>
+          <div>
+            <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Desk Officer</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Enter blotter and incident records, update case status, view analytics.</div>
+          </div>
+        </div>
+        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="folder" data-icon-size="28"></div>
+          <div>
+            <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Data Encoder</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Batch-import legacy records, perform data entry, manage file uploads.</div>
+          </div>
+        </div>
+        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="settings" data-icon-size="28"></div>
+          <div>
+            <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">System Administrator</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Full system access — users, ML model, backups, security settings.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT STRIP -->
+<section class="section" id="about" style="padding-top:5rem;padding-bottom:5rem;">
+  <div style="display:flex;align-items:center;gap:5rem;" class="reveal">
+    <div style="flex:1;">
+      <span class="section-label">About the System</span>
+      <h2 class="section-title" style="font-size:2.2rem;">Built for Local Government.<br/><span class="italic">Works Offline.</span></h2>
+      <p style="font-size:0.95rem;color:rgba(255,255,255,0.5);line-height:1.8;font-weight:300;margin-top:1rem;max-width:420px;">
+        BlotterCast runs entirely on your barangay's local area network — no internet dependency, no cloud fees, no data leaving your premises. Fully compliant with the Philippine Data Privacy Act of 2012.
+      </p>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1px;border:1px solid rgba(79,168,104,0.12);border-radius:16px;overflow:hidden;">
+      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="lock"></div>
+        <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Data Privacy Compliant</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">RA 10173 — Philippine Data Privacy Act of 2012</div>
+      </div>
+      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="database"></div>
+        <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">LAN-Only Hosting</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Fully functional without internet access</div>
+      </div>
+      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="archive"></div>
+        <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Daily Auto-Backup</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Local storage with disaster recovery objectives</div>
+      </div>
+      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="building"></div>
+        <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Desktop & Tablet Ready</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Responsive on Chrome and Microsoft Edge</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<div class="cta-banner reveal">
+  <div>
+    <div class="cta-banner-title">Ready to bring intelligence<br/>to your barangay?</div>
+    <div class="cta-banner-sub">Sign in to access the full BlotterCast system.</div>
+  </div>
+  <div style="display:flex;gap:1rem;flex-shrink:0;">
+    <a href="login.html" class="btn-hero-primary" style="font-size:1rem;padding:16px 36px;">
+      Sign In to BlotterCast →
+    </a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">BlotterCast</div>
+    <div class="footer-sub">Barangay Blotter & Incident Intelligence System</div>
+  </div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="login.html">Sign In</a>
+    <a href="#">Privacy Policy</a>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Mapulang Lupa",
+    "municipality": "Pandi",
+    "province": "Bulacan",
+    "note": "Placeholder polygon only. Replace with verified official or OSM-exported barangay boundary."
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [120.9629, 14.8817],
+        [120.9640, 14.8808],
+        [120.9668, 14.8807],
+        [120.9685, 14.8820],
+        [120.9689, 14.8842],
+        [120.9681, 14.8861],
+        [120.9661, 14.8870],
+        [120.9639, 14.8868],
+        [120.9626, 14.8853],
+        [120.9624, 14.8834],
+        [120.9629, 14.8817]
+      ]
+    ]
+  }
+}

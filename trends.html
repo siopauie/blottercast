@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trends — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link active" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Incident Trends</h1>
+      <p class="text-forest-500 text-sm">Historical patterns and category analysis over time</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="trendYear" class="filter-input" onchange="updateCharts()"></select>
+    </div>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6">
+
+    <!-- Summary KPIs -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="stat-card-grad plum">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/80 text-sm font-medium">Total This Year</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="incident" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl" id="kpiTotal">—</div>
+        <div class="text-xs text-white/70 mt-1" id="kpiTotalSub"></div>
+      </div>
+      <div class="stat-card-grad moss">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/80 text-sm font-medium">Monthly Average</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="trends" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl" id="kpiAvg">—</div>
+        <div class="text-xs text-white/70 mt-1">incidents / month</div>
+      </div>
+      <div class="stat-card-grad sunset">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/80 text-sm font-medium">Peak Month</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl" id="kpiPeak">—</div>
+        <div class="text-xs text-white/70 mt-1" id="kpiPeakSub"></div>
+      </div>
+      <div class="stat-card-grad dark">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/70 text-sm font-medium">Resolution Rate</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl text-white" id="kpiRes">—</div>
+        <div class="text-xs text-white/60 mt-1">resolved or closed cases</div>
+      </div>
+    </div>
+
+    <!-- Line Chart + Doughnut -->
+    <div class="grid grid-cols-3 gap-6">
+      <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="stat-icon-badge" data-icon="trends" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800" id="lineTitle">Monthly Incident Count</h2>
+        </div>
+        <canvas id="lineChart" height="100"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="stat-icon-badge" data-icon="incident" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800">By Category</h2>
+        </div>
+        <canvas id="doughnutChart" height="170"></canvas>
+        <div id="doughnutLegend" class="mt-4 space-y-1 text-xs"></div>
+      </div>
+    </div>
+
+    <!-- Bar Chart + Day-of-week -->
+    <div class="grid grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="stat-icon-badge" data-icon="clock" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800">Incidents by Day of Week</h2>
+        </div>
+        <canvas id="barDayChart" height="130"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="stat-icon-badge" data-icon="predictions" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800">Top 5 Incident Categories (Ranked)</h2>
+        </div>
+        <canvas id="hBarChart" height="130"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+// Trends page — all aggregates computed server-side from MySQL via analytics.php.
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const COLORS = ['#1a5730','#2f8a4c','#4fa868','#c9a84c','#0e7c86','#86c895','#8a6a2e','#94a3b8'];
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#5a7a64';
+
+let lineChart, doughnutChart, barDayChart, hBarChart;
+let cachedYears = [];
+
+async function initYears() {
+  const data = await BCApi.trends();
+  cachedYears = data.years;
+  const sel = document.getElementById('trendYear');
+  sel.innerHTML = cachedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+  sel.value = data.year;
+  renderFromData(data);
+}
+
+async function updateCharts() {
+  const year = document.getElementById('trendYear').value;
+  const data = await BCApi.trends(year);
+  renderFromData(data);
+}
+
+function renderFromData(data) {
+  const year = data.year;
+  document.getElementById('lineTitle').textContent = `Monthly Incident Count (${year})`;
+
+  const monthly = new Array(12).fill(0);
+  data.monthly.forEach(row => { monthly[row.m - 1] = row.c; });
+
+  const dayData = new Array(7).fill(0);
+  data.dayOfWeek.forEach(row => { dayData[row.d - 1] = row.c; }); // MySQL DAYOFWEEK: 1=Sun..7=Sat
+
+  const catCounts = {};
+  data.categories.forEach(row => { catCounts[row.category] = row.c; });
+
+  // KPIs
+  const nowY = String(new Date().getFullYear());
+  const monthsElapsed = String(year) === nowY ? (new Date().getMonth() + 1) : 12;
+  document.getElementById('kpiTotal').textContent = data.total;
+  document.getElementById('kpiTotalSub').textContent = data.prevYearTotal
+    ? (data.total >= data.prevYearTotal ? '↑ ' : '↓ ') + Math.abs(Math.round((data.total - data.prevYearTotal) / data.prevYearTotal * 100)) + '% vs ' + (Number(year) - 1)
+    : 'recorded incidents';
+  document.getElementById('kpiAvg').textContent = Math.round(data.total / Math.max(1, monthsElapsed));
+  const peakIdx = monthly.indexOf(Math.max(...monthly));
+  document.getElementById('kpiPeak').textContent = data.total ? MONTHS[peakIdx] : '—';
+  document.getElementById('kpiPeakSub').textContent = data.total ? monthly[peakIdx] + ' incidents' : '';
+  document.getElementById('kpiRes').textContent = data.total ? data.resolutionRate + '%' : '—';
+
+  const cats = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
+  const catData = cats.map(c => catCounts[c]);
+
+  if (lineChart) lineChart.destroy();
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  const lineGradient = lineCtx.createLinearGradient(0, 0, 0, 260);
+  lineGradient.addColorStop(0, 'rgba(47,138,76,0.28)');
+  lineGradient.addColorStop(1, 'rgba(47,138,76,0.02)');
+  lineChart = new Chart(lineCtx, {
+    type: 'line',
+    data: { labels: MONTHS, datasets: [{ label: 'Incidents', data: monthly,
+      borderColor: '#23703c', backgroundColor: lineGradient, borderWidth: 2.5,
+      tension: 0.4, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#23703c',
+      pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }] },
+    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8, titleFont: { weight: '600' } } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+  });
+
+  if (doughnutChart) doughnutChart.destroy();
+  doughnutChart = new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: { labels: cats, datasets: [{ data: catData, backgroundColor: COLORS, borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } }, cutout: '68%' }
+  });
+  document.getElementById('doughnutLegend').innerHTML = cats.map((c, i) => `
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2"><span style="width:10px;height:10px;border-radius:3px;background:${COLORS[i % COLORS.length]};display:inline-block"></span><span class="text-forest-600">${c}</span></div>
+      <span class="font-bold text-forest-700">${catData[i]}</span>
+    </div>`).join('');
+
+  if (barDayChart) barDayChart.destroy();
+  barDayChart = new Chart(document.getElementById('barDayChart'), {
+    type: 'bar',
+    data: { labels: DAYS, datasets: [{ label: 'Incidents', data: dayData,
+      backgroundColor: '#2f8a4c', hoverBackgroundColor: '#1a5730', borderRadius: 8, borderSkipped: false, maxBarThickness: 40 }] },
+    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+  });
+
+  if (hBarChart) hBarChart.destroy();
+  const top5 = cats.slice(0, 5);
+  hBarChart = new Chart(document.getElementById('hBarChart'), {
+    type: 'bar',
+    data: { labels: top5, datasets: [{ label: 'Count', data: top5.map(c => catCounts[c]),
+      backgroundColor: top5.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 8, borderSkipped: false, maxBarThickness: 26 }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
+      scales: { x: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, y: { grid: { display: false }, border: { display: false } } } }
+  });
+}
+
+(async function () {
+  await requireAuth();
+  try { await initYears(); } catch (err) { showToast('Could not load trends: ' + err.message, 'error'); }
+})();
+</script>
+</body>
+</html>

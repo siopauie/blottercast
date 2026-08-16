@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Incident Reports — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
+      }, fontFamily: { display:['DM Serif Display','serif'], body:['DM Sans','sans-serif'] } } }
+    }
+  </script>
+
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link active" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Incident Reports</h1>
+      <p class="text-forest-500 text-sm">Log and track all reported incidents in the barangay</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openAddIncident()" class="btn-primary flex items-center gap-2">
+        <span data-icon="plus" data-icon-size="16"></span> New Incident Report
+      </button>
+    </div>
+  </header>
+
+  <!-- Priority Summary Cards -->
+  <div class="px-6 pt-6 grid grid-cols-4 gap-4">
+    <div class="stat-card-grad plum">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Total Reports</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="incident" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="countTotal">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">High Priority</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="warning" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="countHigh">0</div>
+    </div>
+    <div class="stat-card-grad sunset">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Under Investigation</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="search" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="countInvestigating">0</div>
+    </div>
+    <div class="stat-card-grad dark">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/70 text-sm font-medium">Resolved</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl text-white" id="countResolved">0</div>
+    </div>
+  </div>
+
+  <main class="flex-1 p-6">
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+
+      <!-- Table Title -->
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="incident" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Incident Records</h2>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <span class="relative flex-1 min-w-52"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="incSearchInput" placeholder="Search report no., location, reporter…" class="filter-input w-full pl-8" oninput="renderIncidents()"/></span>
+        <select id="incCategoryFilter" class="filter-input" onchange="renderIncidents()">
+          <option value="">All Categories</option>
+          <option>Physical Assault</option>
+          <option>Theft</option>
+          <option>Domestic Dispute</option>
+          <option>Vandalism</option>
+          <option>Trespassing</option>
+          <option>Drug-Related Activity</option>
+          <option>Public Disturbance</option>
+        </select>
+        <select id="incPriorityFilter" class="filter-input" onchange="renderIncidents()">
+          <option value="">All Priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+        <select id="incStatusFilter" class="filter-input" onchange="renderIncidents()">
+          <option value="">All Statuses</option>
+          <option value="Under Investigation">Under Investigation</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
+          <option value="Referred">Referred</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Report No.</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Location</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Reporter</th>
+              <th>Officer</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="incidentTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+        <span class="text-sm text-forest-500" id="incPaginationInfo"></span>
+        <div class="flex gap-2" id="incPaginationControls"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit Incident Modal -->
+<div class="modal-overlay" id="incidentModal">
+  <div class="modal-box" style="width:700px">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-display text-xl text-forest-800" id="incModalTitle">New Incident Report</h2>
+      <button onclick="closeModal('incidentModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <form id="incidentForm" class="space-y-4">
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="form-label">Report No.</label><input type="text" id="if_reportNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/></div>
+        <div><label class="form-label">Date Reported</label><input type="date" id="if_dateReported" class="form-input" data-no-future/></div>
+        <div><label class="form-label">Time Reported</label><input type="time" id="if_timeReported" class="form-input"/></div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">Zone</label>
+          <select id="if_zone" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option>Zone 1</option><option>Zone 2</option><option>Zone 3</option><option>Zone 4</option>
+            <option>Zone 5</option><option>Zone 6</option><option>Zone 7</option><option>Zone 8</option>
+          </select>
+        </div>
+        <div class="col-span-2"><label class="form-label">Location Detail</label><input type="text" id="if_location" class="form-input" placeholder="Street, landmark, purok…"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Category</label>
+          <select id="if_category" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option>Physical Assault</option><option>Theft</option><option>Domestic Dispute</option>
+            <option>Vandalism</option><option>Trespassing</option><option>Drug-Related Activity</option>
+            <option>Public Disturbance</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Priority Level</label>
+          <select id="if_priority" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="form-label">Description</label><textarea id="if_description" class="form-input h-20 resize-none" placeholder="Detailed description of the incident…"></textarea></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Reporter Name</label><input type="text" id="if_reporter" class="form-input" placeholder="Full name" data-no-numbers/></div>
+        <div><label class="form-label">Responding Officer</label><input type="text" id="if_officer" class="form-input" placeholder="e.g. PO1 Cruz"/></div>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select id="if_status" class="form-input" required>
+          <option value="" selected disabled hidden>Select…</option>
+          <option value="Under Investigation">Under Investigation</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
+          <option value="Referred">Referred</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeModal('incidentModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="saveIncident()" class="btn-primary">Save Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="incViewModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Incident Report Details</h2>
+      <button onclick="closeModal('incViewModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div id="incViewContent" class="space-y-2 text-sm"></div>
+    <div class="mt-6 flex justify-end"><button onclick="closeModal('incViewModal')" class="btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+  const INC_ROWS = 6;
+  let incPage = 1, incEditId = null;
+  let incidentData = [];
+
+  function mapIncident(r) {
+    const time5 = (r.time_reported || '').slice(0,5);
+    const [y,m,d] = (r.incident_date || '').split('-');
+    return {
+      id: Number(r.id), reportNo: r.report_no, date: r.incident_date,
+      dateReported: (m && d) ? `${m}/${d}/${y}` : r.incident_date,
+      timeReported: time5, hour: r.hour, zone: r.zone_id, location: r.location,
+      lat: r.lat, lng: r.lng, category: r.category, description: r.description,
+      reporter: r.reporter, officer: r.officer, priority: r.priority, status: r.status,
+    };
+  }
+
+  async function loadIncidents() {
+    const raw = await BCApi.list('incidents');
+    incidentData = raw.map(mapIncident);
+    updateSummary();
+    renderIncidents();
+  }
+
+  function priorityClass(p) { return p==='High'?'priority-high':p==='Medium'?'priority-medium':'priority-low'; }
+  function statusClass(s) {
+    if (s==='Resolved') return 'status-resolved';
+    if (s==='Closed') return 'status-closed';
+    if (s==='Referred') return 'status-referred';
+    return 'status-investigating';
+  }
+
+  function updateSummary() {
+    document.getElementById('countTotal').textContent = incidentData.length;
+    document.getElementById('countHigh').textContent = incidentData.filter(r=>r.priority==='High').length;
+    document.getElementById('countInvestigating').textContent = incidentData.filter(r=>r.status==='Under Investigation').length;
+    document.getElementById('countResolved').textContent = incidentData.filter(r=>r.status==='Resolved').length;
+  }
+
+  function getIncFiltered() {
+    const s = document.getElementById('incSearchInput').value.toLowerCase();
+    const c = document.getElementById('incCategoryFilter').value;
+    const p = document.getElementById('incPriorityFilter').value;
+    const st = document.getElementById('incStatusFilter').value;
+    return incidentData.filter(r =>
+      (!s || r.reportNo.toLowerCase().includes(s) || r.location.toLowerCase().includes(s) || r.reporter.toLowerCase().includes(s)) &&
+      (!c || r.category === c) &&
+      (!p || r.priority === p) &&
+      (!st || r.status === st)
+    );
+  }
+
+  function renderIncidents() {
+    const filtered = getIncFiltered();
+    const total = filtered.length;
+    const start = (incPage - 1) * INC_ROWS;
+    const page = filtered.slice(start, start + INC_ROWS);
+
+    const tbody = document.getElementById('incidentTableBody');
+    tbody.innerHTML = page.length === 0
+      ? `<tr><td colspan="11" class="text-center py-10 text-forest-400">No incident reports found.</td></tr>`
+      : page.map(r => `
+        <tr>
+          <td class="font-semibold text-forest-700">${r.reportNo}</td>
+          <td>${r.dateReported}</td>
+          <td>${r.timeReported}</td>
+          <td class="text-xs">${r.location}</td>
+          <td><span class="text-xs font-medium text-forest-700">${r.category}</span></td>
+          <td class="text-xs text-gray-500 max-w-xs truncate" title="${r.description}">${r.description}</td>
+          <td class="text-xs">${r.reporter}</td>
+          <td class="text-xs">${r.officer}</td>
+          <td><span class="badge ${priorityClass(r.priority)}">${r.priority}</span></td>
+          <td><span class="badge ${statusClass(r.status)}" style="white-space:nowrap">${r.status}</span></td>
+          <td>
+            <div class="row-actions">
+              <button onclick="viewIncident(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
+              <button onclick="editIncident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
+              <button onclick="deleteIncident(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+    document.getElementById('incPaginationInfo').textContent = `Showing ${Math.min(start+1,total)||0}–${Math.min(start+INC_ROWS,total)} of ${total}`;
+    const totalPages = Math.ceil(total / INC_ROWS) || 1;
+    bcRenderPagination(document.getElementById('incPaginationControls'), incPage, totalPages, (p) => { incPage = p; renderIncidents(); });
+  }
+
+  async function openAddIncident() {
+    incEditId = null;
+    document.getElementById('incModalTitle').textContent = 'New Incident Report';
+    document.getElementById('incidentForm').reset();
+    openModal('incidentModal');
+
+    // Look-ahead preview only, same reasoning as Blotter's Docket No.
+    // preview — the real number is (re)generated at save time, so it
+    // can't go stale or collide even with two forms open at once.
+    const reportField = document.getElementById('if_reportNo');
+    reportField.value = 'Loading…';
+    try {
+      const { seqNo } = await BCApi.peekSeq('incidents');
+      if (incEditId === null) reportField.value = seqNo;
+    } catch (err) {
+      reportField.value = '';
+    }
+  }
+
+  function editIncident(id) {
+    const r = incidentData.find(x => x.id === id);
+    incEditId = id;
+    document.getElementById('incModalTitle').textContent = 'Edit Incident Report';
+    document.getElementById('if_reportNo').value = r.reportNo;
+    document.getElementById('if_dateReported').value = r.date || '';
+    document.getElementById('if_zone').value = r.zone || 'Zone 1';
+    document.getElementById('if_timeReported').value = r.timeReported;
+    document.getElementById('if_location').value = r.location;
+    document.getElementById('if_category').value = r.category;
+    document.getElementById('if_priority').value = r.priority;
+    document.getElementById('if_description').value = r.description;
+    document.getElementById('if_reporter').value = r.reporter;
+    document.getElementById('if_officer').value = r.officer;
+    document.getElementById('if_status').value = r.status;
+    openModal('incidentModal');
+  }
+
+  async function saveIncident() {
+    const vals = {
+      // Same reasoning as Blotter's Docket No.: on create this field only
+      // ever shows a look-ahead preview (see openAddIncident()), never a
+      // reserved number, so it must be sent as '' to let the server mint
+      // the real one at save time — otherwise two people opening "New
+      // Incident Report" around the same moment would both submit the
+      // same previewed number and collide.
+      reportNo: incEditId ? document.getElementById('if_reportNo').value.trim() : '',
+      date: document.getElementById('if_dateReported').value,
+      timeReported: document.getElementById('if_timeReported').value,
+      location: document.getElementById('if_location').value.trim(),
+      category: document.getElementById('if_category').value,
+      priority: document.getElementById('if_priority').value,
+      description: document.getElementById('if_description').value.trim(),
+      reporter: document.getElementById('if_reporter').value.trim(),
+      officer: document.getElementById('if_officer').value.trim(),
+      status: document.getElementById('if_status').value,
+      zone: document.getElementById('if_zone').value,
+    };
+    if (!vals.location || !vals.reporter) { await bcAlert('Please fill in required fields.'); return; }
+    if (!vals.zone) { await bcAlert('Please select the Zone.'); return; }
+    if (!vals.category) { await bcAlert('Please select the Category.'); return; }
+    if (!vals.priority) { await bcAlert('Please select the Priority Level.'); return; }
+    if (!vals.status) { await bcAlert('Please select the Status.'); return; }
+    if (vals.reporter && !bcIsValidName(vals.reporter)) { await bcAlert('Reporter Name should only contain letters (no numbers).'); return; }
+    if (vals.date && bcIsFutureDateTime(vals.date, vals.timeReported)) { await bcAlert('Date/Time Reported cannot be in the future.'); return; }
+    if (!vals.location.toLowerCase().startsWith('zone')) vals.location = vals.zone + ', ' + vals.location;
+    try {
+      if (incEditId) {
+        const prev = incidentData.find(x => x.id === incEditId);
+        if (prev && prev.zone !== vals.zone) { vals.lat = ''; vals.lng = ''; } // re-derive coords server-side
+        await BCApi.update('incidents', incEditId, vals);
+        showToast('Incident report updated!');
+      } else {
+        await BCApi.create('incidents', vals);
+        showToast('Incident report added! It now feeds the heat map, trends, and predictions.');
+      }
+      closeModal('incidentModal');
+      await loadIncidents();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteIncident(id) {
+    if (!(await bcConfirm('Delete this incident report? This cannot be undone.', { title: 'Delete Incident Report', okLabel: 'Delete', danger: true }))) return;
+    try {
+      await BCApi.remove('incidents', id);
+      showToast('Report deleted.');
+      await loadIncidents();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  function viewIncident(id) {
+    const r = incidentData.find(x => x.id === id);
+    const rows = [
+      ['Report No.', r.reportNo], ['Date', r.dateReported], ['Time', r.timeReported],
+      ['Location', r.location], ['Category', r.category], ['Priority', r.priority],
+      ['Description', r.description], ['Reporter', r.reporter], ['Officer', r.officer], ['Status', r.status],
+    ];
+    document.getElementById('incViewContent').innerHTML = rows.map(([k,v]) => `
+      <div class="flex gap-4 py-2 border-b border-forest-50">
+        <span class="w-44 text-forest-500 font-semibold text-xs uppercase tracking-wide flex-shrink-0">${k}</span>
+        <span class="text-forest-800">${v}</span>
+      </div>`).join('');
+    openModal('incViewModal');
+  }
+
+  (async function () {
+    await requireAuth();
+    try { await loadIncidents(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
+  })();
+</script>
+</body>
+</html>

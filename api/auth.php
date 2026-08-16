@@ -1,0 +1,158 @@
+<?php
+require __DIR__ . '/config.php';
+
+$action = $_GET['action'] ?? '';
+$mysqli = db();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
+    $in = body();
+    $username = trim($in['username'] ?? '');
+    $password = $in['password'] ?? '';
+    if ($username === '' || $password === '') json_error('Username and password required');
+
+    $settings = getSecuritySettings();
+
+    $stmt = $mysqli->prepare('SELECT id, username, password, full_name, role, status, failed_attempts, locked_until, password_changed_at FROM users WHERE username = ?');
+    $stmt->bind_param('s', $username);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    // Account Lockout After Failed Attempts: block the login attempt
+    // entirely while locked_until is still in the future, without even
+    // checking the password — that's the whole point of a lockout.
+    if ($user && $settings['lockout_enabled'] && !empty($user['locked_until']) && strtotime($user['locked_until']) > time()) {
+        $minutesLeft = max(1, ceil((strtotime($user['locked_until']) - time()) / 60));
+        json_error("This account is locked due to too many failed login attempts. Try again in $minutesLeft minute(s), or contact an administrator.", 403);
+    }
+
+    if (!$user || !password_verify($password, $user['password'])) {
+        // Only track failed attempts against a real account — an unknown
+        // username shouldn't let an attacker learn whether it exists by
+        // watching a lockout counter.
+        if ($user && $settings['lockout_enabled']) {
+            $attempts = (int)$user['failed_attempts'] + 1;
+            if ($attempts >= $settings['max_failed_logins']) {
+                $lockUntil = date('Y-m-d H:i:s', time() + 15 * 60); // 15-minute lockout window
+                $upd = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = ? WHERE id = ?');
+                $upd->bind_param('si', $lockUntil, $user['id']);
+                $upd->execute();
+                $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Locked', 'System', 'Account locked after too many failed login attempts')");
+                $log->bind_param('s', $user['username']);
+                $log->execute();
+                json_error('Too many failed login attempts. This account has been locked for 15 minutes.', 403);
+            }
+            $upd = $mysqli->prepare('UPDATE users SET failed_attempts = ? WHERE id = ?');
+            $upd->bind_param('ii', $attempts, $user['id']);
+            $upd->execute();
+        }
+        json_error('Invalid username or password', 401);
+    }
+    if ($user['status'] !== 'Active') {
+        json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
+    }
+
+    // Correct password: clear any lockout state.
+    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?');
+    $clear->bind_param('i', $user['id']);
+    $clear->execute();
+
+    // Password Expiry (days): flag it so the frontend can force a change
+    // before letting the user do anything else. Still let them into a
+    // session (they proved they know the current password) rather than
+    // locking them out with no self-service way back in.
+    $mustChangePassword = false;
+    if ($settings['password_expiry_days'] > 0 && !empty($user['password_changed_at'])) {
+        $ageDays = (time() - strtotime($user['password_changed_at'])) / 86400;
+        $mustChangePassword = $ageDays > $settings['password_expiry_days'];
+    }
+
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['must_change_password'] = $mustChangePassword;
+    $_SESSION['last_activity'] = time();
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Login', 'System', 'Successful login')");
+    $log->bind_param('s', $user['username']);
+    $log->execute();
+
+    json_response(['ok' => true, 'user' => [
+        'username' => $user['username'], 'full_name' => $user['full_name'], 'role' => $user['role'],
+        'mustChangePassword' => $mustChangePassword,
+    ]]);
+}
+
+if ($action === 'logout') {
+    if (!empty($_SESSION['username'])) {
+        $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Logout', 'System', 'User logged out')");
+        $log->bind_param('s', $_SESSION['username']);
+        $log->execute();
+    }
+    $_SESSION = [];
+    session_destroy();
+    json_response(['ok' => true]);
+}
+
+if ($action === 'me') {
+    if (empty($_SESSION['user_id'])) json_response(['authenticated' => false]);
+
+    // Same idle-timeout check as require_login() in config.php — 'me' is
+    // called on every page load via requireAuth(), so this is what
+    // actually catches an abandoned tab and forces it back to login.html.
+    $settings = getSecuritySettings();
+    $timeoutSeconds = $settings['session_timeout'] * 60;
+    if ($timeoutSeconds > 0 && !empty($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > $timeoutSeconds) {
+        $_SESSION = [];
+        session_destroy();
+        json_response(['authenticated' => false]);
+    }
+    $_SESSION['last_activity'] = time();
+
+    json_response(['authenticated' => true, 'user' => [
+        'full_name' => $_SESSION['full_name'], 'role' => $_SESSION['role'],
+        'mustChangePassword' => !empty($_SESSION['must_change_password']),
+    ]]);
+}
+
+// Self-service password change — used both for the voluntary "change my
+// password" flow and the mandatory one triggered by Password Expiry
+// (days). Requires the current password (proves it's really the account
+// owner, not just an unattended open session) and enforces Minimum
+// Password Length from the same Security settings the rest of auth.php
+// reads from.
+if ($action === 'change_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_login();
+    $d = body();
+    $currentPassword = $d['currentPassword'] ?? '';
+    $newPassword = $d['newPassword'] ?? '';
+    if ($currentPassword === '' || $newPassword === '') json_error('Current and new password are both required');
+
+    $stmt = $mysqli->prepare('SELECT id, username, password FROM users WHERE id = ?');
+    $stmt->bind_param('i', $_SESSION['user_id']);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+    if (!$user || !password_verify($currentPassword, $user['password'])) {
+        json_error('Current password is incorrect', 401);
+    }
+
+    $settings = getSecuritySettings();
+    if (strlen($newPassword) < $settings['min_password_length']) {
+        json_error("New password must be at least {$settings['min_password_length']} characters long");
+    }
+
+    $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+    $upd = $mysqli->prepare('UPDATE users SET password = ?, password_changed_at = NOW(), failed_attempts = 0, locked_until = NULL WHERE id = ?');
+    $upd->bind_param('si', $hash, $user['id']);
+    $upd->execute();
+
+    $_SESSION['must_change_password'] = false;
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Updated', 'System', 'Password changed')");
+    $log->bind_param('s', $user['username']);
+    $log->execute();
+
+    json_response(['ok' => true]);
+}
+
+json_error('Unknown action', 404);

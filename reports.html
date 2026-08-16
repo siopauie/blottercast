@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <style>
+    .report-card { border-radius:14px; border:1.5px solid #dcf0e0; background:#fff; padding:1.25rem; cursor:pointer; transition:all 0.15s; }
+    .report-card:hover { border-color:#2f8a4c; box-shadow:0 4px 14px rgba(0,0,0,0.07); transform:translateY(-2px); }
+    .report-card .icon { width:2rem; height:2rem; margin-bottom:0.75rem; color: var(--forest-600); display:flex; align-items:center; }
+    .sched-toggle { width:44px; height:24px; border-radius:99px; border:none; cursor:pointer; transition:background 0.2s; position:relative; }
+    .sched-toggle.on { background:#23703c; }
+    .sched-toggle.off { background:#d1d5db; }
+    .sched-toggle::after { content:''; width:18px;height:18px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left 0.2s; }
+    .sched-toggle.on::after { left:23px; }
+  </style>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link active" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Reports</h1>
+      <p class="text-forest-500 text-sm">Generate, schedule, and download formatted reports</p>
+    </div>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6">
+
+    <!-- Report Type Cards -->
+    <div>
+      <h2 class="font-display text-lg text-forest-700 mb-4">Generate Report</h2>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="report-card" onclick="openGenerateModal('Incident Summary Report')">
+          <div class="icon" data-icon="blotter" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Incident Summary Report</div>
+          <div class="text-xs text-forest-500">All incidents in a selected date range with category and status breakdown.</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+            <span class="badge badge-ongoing text-xs">Excel</span>
+          </div>
+        </div>
+        <div class="report-card" onclick="openGenerateModal('Predictive Risk Assessment')">
+          <div class="icon" data-icon="predictions" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Predictive Risk Assessment</div>
+          <div class="text-xs text-forest-500">Zone-level risk forecast with patrol deployment recommendations.</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+          </div>
+        </div>
+        <div class="report-card" onclick="openGenerateModal('Patrol Deployment Plan')">
+          <div class="icon" data-icon="shield" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Patrol Deployment Plan</div>
+          <div class="text-xs text-forest-500">Recommended patrol schedules by zone, time, and risk level.</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+            <span class="badge badge-ongoing text-xs">Excel</span>
+          </div>
+        </div>
+        <div class="report-card" onclick="openGenerateModal('Trend Analysis Report')">
+          <div class="icon" data-icon="trends" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Trend Analysis Report</div>
+          <div class="text-xs text-forest-500">Historical patterns, seasonal trends, and category comparisons.</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+            <span class="badge badge-ongoing text-xs">Excel</span>
+          </div>
+        </div>
+        <div class="report-card" onclick="openGenerateModal('Settlement Compliance Report')">
+          <div class="icon" data-icon="settlement" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Settlement Compliance Report</div>
+          <div class="text-xs text-forest-500">Status of all active settlement agreements and compliance tracking.</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+          </div>
+        </div>
+        <div class="report-card" onclick="openGenerateModal('Comparative Period Report')">
+          <div class="icon" data-icon="dashboard" data-icon-size="22"></div>
+          <div class="font-semibold text-forest-800 mb-1">Comparative Period Report</div>
+          <div class="text-xs text-forest-500">Side-by-side comparison of two date ranges (e.g. Q1 vs Q2).</div>
+          <div class="mt-3 flex gap-2">
+            <span class="badge badge-resolved text-xs">PDF</span>
+            <span class="badge badge-ongoing text-xs">Excel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scheduled Reports -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50">
+        <h2 class="font-display text-lg text-forest-800">Scheduled Reports</h2>
+      </div>
+      <table class="data-table">
+        <thead><tr>
+          <th>Report</th><th>Frequency</th><th>Next Run</th><th>Recipients</th><th>Format</th><th>Enabled</th>
+        </tr></thead>
+        <tbody id="schedTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50">
+        <h2 class="font-display text-lg text-forest-800">Recent Generated Reports</h2>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Report Name</th><th>Generated By</th><th>Date</th><th>Period</th><th>Format</th><th>Actions</th></tr></thead>
+        <tbody id="recentReports"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal-overlay" id="generateModal">
+  <div class="modal-box max-w-lg">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-display text-xl text-forest-800" id="genModalTitle">Generate Report</h2>
+      <button onclick="closeModal('generateModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Date From</label><input type="date" id="gen_from" class="form-input" value="2025-01-01"/></div>
+        <div><label class="form-label">Date To</label><input type="date" id="gen_to" class="form-input" value="2025-01-31"/></div>
+      </div>
+      <div>
+        <label class="form-label">Zone Filter</label>
+        <select class="form-input" id="gen_zone"><option value="">All Zones</option>
+          <option>Zone 1</option><option>Zone 2</option><option>Zone 3</option>
+          <option>Zone 4</option><option>Zone 5</option><option>Zone 6</option>
+          <option>Zone 7</option><option>Zone 8</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Export Format</label>
+        <div class="flex gap-3 mt-1">
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="fmt" value="pdf" checked class="accent-forest-600"/> PDF</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="fmt" value="excel" class="accent-forest-600"/> Excel</label>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeModal('generateModal')" class="btn-secondary">Cancel</button>
+        <button onclick="simulateGenerate()" class="btn-primary" id="genBtn"><span data-icon="reports" data-icon-size="16"></span> Generate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+// Scheduled-report toggles remain a static demo (no cron system in this
+// prototype), but "Generate Report" below produces real files from MySQL.
+const scheduled = [
+  { report:'Incident Summary Report', freq:'Weekly',  next:'Next Monday', recipients:'kapitan, admin', format:'PDF',   on:true  },
+  { report:'Trend Analysis Report',   freq:'Monthly', next:'1st of month', recipients:'admin',          format:'Excel', on:true  },
+  { report:'Settlement Compliance',   freq:'Monthly', next:'1st of month', recipients:'kapitan',        format:'PDF',   on:false },
+];
+
+document.getElementById('schedTableBody').innerHTML = scheduled.map((s,i)=>`
+  <tr>
+    <td class="font-medium text-forest-800">${s.report}</td>
+    <td><span class="badge badge-ongoing">${s.freq}</span></td>
+    <td class="text-sm text-forest-600">${s.next}</td>
+    <td class="text-xs text-forest-400">${s.recipients}</td>
+    <td><span class="badge badge-resolved text-xs">${s.format}</span></td>
+    <td><button class="sched-toggle ${s.on?'on':'off'}" id="tog${i}" onclick="toggleSched(${i})"></button></td>
+  </tr>`).join('');
+
+let schedStates = scheduled.map(s=>s.on);
+function toggleSched(i) {
+  schedStates[i]=!schedStates[i];
+  const btn=document.getElementById('tog'+i);
+  btn.className='sched-toggle '+(schedStates[i]?'on':'off');
+  showToast(schedStates[i]?'Schedule enabled.':'Schedule disabled.');
+}
+
+async function loadRecentReports() {
+  try {
+    const rows = await BCApi._fetch('api/reports.php?action=list');
+    document.getElementById('recentReports').innerHTML = rows.length === 0
+      ? '<tr><td colspan="6" class="text-center py-8 text-forest-400">No reports generated yet. Use "Generate Report" above.</td></tr>'
+      : rows.map(r => `
+        <tr>
+          <td class="font-medium text-forest-800">${r.report_type}</td>
+          <td class="text-sm text-forest-500">${r.generated_by}</td>
+          <td class="text-sm text-forest-400">${new Date(r.created_at).toLocaleDateString('en-PH', {month:'short', day:'numeric', year:'numeric'})}</td>
+          <td class="text-xs text-forest-400">${r.period_from || ''}${r.period_to ? ' – ' + r.period_to : ''}</td>
+          <td><span class="badge badge-resolved text-xs">${r.format}</span></td>
+          <td>
+            <a href="api/reports.php?action=download&file=${encodeURIComponent(r.file_path)}" class="btn-secondary text-xs px-3 py-1 inline-flex items-center gap-1"><span data-icon="download" data-icon-size="14"></span> Download</a>
+          </td>
+        </tr>`).join('');
+  } catch (err) {
+    showToast('Could not load report history: ' + err.message, 'error');
+  }
+}
+
+let currentReportType = 'Incident Summary Report';
+
+function openGenerateModal(title) {
+  currentReportType = title;
+  document.getElementById('genModalTitle').textContent = 'Generate: ' + title;
+  openModal('generateModal');
+}
+
+async function simulateGenerate() {
+  const from = document.getElementById('gen_from').value;
+  const to = document.getElementById('gen_to').value;
+  const zone = document.getElementById('gen_zone').value;
+  const format = document.querySelector('input[name="fmt"]:checked').value;
+  const btn = document.getElementById('genBtn');
+
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const result = await BCApi._fetch('api/reports.php?action=generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: currentReportType, from, to, zone, format }),
+    });
+    closeModal('generateModal');
+    showToast('Report generated! Starting download…');
+    await loadRecentReports();
+    // Trigger the actual file download
+    window.location.href = result.url;
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<span data-icon="reports" data-icon-size="16"></span> Generate';
+  }
+}
+
+(async function () {
+  await requireAuth();
+  await loadRecentReports();
+})();
+</script>
+</body>
+</html>

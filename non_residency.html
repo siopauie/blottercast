@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Certificate of Non-Residency — BlotterCast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link active" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Certificate of Non-Residency</h1>
+      <p class="text-forest-500 text-sm">Issue and manage certificates of non-residency</p>
+    </div>
+    <button onclick="openNonResidencyForm()" class="btn-primary"><span data-icon="plus" data-icon-size="16"></span> Issue New Certificate</button>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6">
+
+    <!-- Summary -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="stat-card-grad plum">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/80 text-sm font-medium">Issued This Month</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="folder" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl" id="nrMonthCount">0</div>
+      </div>
+      <div class="stat-card-grad sunset">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/80 text-sm font-medium">Total This Year</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="trends" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl" id="nrYearCount">0</div>
+      </div>
+      <div class="stat-card-grad dark">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-white/70 text-sm font-medium">Revenue (Fees)</span>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="database" data-icon-size="18"></div>
+        </div>
+        <div class="font-display text-3xl text-white" id="nrRevenue">₱0</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Issuance Log -->
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+          <div class="stat-icon-badge" data-icon="clearance" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800">Issuance Log</h2>
+        </div>
+        <div class="filter-bar">
+          <span class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="14"></span><input type="text" id="nrSearch" placeholder="Search…" class="filter-input text-sm pl-8 w-full" oninput="nrPage=1;renderNrLog()"/></span>
+        </div>
+        <table class="data-table">
+          <thead><tr>
+            <th>Control No.</th><th>Name</th><th>Purpose</th><th>Date Issued</th><th>OR No.</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="nonResidencyLog"></tbody>
+        </table>
+        <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+          <span class="text-sm text-forest-500" id="nrPaginationInfo"></span>
+          <div class="flex gap-2" id="nrPaginationControls"></div>
+        </div>
+      </div>
+
+      <!-- Certificate Preview -->
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-display text-lg text-forest-800">Certificate Preview</h2>
+          <div class="flex gap-2">
+            <button onclick="window.print()" class="btn-secondary text-sm flex items-center gap-2"><span data-icon="printer" data-icon-size="16"></span> Print</button>
+          </div>
+        </div>
+        <div id="certPrint" class="flex justify-center">
+          <div class="cert-sheet" id="certContent">
+            <img src="assets/non-residency-letterhead.jpg" class="cert-bg" alt="Certificate of Non-Residency letterhead"/>
+            <div class="cert-ov cert-ov-nr-ctrl-non" id="nr_ctrl_display">
+              Control No.: NR-2025-001
+            </div>
+            <div class="cert-ov cert-ov-title-non">Certificate of Non-Residency</div>
+            <div class="cert-ov cert-ov-nr-body">
+              <p class="no-indent">TO WHOM IT MAY CONCERN,</p>
+              <p>This is to certify that Mr./Mrs./Ms. <span class="cert-name" id="nr_name">___________________</span>, which previous home address is <span id="nr_prev_addr">_____________________</span>. He/She no longer resides in the given address.</p>
+              <p>This certification was issued upon the request of <span class="cert-blank" id="nr_purpose">_____________________</span>.</p>
+              <p>Given this <span class="cert-blank" id="nr_day">___</span> day of <span class="cert-blank" id="nr_month">_______</span> <span id="nr_year">____</span>, at the office of the Barangay Chairman, Mapulang Lupa, Pandi.</p>
+            </div>
+            <div class="cert-ov-nr-voter-mask"></div>
+            <div class="cert-ov cert-ov-nr-voter">( &nbsp;<span id="nr_voter_check">&nbsp;</span>&nbsp; ) VOTER &nbsp; ( &nbsp;<span id="nr_nonvoter_check">&nbsp;</span>&nbsp; ) NON-VOTER</div>
+            <div class="cert-ov cert-ov-nr-applicant-name" id="nr_applicant_name"></div>
+            <div class="cert-ov cert-ov-nr-sigimg" id="nr_sigimg_wrap"></div>
+            <div class="cert-ov cert-ov-nr-sigblock">
+              <div class="cert-ov-chairman-name" id="nr_captain"></div>
+              <div class="cert-ov-chairman-title">Punong Barangay</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Non-Residency Form Modal -->
+<div class="modal-overlay" id="nonResidencyFormModal">
+  <div class="modal-box max-w-lg">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Issue Certificate of Non-Residency</h2>
+      <button onclick="closeModal('nonResidencyFormModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div class="space-y-4">
+      <div class="relative">
+        <label class="form-label">Person <span class="text-red-500">*</span></label>
+        <input type="text" id="nr_residentSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off"/>
+        <input type="hidden" id="nr_residentId"/>
+        <div id="nr_residentSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
+        <p class="text-xs text-forest-400 mt-1">Only Census records marked <strong>Transferred</strong> appear here. Certifies that this person no longer resides in this barangay.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4" id="nr_derived_preview">
+        <div class="col-span-2"><label class="form-label">Full Name</label><input type="text" id="nr_name_display" class="form-input" disabled/></div>
+        <div class="col-span-2"><label class="form-label">Previous / Former Home Address in this Barangay</label><input type="text" id="nr_prevaddr_input" class="form-input" placeholder="e.g. PH2 BLK18 LOT19 Pandi Residence 1, Mapulang Lupa, Pandi, Bulacan"/></div>
+        <div class="col-span-2">
+          <label class="form-label">Requested By / Purpose</label>
+          <input type="text" id="nr_purpose_input" class="form-input" placeholder="e.g. PNP-Pandi, Employment, School Requirement"/>
+        </div>
+        <div><label class="form-label">O.R. Number</label><input type="text" id="nr_or_input" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/></div>
+        <div><label class="form-label">Amount Paid (₱)</label><input type="number" id="nr_fee" class="form-input" value="20"/></div>
+      </div>
+      <div id="nr_blotter_warning" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-4">
+        <div class="flex items-start gap-2 mb-2">
+          <span class="text-amber-600 flex-shrink-0 mt-0.5" data-icon="warning" data-icon-size="18"></span>
+          <div>
+            <div class="font-semibold text-amber-800 text-sm">This resident has blotter record(s) on file</div>
+            <div class="text-xs text-amber-700 mt-0.5">Review before deciding whether to issue this certificate.</div>
+          </div>
+        </div>
+        <div id="nr_blotter_list" class="space-y-2 mb-3"></div>
+        <label class="flex items-center gap-2 text-xs text-amber-800">
+          <input type="checkbox" id="nr_blotter_ack" class="rounded"/>
+          I have reviewed the blotter record(s) above and choose to proceed with issuing this certificate.
+        </label>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeModal('nonResidencyFormModal')" class="btn-secondary">Cancel</button>
+        <button onclick="issueNonResidency()" class="btn-primary">Issue & Preview</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+let nrLogData=[]; let nrPage=1; const NR_ROWS=8;
+
+function mapNonResidency(r) {
+  const d = new Date(r.date_issued + 'T00:00:00');
+  return {
+    id: Number(r.id), residentId: Number(r.resident_id), ctrl: r.ctrl_no, name: r.full_name,
+    previousAddress: r.previous_address || '', purpose: r.purpose, voterStatus: r.voter_status,
+    date: `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`,
+    dateRaw: r.date_issued, or: r.or_no || '—', fee: parseFloat(r.fee) || 0,
+  };
+}
+
+let nrResidentOptions = []; // Census records available to pick for a new certificate
+
+async function loadNrResidentOptionsForPicker() {
+  const raw = await BCApi.docList('census');
+  // A Certificate of Non-Residency only makes sense for someone Census has
+  // on file as Transferred (i.e. moved out) — Active/Deceased residents
+  // shouldn't be selectable here.
+  nrResidentOptions = raw.filter(r => r.status === 'Transferred').map(r => {
+    const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+    return {
+      id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
+      age, address: r.address || '', householdNo: r.household_no || '', voterStatus: r.voter_status,
+    };
+  });
+  bcInitResidentPicker('nr_residentSearch', 'nr_residentId', 'nr_residentSuggestions', nrResidentOptions, onNrResidentPicked);
+}
+
+async function onNrResidentPicked(r) {
+  const warningBox = document.getElementById('nr_blotter_warning');
+  const listEl = document.getElementById('nr_blotter_list');
+  document.getElementById('nr_name_display').value = r ? `${r.lastName}, ${r.firstName} ${r.middleName}`.trim() : '';
+  // Their Census address is very often the same as the "previous home
+  // address" being certified as no longer current — prefill it, but leave
+  // it editable since the actual former address on the request may differ
+  // in wording/detail from what Census has on file.
+  if (r && r.address && !document.getElementById('nr_prevaddr_input').value) {
+    document.getElementById('nr_prevaddr_input').value = r.address;
+  }
+
+  document.getElementById('nr_blotter_ack').checked = false;
+  warningBox.classList.add('hidden');
+  listEl.innerHTML = '';
+  if (!r) return;
+  try {
+    const records = await BCApi.checkBlotterRecords(r.lastName, r.firstName, r.id);
+    if (records.length > 0) {
+      listEl.innerHTML = records.map(b => `
+        <div class="bg-white border border-amber-200 rounded-lg p-3 text-xs">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-mono font-semibold text-forest-700">${b.docket_no}</span>
+            <span class="badge ${b.role === 'Complainant' ? 'badge-resolved' : 'badge-pending'}">${b.role}</span>
+          </div>
+          <div class="text-forest-600"><strong>${b.complainant}</strong> vs. <strong>${b.respondent}</strong></div>
+          <div class="text-forest-500 mt-1">${b.nature} &middot; ${b.case_type === 'CRIM' ? 'Criminal' : 'Civil'} &middot; Filed ${b.date_filed} &middot; Status: ${b.status}</div>
+        </div>`).join('');
+      warningBox.classList.remove('hidden');
+    }
+  } catch (e) { /* if the check fails, don't block issuance on it */ }
+}
+
+async function loadNrLog() {
+  const raw = await BCApi.docList('non_residency');
+  nrLogData = raw.map(mapNonResidency);
+  renderNrSummary();
+  renderNrLog();
+}
+
+function renderNrSummary() {
+  const now = new Date();
+  const thisMonth = nrLogData.filter(r => {
+    const d = new Date(r.dateRaw);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const thisYear = nrLogData.filter(r => new Date(r.dateRaw).getFullYear() === now.getFullYear());
+  document.getElementById('nrMonthCount').textContent = thisMonth.length;
+  document.getElementById('nrYearCount').textContent = thisYear.length;
+  document.getElementById('nrRevenue').textContent = '₱' + thisYear.reduce((sum, r) => sum + r.fee, 0).toLocaleString();
+}
+
+function renderNrLog(){
+  const s=document.getElementById('nrSearch').value.toLowerCase();
+  const rows=nrLogData.filter(r=>!s||r.name.toLowerCase().includes(s)||r.ctrl.toLowerCase().includes(s));
+  const total=rows.length;
+  const totalPages=Math.ceil(total/NR_ROWS)||1;
+  nrPage=Math.min(Math.max(1,nrPage),totalPages);
+  const start=(nrPage-1)*NR_ROWS;
+  const pageRows=rows.slice(start,start+NR_ROWS);
+  document.getElementById('nonResidencyLog').innerHTML=pageRows.length===0
+    ? '<tr><td colspan="6" class="text-center py-8 text-forest-400">No certificates issued yet.</td></tr>'
+    : pageRows.map(r=>`
+    <tr>
+      <td class="font-semibold text-forest-700">${r.ctrl}</td>
+      <td class="font-semibold text-sm">${r.name}</td>
+      <td class="text-xs">${r.purpose}</td>
+      <td class="text-xs text-forest-400">${r.date}</td>
+      <td class="text-xs">${r.or}</td>
+      <td>
+        <div class="flex gap-1">
+          <button onclick="previewNrLog(${r.id})" class="icon-btn" title="Preview"><span data-icon="view" data-icon-size="16"></span></button>
+          <button onclick="window.print()" class="btn-primary text-xs px-2 py-1"><span data-icon="printer" data-icon-size="14"></span></button>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('nrPaginationInfo').textContent = total===0 ? '' : `Showing ${start+1}–${Math.min(start+NR_ROWS,total)} of ${total}`;
+  bcRenderPagination(document.getElementById('nrPaginationControls'), nrPage, totalPages, (p) => { nrPage=p; renderNrLog(); });
+}
+
+function setNrVoterCheckmarks(voterStatus) {
+  document.getElementById('nr_voter_check').textContent = voterStatus === 'Registered Voter' ? '✓' : '';
+  document.getElementById('nr_nonvoter_check').textContent = voterStatus === 'Not Registered' ? '✓' : '';
+}
+
+function previewNrLog(id){
+  const r=nrLogData.find(x=>x.id===id);
+  const d = new Date(r.dateRaw + 'T00:00:00');
+  document.getElementById('nr_name').textContent=r.name;
+  document.getElementById('nr_prev_addr').textContent=r.previousAddress || '_____________________';
+  document.getElementById('nr_purpose').textContent=r.purpose;
+  document.getElementById('nr_day').textContent=d.getDate();
+  document.getElementById('nr_month').textContent=months[d.getMonth()];
+  document.getElementById('nr_year').textContent=d.getFullYear();
+  document.getElementById('nr_ctrl_display').textContent=`Control No.: ${r.ctrl}`;
+  document.getElementById('nr_applicant_name').textContent=r.name.toUpperCase();
+  setNrVoterCheckmarks(r.voterStatus);
+  showToast('Certificate loaded for preview.');
+}
+
+async function openNonResidencyForm(){
+  bcResidentPickerClear('nr_residentSearch');
+  openModal('nonResidencyFormModal');
+
+  // Look-ahead preview only, same as the Docket No. peek in Blotter — the
+  // real number is generated fresh again at save time.
+  const orField = document.getElementById('nr_or_input');
+  orField.value = 'Loading…';
+  try {
+    const { orNo } = await BCApi.peekOr();
+    orField.value = orNo;
+  } catch (err) {
+    orField.value = '';
+  }
+}
+
+function resetNonResidencyForm(){
+  bcResidentPickerClear('nr_residentSearch');
+  document.getElementById('nr_prevaddr_input').value = '';
+  document.getElementById('nr_purpose_input').value = '';
+  document.getElementById('nr_or_input').value = '';
+  document.getElementById('nr_fee').value = '20';
+}
+
+async function issueNonResidency(){
+  const residentId=document.getElementById('nr_residentId').value;
+  const previousAddress=document.getElementById('nr_prevaddr_input').value.trim();
+  const purpose=document.getElementById('nr_purpose_input').value.trim();
+  const orNo=document.getElementById('nr_or_input').value.trim();
+  const fee=document.getElementById('nr_fee').value;
+  if(!residentId){await bcAlert('Please select the person this certificate is for.');return;}
+  if(!previousAddress){await bcAlert('Please enter their previous / former home address.');return;}
+  if(!purpose){await bcAlert('Please enter who requested this certificate / the purpose.');return;}
+  const warningVisible = !document.getElementById('nr_blotter_warning').classList.contains('hidden');
+  if (warningVisible && !document.getElementById('nr_blotter_ack').checked) {
+    await bcAlert('This resident has blotter record(s) on file. Please review them and check the acknowledgment box before issuing this certificate.');
+    return;
+  }
+
+  try {
+    const result = await BCApi.docCreate('non_residency', {
+      residentId, previousAddress, purpose, orNo, fee, dateIssued: new Date().toISOString().slice(0,10),
+    });
+
+    closeModal('nonResidencyFormModal');
+    resetNonResidencyForm();
+    // Reload the log from the server, then reuse the same preview path as the
+    // "Preview" (eye) icon so the certificate always reflects what's actually
+    // in the database, instead of re-deriving it from the (possibly stale)
+    // client-side resident picker cache.
+    await loadNrLog();
+    previewNrLog(Number(result.id));
+    showToast('Certificate of Non-Residency issued! Preview updated.');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+(async function () {
+  await requireAuth();
+  try {
+    const cap = await BCApi.captainSignature();
+    document.getElementById('nr_captain').textContent = cap.fullName ? cap.fullName.toUpperCase() : '';
+    const sigWrap = document.getElementById('nr_sigimg_wrap');
+    if (cap.signaturePath) {
+      sigWrap.innerHTML = `<img src="${cap.signaturePath}" alt="Punong Barangay signature"/>`;
+    }
+  } catch (e) { /* no active Barangay Captain on file yet — signature block stays blank */ }
+
+  try { await loadNrResidentOptionsForPicker(); } catch (err) { showToast('Could not load Census records: ' + err.message, 'error'); }
+  try { await loadNrLog(); } catch (err) { showToast('Could not load non-residency log: ' + err.message, 'error'); }
+})();
+</script>
+</body>
+</html>

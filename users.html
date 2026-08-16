@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Users & Roles — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link active" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Users & Roles</h1>
+      <p class="text-forest-500 text-sm">Manage personnel accounts, roles, and access permissions</p>
+    </div>
+    <button onclick="openAddUser()" class="btn-primary"><span data-icon="plus" data-icon-size="16"></span> Add User</button>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6">
+
+    <!-- Role Permission Matrix -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="key" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Role Permission Matrix</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <th class="text-center">System Admin</th>
+              <th class="text-center">Barangay Captain</th>
+              <th class="text-center">Desk Officer</th>
+              <th class="text-center">Data Encoder</th>
+            </tr>
+          </thead>
+          <tbody id="permMatrix"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="users" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">System Users</h2>
+      </div>
+      <div class="filter-bar">
+        <span class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="userSearch" placeholder="Search users…" class="filter-input w-full pl-8" oninput="usersPage=1;renderUsers()"/></span>
+        <select id="roleFilter" class="filter-input" onchange="usersPage=1;renderUsers()">
+          <option value="">All Roles</option>
+          <option>System Admin</option><option>Barangay Captain</option>
+          <option>Desk Officer</option><option>Data Encoder</option>
+        </select>
+        <select id="statusFilter2" class="filter-input" onchange="usersPage=1;renderUsers()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Suspended">Suspended</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead><tr>
+            <th>User</th><th>Username</th><th>Role</th>
+            <th>Last Login</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+        <span class="text-sm text-forest-500" id="usersPaginationInfo"></span>
+        <div class="flex gap-2" id="usersPaginationControls"></div>
+      </div>
+    </div>
+
+    <!-- Audit Log -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="database" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Recent Audit Log</h2>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Module</th><th>Details</th></tr></thead>
+        <tbody id="auditLog"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal-box max-w-lg">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-display text-xl text-forest-800" id="userModalTitle">Add New User</h2>
+      <button onclick="closeModal('userModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <form id="userForm" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Full Name</label><input type="text" id="uf_name" class="form-input" placeholder="Full name" data-no-numbers/></div>
+        <div><label class="form-label">Username</label><input type="text" id="uf_username" class="form-input" placeholder="username"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Email</label><input type="email" id="uf_email" class="form-input" placeholder="email@barangay.gov"/></div>
+        <div><label class="form-label">Contact No.</label><input type="text" id="uf_contact" class="form-input" placeholder="09171234567" data-digits-only maxlength="11"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Role</label>
+          <select id="uf_role" class="form-input" onchange="updateSignatureSectionVisibility(this.value)">
+            <option>System Admin</option><option>Barangay Captain</option>
+            <option selected>Desk Officer</option><option>Data Encoder</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select id="uf_status" class="form-input">
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="form-label">Password</label><input type="password" id="uf_password" class="form-input" placeholder="Set initial password"/></div>
+      <div id="uf_sig_section" class="hidden border-t border-forest-100 pt-4">
+        <label class="form-label">E-Signature <span class="text-forest-400 font-normal">(used on printed Barangay Clearance &amp; Certificate of Indigency)</span></label>
+        <div class="flex items-center gap-4">
+          <div id="uf_sig_preview_wrap" class="hidden w-32 h-20 border border-forest-100 rounded-lg bg-forest-50 flex items-center justify-center overflow-hidden">
+            <img id="uf_sig_preview" class="max-w-full max-h-full object-contain" alt="Current signature"/>
+          </div>
+          <div id="uf_sig_empty" class="w-32 h-20 border border-dashed border-forest-200 rounded-lg bg-forest-50 flex items-center justify-center text-forest-400 text-xs text-center px-2">No signature uploaded</div>
+          <div class="flex-1">
+            <input type="file" id="uf_sig_file" accept="image/png,image/jpeg" class="hidden" onchange="handleSignatureFile(event)"/>
+            <button type="button" onclick="document.getElementById('uf_sig_file').click()" class="btn-secondary text-xs px-3 py-2">Upload Signature</button>
+            <button type="button" id="uf_sig_remove_btn" onclick="removeSignatureNow()" class="btn-danger text-xs px-3 py-2 hidden">Remove</button>
+            <p class="text-xs text-forest-400 mt-1">PNG with transparent background recommended, max 2MB.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeModal('userModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="saveUser()" class="btn-primary">Save User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+const permissions = [
+  { label:'View All Records',    admin:true, captain:true,  officer:true,  encoder:true  },
+  { label:'Add Blotter Entry',   admin:true, captain:true,  officer:true,  encoder:true  },
+  { label:'Edit Any Record',     admin:true, captain:true,  officer:true,  encoder:false },
+  { label:'Delete Records',      admin:true, captain:true,  officer:false, encoder:false },
+  { label:'Generate Reports',    admin:true, captain:true,  officer:true,  encoder:false },
+  { label:'View Analytics',      admin:true, captain:true,  officer:true,  encoder:false },
+  { label:'Manage Users',        admin:true, captain:true,  officer:false, encoder:false },
+  { label:'Retrain ML Model',    admin:true, captain:true,  officer:false, encoder:false },
+  { label:'Import CSV/Excel',    admin:true, captain:true,  officer:false, encoder:true  },
+  { label:'System Settings',     admin:true, captain:false, officer:false, encoder:false },
+];
+
+const check = v => v
+  ? '<span class="perm-yes" data-icon="check" data-icon-size="14"></span>'
+  : '<span class="perm-no">&#8212;</span>';
+
+document.getElementById('permMatrix').innerHTML = permissions.map(p=>`
+  <tr>
+    <td class="font-medium text-forest-700">${p.label}</td>
+    <td class="perm-cell">${check(p.admin)}</td>
+    <td class="perm-cell">${check(p.captain)}</td>
+    <td class="perm-cell">${check(p.officer)}</td>
+    <td class="perm-cell">${check(p.encoder)}</td>
+  </tr>`).join('');
+
+let usersData = []; let usersPage = 1; const USERS_ROWS = 8;
+let editUserId = null;
+
+function mapUser(u) {
+  return {
+    id: Number(u.id), name: u.full_name, username: u.username, email: u.email || '',
+    contact: u.contact_no || '', role: u.role, status: u.status, signaturePath: u.signature_path || null,
+    lastLogin: u.last_login ? new Date(u.last_login).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : 'Never',
+  };
+}
+
+async function loadUsers() {
+  const raw = await BCApi.users();
+  usersData = raw.map(mapUser);
+  renderUsers();
+}
+
+async function loadAuditLog() {
+  try {
+    const rows = await BCApi.auditLog(10);
+    document.getElementById('auditLog').innerHTML = rows.length === 0
+      ? '<tr><td colspan="5" class="text-center py-6 text-forest-400">No activity recorded yet.</td></tr>'
+      : rows.map(r => `
+        <tr>
+          <td class="text-xs text-forest-400">${new Date(r.created_at).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })}</td>
+          <td class="font-semibold text-forest-700 text-sm">${r.username}</td>
+          <td><span class="badge ${r.action==='Created'?'badge-resolved':r.action==='Deleted'?'badge-not-complied':'badge-ongoing'}">${r.action}</span></td>
+          <td class="text-sm text-forest-600">${r.module}</td>
+          <td class="text-xs text-forest-400">${r.details || ''}</td>
+        </tr>`).join('');
+  } catch (err) {
+    showToast('Could not load audit log: ' + err.message, 'error');
+  }
+}
+
+function renderUsers() {
+  const s = document.getElementById('userSearch').value.toLowerCase();
+  const r = document.getElementById('roleFilter').value;
+  const st = document.getElementById('statusFilter2').value;
+  const filtered = usersData.filter(u =>
+    (!s || u.name.toLowerCase().includes(s) || u.username.toLowerCase().includes(s)) &&
+    (!r || u.role === r) && (!st || u.status === st)
+  );
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / USERS_ROWS) || 1;
+  usersPage = Math.min(Math.max(1, usersPage), totalPages);
+  const start = (usersPage - 1) * USERS_ROWS;
+  const pageRows = filtered.slice(start, start + USERS_ROWS);
+  const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('usersTableBody').innerHTML = pageRows.length === 0
+    ? '<tr><td colspan="6" class="text-center py-8 text-forest-400">No users match your filters.</td></tr>'
+    : pageRows.map(u=>`
+    <tr>
+      <td>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-forest-${u.role==='System Admin'?'700':u.role==='Barangay Captain'?'600':'500'} flex items-center justify-center text-white font-semibold text-xs">${initials(u.name)}</div>
+          <div>
+            <div class="font-semibold text-forest-800 text-sm">${u.name}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-forest-500 text-sm font-mono">${u.username}</td>
+      <td><span class="badge badge-resolved text-xs">${u.role}</span></td>
+      <td class="text-xs text-forest-400">${u.lastLogin}</td>
+      <td><span class="badge ${u.status==='Active'?'badge-resolved':u.status==='Suspended'?'badge-not-complied':'badge-pending'}">${u.status}</span></td>
+      <td>
+        <div class="row-actions">
+          <button onclick="editUser(${u.id})" class="btn-edit text-xs px-2 py-1"><span data-icon="edit" data-icon-size="13"></span> Edit</button>
+          <button onclick="toggleStatus(${u.id})" class="btn-secondary text-xs px-2 py-1">${u.status==='Active'?'Suspend':'Activate'}</button>
+          <button onclick="removeUser(${u.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('usersPaginationInfo').textContent = total===0 ? '' : `Showing ${start+1}–${Math.min(start+USERS_ROWS,total)} of ${total}`;
+  bcRenderPagination(document.getElementById('usersPaginationControls'), usersPage, totalPages, (p) => { usersPage = p; renderUsers(); });
+}
+
+function openAddUser() {
+  editUserId=null; document.getElementById('userModalTitle').textContent='Add New User';
+  document.getElementById('userForm').reset();
+  document.getElementById('uf_username').disabled = false;
+  document.getElementById('uf_password').placeholder='Set initial password';
+  // Signature can only be attached to an existing account (needs an id to upload against).
+  document.getElementById('uf_sig_section').classList.add('hidden');
+  openModal('userModal');
+}
+function editUser(id) {
+  const u=usersData.find(x=>x.id===id); editUserId=id;
+  document.getElementById('userModalTitle').textContent='Edit User';
+  document.getElementById('uf_name').value=u.name;
+  document.getElementById('uf_username').value=u.username;
+  document.getElementById('uf_username').disabled = true;
+  document.getElementById('uf_email').value=u.email;
+  document.getElementById('uf_contact').value=u.contact;
+  document.getElementById('uf_role').value=u.role;
+  document.getElementById('uf_status').value=u.status;
+  document.getElementById('uf_password').value='';
+  document.getElementById('uf_password').placeholder='Leave blank to keep current password';
+  updateSignatureSectionVisibility(u.role);
+  renderSignaturePreview(u.signaturePath);
+  openModal('userModal');
+}
+
+function updateSignatureSectionVisibility(role) {
+  const section = document.getElementById('uf_sig_section');
+  if (editUserId && role === 'Barangay Captain') section.classList.remove('hidden');
+  else section.classList.add('hidden');
+}
+
+function renderSignaturePreview(signaturePath) {
+  const wrap = document.getElementById('uf_sig_preview_wrap');
+  const empty = document.getElementById('uf_sig_empty');
+  const img = document.getElementById('uf_sig_preview');
+  const removeBtn = document.getElementById('uf_sig_remove_btn');
+  if (signaturePath) {
+    img.src = signaturePath + '?t=' + Date.now(); // cache-bust after re-upload
+    wrap.classList.remove('hidden');
+    empty.classList.add('hidden');
+    removeBtn.classList.remove('hidden');
+  } else {
+    wrap.classList.add('hidden');
+    empty.classList.remove('hidden');
+    removeBtn.classList.add('hidden');
+  }
+}
+
+async function handleSignatureFile(e) {
+  const file = e.target.files[0];
+  if (!file || !editUserId) return;
+  try {
+    const result = await BCApi.uploadSignature(editUserId, file);
+    renderSignaturePreview(result.signaturePath);
+    const u = usersData.find(x => x.id === editUserId);
+    if (u) u.signaturePath = result.signaturePath;
+    showToast('Signature uploaded.');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    e.target.value = '';
+  }
+}
+
+async function removeSignatureNow() {
+  if (!editUserId) return;
+  if (!(await bcConfirm('Remove this signature? It will no longer appear on printed certificates.', { title: 'Remove Signature', okLabel: 'Remove', danger: true }))) return;
+  try {
+    await BCApi.removeSignature(editUserId);
+    renderSignaturePreview(null);
+    const u = usersData.find(x => x.id === editUserId);
+    if (u) u.signaturePath = null;
+    showToast('Signature removed.');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+async function saveUser() {
+  const vals={
+    name:document.getElementById('uf_name').value.trim(),
+    username:document.getElementById('uf_username').value.trim(),
+    email:document.getElementById('uf_email').value.trim(),
+    contact:document.getElementById('uf_contact').value.trim(),
+    role:document.getElementById('uf_role').value,
+    status:document.getElementById('uf_status').value,
+    password:document.getElementById('uf_password').value,
+  };
+  if(!vals.name||!vals.username){await bcAlert('Please fill in required fields.');return;}
+  if (vals.name && !bcIsValidName(vals.name)) { await bcAlert('Full Name should only contain letters (no numbers).'); return; }
+  if (vals.email && !bcIsValidEmail(vals.email)) { await bcAlert('Please enter a valid email address.'); return; }
+  if (vals.contact && !bcIsValidContact(vals.contact)) { await bcAlert('Contact No. should be a valid PH mobile number (e.g. 09171234567).'); return; }
+  try {
+    if (editUserId) {
+      await BCApi.updateUser(editUserId, vals);
+      showToast('User updated!');
+    } else {
+      if (!vals.password) { await bcAlert('Password is required for new accounts.'); return; }
+      await BCApi.createUser(vals);
+      showToast('User added!');
+    }
+    closeModal('userModal');
+    await loadUsers();
+    await loadAuditLog();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+async function toggleStatus(id) {
+  try {
+    const result = await BCApi.toggleUserStatus(id);
+    showToast(`User ${result.status.toLowerCase()}.`);
+    await loadUsers();
+    await loadAuditLog();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+async function removeUser(id) {
+  if (!(await bcConfirm('Permanently delete this user account? This cannot be undone.', { title: 'Delete User Account', okLabel: 'Delete', danger: true }))) return;
+  try {
+    await BCApi.deleteUser(id);
+    showToast('User deleted.');
+    await loadUsers();
+    await loadAuditLog();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+(async function () {
+  await requireAuth();
+  try {
+    await Promise.all([loadUsers(), loadAuditLog()]);
+  } catch (err) {
+    showToast('Could not load users: ' + err.message, 'error');
+  }
+})();
+</script>
+</body>
+</html>

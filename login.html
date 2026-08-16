@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — BlotterCast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green-deep:  #0a2414;
+      --green-dark:  #123d22;
+      --green-mid:   #1a5730;
+      --green-main:  #2f8a4c;
+      --green-light: #4fa868;
+      --green-pale:  #b8e0c0;
+      --cream:       #f5f0e8;
+      --gold:        #c9a84c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--green-deep);
+      min-height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── NOISE TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35;
+    }
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      flex: 1; position: relative;
+      background:
+        linear-gradient(
+          160deg,
+          rgba(8, 30, 16, 0.86) 0%,
+          rgba(5, 18, 10, 0.92) 60%,
+          rgba(7, 25, 14, 0.86) 100%
+        ),
+        url('assets/barangay-hall.png');
+      background-size: cover;
+      background-position: center;
+      display: flex; flex-direction: column;
+      padding: 3rem; overflow: hidden;
+      border-right: 1px solid rgba(79,168,104,0.08);
+    }
+
+    /* Decorative grid lines */
+    .left-panel::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,168,104,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,168,104,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Large background letter */
+    .left-panel::after {
+      content: 'B';
+      font-family: 'Playfair Display', serif;
+      font-size: 52vw; font-weight: 900;
+      color: rgba(47,138,76,0.04);
+      position: absolute;
+      bottom: -15vw; left: -10vw;
+      line-height: 1; pointer-events: none;
+      z-index: 0;
+    }
+
+    .left-content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
+
+    /* Brand */
+    .brand-block { margin-bottom: auto; }
+    .brand-mark {
+      display: flex; align-items: flex-start; gap: 1px;
+      text-decoration: none;
+    }
+    .brand-icon-img { width: 62px; height: 78px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.35)); margin-top: 2px; }
+    .brand-textcol { display: flex; flex-direction: column; margin-top: 12px;}
+    .brand-name { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 2.1rem; color: white; letter-spacing: -0.01em; line-height: 1; }
+    .brand-republic { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--green-pale); letter-spacing: 0.09em; margin-top: 8px; }
+    .brand-tagline { font-family: 'Quicksand', sans-serif; font-weight: 500; font-size: 0.95rem; color: rgba(255,255,255,0.55); margin-left: 3px;}
+
+    /* Tagline block */
+    .left-tagline {
+      margin-top: auto;
+      animation: fade-up 0.8s 0.2s ease both;
+    }
+    .left-tagline .eyebrow {
+      font-size: 0.7rem; font-weight: 700; color: var(--green-light);
+      text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 1rem;
+    }
+    .left-tagline h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      line-height: 1.1; color: white; margin-bottom: 1.25rem;
+    }
+    .left-tagline h2 em { font-style: italic; color: var(--green-pale); }
+    .left-tagline p {
+      font-size: 0.9rem; color: rgba(255,255,255,0.45);
+      line-height: 1.7; font-weight: 300; max-width: 340px;
+    }
+
+    /* Stats row */
+    .left-stats {
+      display: flex; gap: 2rem; margin-top: 2.5rem;
+      padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .left-stat-num { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--green-pale); }
+    .left-stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    /* Floating status cards */
+    .status-cards {
+      position: absolute; top: 50%; right: 2rem; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 0.75rem; z-index: 2;
+    }
+    .status-card {
+      background: rgba(26,87,48,0.7);
+      border: 1px solid rgba(79,168,104,0.18);
+      border-radius: 12px; padding: 0.875rem 1rem;
+      backdrop-filter: blur(10px);
+      min-width: 160px;
+      animation: float-card 5s ease-in-out infinite;
+    }
+    .status-card:nth-child(2) { animation-delay: 1.5s; }
+    .status-card:nth-child(3) { animation-delay: 3s; }
+    @keyframes float-card {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    .sc-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .sc-value { font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 6px; }
+    .sc-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .sc-dot.green { background: var(--green-light); box-shadow: 0 0 6px var(--green-light); animation: blink 1.5s infinite; }
+    .sc-dot.amber { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── RIGHT PANEL (LOGIN FORM) ── */
+    .right-panel {
+      width: 480px; flex-shrink: 0;
+      background: white;
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 3rem 3.5rem;
+      position: relative; z-index: 1;
+    }
+
+    .form-header { margin-bottom: 2.5rem; }
+    .form-header .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; color: #6b7280; text-decoration: none;
+      margin-bottom: 1.75rem; transition: color 0.2s;
+    }
+    .form-header .back-link:hover { color: var(--green-mid); }
+    .form-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; color: #111827; letter-spacing: -0.02em; margin-bottom: 0.5rem;
+    }
+    .form-header p { font-size: 0.875rem; color: #9ca3af; font-weight: 300; }
+
+    /* Input groups */
+    .input-group { margin-bottom: 1.25rem; }
+    .input-label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 0.95rem; color: #9ca3af; pointer-events: none;
+    }
+    .form-input {
+      width: 100%; padding: 12px 14px 12px 40px;
+      border: 1.5px solid #e5e7eb; border-radius: 10px;
+      font-size: 0.9rem; color: #111827;
+      font-family: 'Outfit', sans-serif;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background: #fafafa;
+    }
+    .form-input:focus {
+      outline: none; border-color: var(--green-main);
+      box-shadow: 0 0 0 3px rgba(47,138,76,0.12);
+      background: white;
+    }
+    .form-input.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .toggle-pw {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; font-size: 0.9rem; color: #9ca3af;
+      border: none; background: none; padding: 0;
+    }
+    .toggle-pw:hover { color: var(--green-main); }
+
+    .error-msg { font-size: 0.75rem; color: #ef4444; margin-top: 5px; display: none; }
+    .error-msg.show { display: block; }
+
+    /* Options row */
+    .options-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; }
+    .remember-label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #6b7280; cursor: pointer; }
+    .remember-label input[type="checkbox"] {
+      -webkit-appearance: none; appearance: none;
+      width: 17px; height: 17px; margin: 0;
+      border: 1.5px solid var(--green-pale);
+      border-radius: 5px; background: #fff;
+      position: relative; flex-shrink: 0; cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    }
+    .remember-label input[type="checkbox"]:hover { border-color: var(--green-light); }
+    .remember-label input[type="checkbox"]:active { transform: scale(0.88); }
+    .remember-label input[type="checkbox"]:checked { background: var(--green-main); border-color: var(--green-main); }
+    .remember-label input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 4px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .remember-label input[type="checkbox"]:focus-visible { outline: 2px solid var(--green-light); outline-offset: 2px; }
+    .forgot-link { font-size: 0.82rem; color: var(--green-main); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+    .forgot-link:hover { color: var(--green-mid); }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%; padding: 14px;
+      background: var(--green-deep); color: white;
+      border: none; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(10,36,20,0.2);
+    }
+    .btn-login:hover {
+      background: var(--green-mid);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(10,36,20,0.28);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; display: none;
+      animation: spin 0.6s linear infinite;
+    }
+    .btn-login.loading .spinner { display: block; }
+    .btn-login.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error alert */
+    .alert-error {
+      background: #fef2f2; border: 1.5px solid #fecaca;
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 0.82rem; color: #dc2626; margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 8px;
+      display: none;
+    }
+    .alert-error.show { display: flex; }
+
+    /* Success overlay */
+    .success-overlay {
+      position: absolute; inset: 0;
+      background: white;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1rem; z-index: 10;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--green-deep); color: white;
+      display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+      animation: pop 0.4s ease;
+    }
+    @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+
+    /* Divider */
+    .divider { display: flex; align-items: center; gap: 12px; margin: 1.5rem 0; }
+    .divider-line { flex: 1; height: 1px; background: #f3f4f6; }
+    .divider-text { font-size: 0.75rem; color: #d1d5db; font-weight: 500; }
+
+    /* Demo accounts */
+    .demo-label { font-size: 0.72rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+    .demo-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .demo-pill {
+      padding: 5px 12px; border-radius: 8px;
+      border: 1.5px solid #e5e7eb; background: #f9fafb;
+      font-size: 0.75rem; font-weight: 500; color: #6b7280;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .demo-pill:hover { border-color: var(--green-main); color: var(--green-main); background: #f0f9f2; }
+
+    /* Footer note */
+    .form-footer {
+      margin-top: 2rem; padding-top: 1.5rem;
+      border-top: 1px solid #f3f4f6;
+      font-size: 0.75rem; color: #d1d5db; text-align: center; line-height: 1.6;
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: fade-up 0.5s ease both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="left-content">
+    <!-- Brand -->
+    <div class="brand-block">
+      <a href="index.html" class="brand-mark" role="img" aria-label="BlotterCast, Republic of the Philippines">
+        <img src="logo.png" alt="" class="brand-icon-img" aria-hidden="true"/>
+        <span class="brand-textcol" aria-hidden="true">
+          <span class="brand-name">lotterCast</span>
+          <span class="brand-republic">REPUBLIC OF THE PHILIPPINES</span>
+        </span>
+      </a>
+      <div class="brand-tagline">Pamahalaang&nbsp; Barangay&nbsp; ng Mapulang Lupa – Official Records Portal</div>
+    </div>
+
+    <!-- Tagline -->
+    <div class="left-tagline">
+      <div class="eyebrow">Barangay Intelligence System</div>
+      <h2>Where Records Meet<br/><em>Insight.</em></h2>
+      <p>Turning every blotter entry into a data point. Every incident into a pattern. Every pattern into a prediction that keeps your community safer.</p>
+      <div class="left-stats">
+        <div class="left-stat">
+          <div class="left-stat-num">91%</div>
+          <div class="left-stat-label">ML Accuracy</div>
+        </div>
+        <div class="left-stat">
+          <div class="left-stat-num">336+</div>
+          <div class="left-stat-label">Records 2025</div>
+        </div>
+        <div class="left-stat">
+          <div class="left-stat-num">8</div>
+          <div class="left-stat-label">Zones</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Status Cards -->
+  <div class="status-cards">
+    <div class="status-card">
+      <div class="sc-label">System Status</div>
+      <div class="sc-value"><span class="sc-dot green"></span> Online</div>
+    </div>
+    <div class="status-card">
+      <div class="sc-label">Risk Alert – Zone 1</div>
+      <div class="sc-value"><span class="sc-dot amber"></span> High Risk</div>
+    </div>
+    <div class="status-card">
+      <div class="sc-label">Last Model Train</div>
+      <div class="sc-value">Jan 20, 2025</div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <!-- Success Overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-icon" data-icon="check" data-icon-size="30"></div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#111827;">Welcome back!</div>
+    <div style="font-size:0.875rem;color:#9ca3af;" id="successMsg">Redirecting to dashboard…</div>
+  </div>
+
+  <!-- Form Header -->
+  <div class="form-header animate-in">
+    <a href="index.html" class="back-link">← Back to BlotterCast</a>
+    <h1>Sign In</h1>
+    <p>Access the barangay management portal</p>
+  </div>
+
+  <!-- Alert -->
+  <div class="alert-error" id="loginAlert">
+    <span data-icon="warning" data-icon-size="16"></span>
+    <span id="loginAlertMsg">Invalid username or password. Please try again.</span>
+  </div>
+
+  <!-- Form -->
+  <form id="loginForm" onsubmit="handleLogin(event)" class="animate-in delay-2">
+
+    <div class="input-group">
+      <label class="input-label">Username</label>
+      <div class="input-wrap">
+        <span class="input-icon" data-icon="user" data-icon-size="16"></span>
+        <input type="text" id="username" class="form-input" placeholder="Enter your username" autocomplete="username"/>
+      </div>
+      <div class="error-msg" id="usernameError">Please enter your username.</div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Password</label>
+      <div class="input-wrap">
+        <span class="input-icon" data-icon="key" data-icon-size="16"></span>
+        <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password"/>
+        <button type="button" class="toggle-pw" id="togglePw" onclick="togglePassword()"><span data-icon="view" data-icon-size="18"></span></button>
+      </div>
+      <div class="error-msg" id="passwordError">Please enter your password.</div>
+    </div>
+
+    <div class="options-row">
+      <label class="remember-label">
+        <input type="checkbox" id="remember"/> Remember me
+      </label>
+      <a href="#" class="forgot-link">Forgot password?</a>
+    </div>
+
+    <button type="submit" class="btn-login" id="loginBtn">
+      <div class="spinner" id="spinner"></div>
+      <span class="btn-text">Sign In to BlotterCast</span>
+    </button>
+  </form>
+
+  <!-- Footer note -->
+  <div class="form-footer animate-in delay-3">
+    Authorized personnel only. All access is logged and monitored.<br/>
+    Compliant with the Philippine Data Privacy Act of 2012 (RA 10173).
+  </div>
+</div>
+
+<script src="api.js"></script>
+  <script src="icons.js"></script>
+<script>
+  function togglePassword() {
+    const pw = document.getElementById('password');
+    const btn = document.getElementById('togglePw');
+    if (pw.type === 'password') { pw.type = 'text'; btn.innerHTML = iconSvg('viewOff', 18); }
+    else { pw.type = 'password'; btn.innerHTML = iconSvg('view', 18); }
+  }
+  async function handleLogin(e) {
+    e.preventDefault();
+    const uEl = document.getElementById('username');
+    const pEl = document.getElementById('password');
+    const uErr = document.getElementById('usernameError');
+    const pErr = document.getElementById('passwordError');
+    const alert = document.getElementById('loginAlert');
+    const btn = document.getElementById('loginBtn');
+
+    // Reset
+    uEl.classList.remove('error'); pEl.classList.remove('error');
+    uErr.classList.remove('show'); pErr.classList.remove('show');
+    alert.classList.remove('show');
+
+    const username = uEl.value.trim();
+    const password = pEl.value.trim();
+    let valid = true;
+
+    if (!username) { uEl.classList.add('error'); uErr.classList.add('show'); valid = false; }
+    if (!password) { pEl.classList.add('error'); pErr.classList.add('show'); valid = false; }
+    if (!valid) return;
+
+    btn.classList.add('loading');
+
+    try {
+      const result = await BCApi.login(username, password);
+      btn.classList.remove('loading');
+      document.getElementById('successMsg').textContent = `Signed in as ${result.user.full_name} — Redirecting…`;
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+    } catch (err) {
+      btn.classList.remove('loading');
+      alert.classList.add('show');
+      const alertText = document.getElementById('loginAlertMsg');
+      if (alertText) alertText.textContent = err.message || 'Invalid username or password.';
+      uEl.classList.add('error'); pEl.classList.add('error');
+      const form = document.getElementById('loginForm');
+      form.style.animation = 'shake 0.4s ease';
+      setTimeout(() => form.style.animation = '', 400);
+    }
+  }
+
+  // Shake keyframe
+  const style = document.createElement('style');
+  style.textContent = `@keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }`;
+  document.head.appendChild(style);
+
+  // Clear errors on input
+  ['username','password'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      document.getElementById(id).classList.remove('error');
+      document.getElementById(id+'Error').classList.remove('show');
+      document.getElementById('loginAlert').classList.remove('show');
+    });
+  });
+</script>
+</body>
+</html>

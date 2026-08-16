@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link active" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">System Settings</h1>
+      <p class="text-forest-500 text-sm">Configure barangay information, notifications, security, and backup options</p>
+    </div>
+    <button onclick="saveSettings()" class="btn-primary"><span data-icon="save" data-icon-size="16"></span> Save Changes</button>
+  </header>
+
+  <!-- Tab Bar -->
+  <div class="bg-white border-b border-forest-100 px-8 py-3 flex gap-2">
+    <button class="settings-tab active" onclick="switchTab('general',this)"><span data-icon="building" data-icon-size="15"></span> General</button>
+    <button class="settings-tab" onclick="switchTab('notifications',this)"><span data-icon="bell" data-icon-size="15"></span> Notifications</button>
+    <button class="settings-tab" onclick="switchTab('security',this)"><span data-icon="lock" data-icon-size="15"></span> Security</button>
+    <button class="settings-tab" onclick="switchTab('backup',this)"><span data-icon="archive" data-icon-size="15"></span> Backup &amp; Recovery</button>
+  </div>
+
+  <main class="flex-1 p-6 space-y-5">
+
+    <!-- GENERAL -->
+    <div id="tab-general" class="space-y-5">
+      <div class="settings-section">
+        <h3>Barangay Information</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Barangay Name</label><input type="text" class="form-input" data-setting="barangay_name" value="Barangay Mapulang Lupa"/></div>
+          <div><label class="form-label">Municipality / City</label><input type="text" class="form-input" data-setting="municipality" value="Pandi, Bulacan"/></div>
+          <div><label class="form-label">Region</label><input type="text" class="form-input" data-setting="region" value="Region III – Central Luzon"/></div>
+          <div><label class="form-label">Barangay Captain</label><input type="text" class="form-input" data-setting="captain_name" data-no-numbers value="Kapitan Jose Reyes"/></div>
+          <div><label class="form-label">Contact Number</label><input type="text" class="form-input" data-setting="contact_no" data-digits-only maxlength="11" value="09170000000"/></div>
+          <div><label class="form-label">Email Address</label><input type="email" class="form-input" data-setting="email" value="mapulanglupa@pandi.gov.ph"/></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>System Preferences</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Date Format</label>
+            <select class="form-input" data-setting="date_format"><option>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select>
+          </div>
+          <div>
+            <label class="form-label">Time Format</label>
+            <select class="form-input" data-setting="time_format"><option>12-Hour (AM/PM)</option><option>24-Hour</option></select>
+          </div>
+          <div>
+            <label class="form-label">Records Per Page</label>
+            <select class="form-input" data-setting="records_per_page"><option>5</option><option selected>6</option><option>10</option><option>20</option><option>50</option></select>
+          </div>
+          <div>
+            <label class="form-label">Default Language</label>
+            <select class="form-input" data-setting="default_language"><option>English</option><option>Filipino</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="tab-notifications" class="space-y-5 hidden">
+      <div class="settings-section">
+        <h3>Alert Thresholds</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Risk Score Threshold (0–100)</label>
+            <input type="number" class="form-input" data-setting="risk_threshold" value="75" min="0" max="100"/>
+            <p class="text-xs text-forest-400 mt-1">Trigger alert when predicted risk exceeds this value.</p>
+          </div>
+          <div>
+            <label class="form-label">Incident Spike Threshold</label>
+            <input type="number" class="form-input" data-setting="spike_threshold" value="5" min="1"/>
+            <p class="text-xs text-forest-400 mt-1">Alert when new incidents exceed this count in 24 hours.</p>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Notification Channels</h3>
+        <div class="space-y-0">
+          <div class="toggle-row">
+            <div><div class="toggle-label">In-App Notifications</div><div class="toggle-desc">Show alerts in the notification center</div></div>
+            <button class="toggle-switch on" data-setting="notif_inapp" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Model Retraining Alerts</div><div class="toggle-desc">Notify when ML model retraining completes</div></div>
+            <button class="toggle-switch on" data-setting="notif_retrain" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div id="tab-security" class="space-y-5 hidden">
+      <div class="settings-section">
+        <h3>Authentication Settings</h3>
+        <div class="space-y-0">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Account Lockout After Failed Attempts</div><div class="toggle-desc">Lock account after 5 consecutive failed logins</div></div>
+            <button class="toggle-switch on" data-setting="lockout_enabled" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="form-label">Session Timeout (minutes)</label>
+            <input type="number" class="form-input" data-setting="session_timeout" value="30"/>
+          </div>
+          <div>
+            <label class="form-label">Max Failed Login Attempts</label>
+            <input type="number" class="form-input" data-setting="max_failed_logins" value="5"/>
+          </div>
+          <div>
+            <label class="form-label">Minimum Password Length</label>
+            <input type="number" class="form-input" data-setting="min_password_length" value="8"/>
+          </div>
+          <div>
+            <label class="form-label">Password Expiry (days)</label>
+            <input type="number" class="form-input" data-setting="password_expiry_days" value="90"/>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Data Privacy</h3>
+        <div class="space-y-0">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Audit Trail Logging</div><div class="toggle-desc">Log all data changes, logins, and report exports</div></div>
+            <button class="toggle-switch on" data-setting="audit_trail" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Data Subject Rights Module</div><div class="toggle-desc">Allow data access/correction requests from data subjects</div></div>
+            <button class="toggle-switch on" data-setting="data_subject_rights" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKUP -->
+    <div id="tab-backup" class="space-y-5 hidden">
+      <div class="settings-section">
+        <h3>Automated Backup</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Backup Frequency</label>
+            <select class="form-input" data-setting="backup_frequency"><option selected>Daily</option><option>Every 12 hours</option><option>Weekly</option></select>
+          </div>
+          <div>
+            <label class="form-label">Backup Time</label>
+            <input type="time" class="form-input" data-setting="backup_time" value="02:00"/>
+          </div>
+          <div>
+            <label class="form-label">Backup Destination</label>
+            <select class="form-input" data-setting="backup_destination"><option>Local Storage Device</option><option>External Drive</option><option>Both</option></select>
+          </div>
+          <div>
+            <label class="form-label">Retain Backups For (days)</label>
+            <input type="number" class="form-input" data-setting="retain_backups_days" value="30"/>
+          </div>
+        </div>
+        <p class="text-xs text-forest-400 mt-2">Frequency/time/destination/retention are scheduling preferences saved here; this prototype has no background cron worker, so backups run when you click the button below (or via a server cron job calling this same endpoint).</p>
+        <div class="mt-4 flex gap-3">
+          <button onclick="runBackupNow()" class="btn-primary text-sm" id="backupBtn"><span data-icon="play" data-icon-size="14"></span> Run Backup Now</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Recovery Objectives</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Recovery Time Objective (RTO)</label>
+            <input type="text" class="form-input" data-setting="rto_hours" value="4 hours"/>
+            <p class="text-xs text-forest-400 mt-1">Maximum acceptable downtime after failure.</p>
+          </div>
+          <div>
+            <label class="form-label">Recovery Point Objective (RPO)</label>
+            <input type="text" class="form-input" data-setting="rpo_hours" value="24 hours"/>
+            <p class="text-xs text-forest-400 mt-1">Maximum acceptable data loss window.</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-forest-50">
+          <div class="font-semibold text-forest-700 text-sm">Backup History</div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>File</th><th>Size</th><th>Status</th><th>By</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="backupHistoryBody"><tr><td colspan="6" class="text-center py-6 text-forest-400">No backups yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ML MODEL -->
+  
+      <div class="settings-section">
+        <h3><span data-icon="database" data-icon-size="18"></span> Data Management</h3>
+        <p class="text-sm text-forest-500 mb-4">All records are stored in the MySQL <code>blottercast</code> database. Records added on the Blotter and Incident pages automatically feed the Heat Map, Trends, and the Python ML Predictions module.</p>
+        <div class="flex items-center gap-3">
+          <button onclick="resetDemoData()" class="btn-secondary"><span data-icon="refresh" data-icon-size="15"></span> Reset Demo Dataset</button>
+          <button onclick="downloadData()" class="btn-secondary"><span data-icon="download" data-icon-size="16"></span> Export Records (JSON)</button>
+        </div>
+      </div>
+
+    </main>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  btn.classList.add('active');
+}
+
+function applySettings(values) {
+  document.querySelectorAll('[data-setting]').forEach(el => {
+    const key = el.dataset.setting;
+    if (!(key in values)) return;
+    const val = values[key];
+    if (el.tagName === 'BUTTON' && el.classList.contains('toggle-switch')) {
+      const on = val === '1' || val === 'true';
+      el.classList.toggle('on', on);
+      el.classList.toggle('off', !on);
+    } else if (el.tagName === 'SELECT') {
+      // match by value first, fall back to matching visible text
+      if ([...el.options].some(o => o.value === val)) el.value = val;
+      else {
+        const opt = [...el.options].find(o => o.textContent.trim() === val);
+        if (opt) el.value = opt.value;
+      }
+    } else {
+      el.value = val;
+    }
+  });
+}
+
+function collectSettings() {
+  const out = {};
+  document.querySelectorAll('[data-setting]').forEach(el => {
+    const key = el.dataset.setting;
+    if (el.tagName === 'BUTTON' && el.classList.contains('toggle-switch')) {
+      out[key] = el.classList.contains('on') ? '1' : '0';
+    } else {
+      out[key] = el.value;
+    }
+  });
+  return out;
+}
+
+async function saveSettings() {
+  const btn = document.querySelector('[onclick="saveSettings()"]');
+  const values = collectSettings();
+  if (values.contact_no && !bcIsValidContact(values.contact_no)) {
+    showToast('Contact Number should be a valid PH mobile number (e.g. 09171234567).', 'error'); return;
+  }
+  if (values.email && !bcIsValidEmail(values.email)) {
+    showToast('Please enter a valid email address.', 'error'); return;
+  }
+  if (values.captain_name && !bcIsValidName(values.captain_name)) {
+    showToast('Barangay Captain name should only contain letters (no numbers).', 'error'); return;
+  }
+  try {
+    await BCApi.settingsSave(values);
+    showToast('Settings saved successfully!');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function runBackupNow() {
+  const btn = document.getElementById('backupBtn');
+  btn.disabled = true; btn.innerHTML = '<span data-icon="spinner" data-icon-size="15"></span> Running backup…';
+  try {
+    const result = await BCApi.runBackup();
+    showToast(`Backup created: ${result.file} (${(result.size/1024).toFixed(0)} KB)`);
+    await loadBackupHistory();
+  } catch (err) {
+    showToast('Backup failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<span data-icon="play" data-icon-size="14"></span> Run Backup Now';
+  }
+}
+
+async function loadBackupHistory() {
+  try {
+    const rows = await BCApi.backupHistory();
+    document.getElementById('backupHistoryBody').innerHTML = rows.length === 0
+      ? '<tr><td colspan="6" class="text-center py-6 text-forest-400">No backups yet. Click "Run Backup Now" above.</td></tr>'
+      : rows.map(r => `
+        <tr>
+          <td class="font-mono text-xs text-forest-600">${r.file_name}</td>
+          <td class="text-xs">${(r.size_bytes/1024).toFixed(0)} KB</td>
+          <td><span class="badge ${r.status==='Success'?'badge-resolved':'badge-not-complied'}">${r.status}</span></td>
+          <td class="text-xs text-forest-400">${r.created_by||''}</td>
+          <td class="text-xs text-forest-400">${new Date(r.created_at).toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</td>
+          <td>${r.status==='Success' ? `<a href="api/settings.php?action=download_backup&file=${encodeURIComponent(r.file_name)}" class="btn-secondary text-xs px-3 py-1 inline-flex items-center gap-1"><span data-icon="download" data-icon-size="14"></span> Download</a>` : ''}</td>
+        </tr>`).join('');
+  } catch (err) {
+    showToast('Could not load backup history: ' + err.message, 'error');
+  }
+}
+
+async function resetDemoData() {
+  if (!(await bcConfirm('Reset all records to a freshly seeded demo dataset? Records you added will be removed. This runs api/seed.php on the server.', { title: 'Reset Demo Data', okLabel: 'Reset', danger: true }))) return;
+  try {
+    await BCApi._fetch('api/seed.php');
+    showToast('Demo dataset reseeded. Reloading…');
+    setTimeout(() => window.location.reload(), 1200);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+async function downloadData() {
+  try {
+    const [incidents, blotter, settlements] = await Promise.all([
+      BCApi.list('incidents'), BCApi.list('blotter'), BCApi.list('settlements'),
+    ]);
+    const blob = new Blob([JSON.stringify({ incidents, blotter, settlements }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'blottercast-records.json';
+    a.click();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+(async function () {
+  await requireAuth();
+  try {
+    const values = await BCApi.settingsList();
+    applySettings(values);
+    await loadBackupHistory();
+    // If it's been long enough since the last backup (per Backup Frequency
+    // below), this silently runs one now instead of waiting for someone to
+    // click "Run Backup Now" — then refreshes the history so it's visible.
+    try {
+      const auto = await BCApi.autoBackupCheck();
+      if (auto.ran) {
+        await loadBackupHistory();
+        showToast(auto.success ? 'Automatic backup completed (' + auto.file + ').' : 'Automatic backup failed: ' + auto.error, auto.success ? 'success' : 'error');
+      }
+    } catch (e) { /* not fatal — manual "Run Backup Now" still works */ }
+  } catch (err) {
+    showToast('Could not load settings: ' + err.message, 'error');
+  }
+})();
+</script>
+</body>
+</html>

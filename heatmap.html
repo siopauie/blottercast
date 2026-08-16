@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heat Map — BlotterCast</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css"/>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest: {
+              50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',
+              400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',
+              800:'#123d22',900:'#0a2414'
+            }
+          },
+          fontFamily: {
+            display:['DM Serif Display','serif'],
+            body:['DM Sans','sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .card {
+      background:#fff;
+      border:1px solid var(--forest-100, #dcf0e0);
+      border-radius:1rem;
+      box-shadow:0 1px 4px rgba(10, 36, 20, 0.08);
+    }
+
+    #map {
+      width:100%;
+      height:560px;
+      border-radius:1rem;
+      overflow:hidden;
+      border:1px solid var(--forest-100, #dcf0e0);
+      position:relative;
+      isolation:isolate;
+      contain:paint; /* extra guarantee that nothing inside can paint outside this box */
+    }
+
+    /* Leaflet ships its own z-index scale (controls go up to 1000), which is
+       higher than our sticky header (20) and fixed sidebar (30). Normally
+       isolation+overflow above should contain it, but on some browsers a
+       GPU-transformed tile layer can still bleed through on scroll, so we
+       also cap Leaflet's internal z-indexes directly — keeping their
+       relative order, just scaled well below the header/sidebar. */
+    #map .leaflet-tile-pane      { z-index: 1; }
+    #map .leaflet-overlay-pane   { z-index: 2; }
+    #map .leaflet-shadow-pane    { z-index: 3; }
+    #map .leaflet-marker-pane    { z-index: 4; }
+    #map .leaflet-tooltip-pane   { z-index: 5; }
+    #map .leaflet-popup-pane     { z-index: 6; }
+    #map .leaflet-map-pane canvas{ z-index: 1; }
+    #map .leaflet-map-pane svg   { z-index: 2; }
+    #map .leaflet-control-container .leaflet-top,
+    #map .leaflet-control-container .leaflet-bottom { z-index: 7; }
+
+    .leaflet-popup-content-wrapper {
+      border-radius:14px;
+      font-family:'DM Sans', sans-serif;
+    }
+
+    .stat-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      border:1px solid #dcf0e0;
+      background:#f0f9f2;
+      border-radius:999px;
+      padding:.45rem .8rem;
+      font-size:.8rem;
+      color:#1a5730;
+      font-weight:600;
+    }
+
+    .legend-box {
+      width:16px;
+      height:16px;
+      border-radius:4px;
+      flex-shrink:0;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.6) inset;
+    }
+
+    .table-wrap { overflow-x:auto; }
+
+    .badge {
+      display:inline-block;
+      padding:.35rem .65rem;
+      border-radius:999px;
+      font-size:.75rem;
+      font-weight:700;
+    }
+
+    /* Heat map severity badges — a different scale (low/medium/high risk)
+       from the status badges used elsewhere, so kept distinct on purpose. */
+    .badge-low { background:#e8f5e9; color:#166534; }
+    .badge-medium { background:#fff8e1; color:#a16207; }
+    .badge-high { background:#fee2e2; color:#b91c1c; }
+
+    .status-note {
+      border:1px solid var(--forest-100, #dcf0e0);
+      background:var(--forest-50, #f0f9f2);
+      color:#1a5730;
+      border-radius:.75rem;
+      padding:.8rem 1rem;
+      font-size:.9rem;
+    }
+
+
+    @media (max-width: 1024px) {
+      aside { display:none; }
+      .content-wrap { margin-left:0 !important; }
+      .page-header { flex-direction:column; align-items:flex-start; }
+      #map { height:460px; }
+    }
+  </style>
+</head>
+
+<body class="bg-forest-50 min-h-screen text-forest-800">
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link active" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="content-wrap ml-64 flex flex-col min-h-screen">
+    <header class="page-header">
+      <div>
+        <h1 class="font-display text-2xl text-forest-800">Incident Heat Map</h1>
+        <p class="text-forest-500 text-sm">Map boundary overlay of Mapulang Lupa, Pandi, Bulacan</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <select id="periodFilter" class="filter-input">
+          <option value="all">All Time</option>
+          <option value="month">This Month</option>
+          <option value="week">This Week</option>
+        </select>
+
+        <select id="categoryFilter" class="filter-input">
+          <option value="all">All Categories</option>
+          <option value="Physical Assault">Physical Assault</option>
+          <option value="Theft">Theft</option>
+          <option value="Domestic Dispute">Domestic Dispute</option>
+          <option value="Vandalism">Vandalism</option>
+          <option value="Drug-Related Activity">Drug-Related Activity</option>
+          <option value="Public Disturbance">Public Disturbance</option>
+        </select>
+
+        <label class="flex items-center gap-2 bg-white border border-forest-200 rounded-xl px-3 py-2 text-sm text-forest-700">
+          <input type="checkbox" id="showMarkers" checked />
+          Show Incident Markers
+        </label>
+      </div>
+    </header>
+
+    <main class="flex-1 p-6 space-y-6">
+      <div id="boundaryStatus" class="status-note">
+        Loading barangay boundary...
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 card p-5">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="stat-icon-badge" data-icon="heatmap" data-icon-size="17"></div>
+              <div>
+                <h2 class="font-display text-lg text-forest-800">Mapulang Lupa Heat Map</h2>
+                <p class="text-sm text-forest-500">Incident concentration based on recorded blotter locations</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs text-forest-600">
+              <div class="flex items-center gap-2">
+                <div class="legend-box" style="background:#4ade80;"></div><span>Low</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="legend-box" style="background:#facc15;"></div><span>Medium</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="legend-box" style="background:#fb923c;"></div><span>Elevated</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="legend-box" style="background:#ef4444;"></div><span>High</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="map"></div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="stat-pill">Barangay: Mapulang Lupa</span>
+            <span class="stat-pill">Municipality: Pandi</span>
+            <span class="stat-pill">Source: Blotter records</span>
+            <span class="stat-pill">Boundary file: mapulang-lupa.geojson</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <div class="card p-5">
+            <h2 class="font-display text-base text-forest-800 mb-4">Summary</h2>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="stat-card-grad plum">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-white/80 text-xs font-medium uppercase tracking-wide">Visible Incidents</span>
+                  <div class="stat-icon-badge w-8 h-8 rounded-lg" data-icon="incident" data-icon-size="15"></div>
+                </div>
+                <div id="totalVisible" class="font-display text-2xl">0</div>
+              </div>
+              <div class="stat-card-grad dark">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-white/70 text-xs font-medium uppercase tracking-wide">Top Category</span>
+                  <div class="stat-icon-badge w-8 h-8 rounded-lg" data-icon="trends" data-icon-size="15"></div>
+                </div>
+                <div id="topCategory" class="font-display text-sm font-semibold text-white leading-snug">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <h2 class="font-display text-base text-forest-800 mb-4">Category Breakdown</h2>
+            <div id="categoryList" class="space-y-3"></div>
+          </div>
+
+          <div class="card p-5">
+            <h2 class="font-display text-base text-forest-800 mb-4">Map Notes</h2>
+            <ul class="text-sm text-forest-500 space-y-2 leading-6">
+              <li>The green outline is the barangay boundary from your GeoJSON file.</li>
+              <li>Only incident points inside the boundary are included in the heat layer.</li>
+              <li>Use the filters to change the visible points and hotspots.</li>
+              <li>If the map says the boundary is missing, make sure <code>mapulang-lupa.geojson</code> is in the same folder.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-forest-50 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-display text-lg text-forest-800">Incident Location Summary</h2>
+            <p class="text-sm text-forest-500">Only incidents inside the loaded barangay boundary are displayed</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Weight</th>
+              </tr>
+            </thead>
+            <tbody id="incidentTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="permissions.js"></script>
+  <script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+  <script>
+    // Approximate center of Mapulang Lupa, Pandi, Bulacan
+    const MAP_CENTER = [14.8831, 120.9651];
+
+    // Live records fetched from the PHP/MySQL API. Every incident
+    // added on the Incident Reports page appears here.
+    const WEIGHTS = { High: 1.0, Medium: 0.7, Low: 0.45 };
+    let incidents = [];
+
+    async function loadIncidents() {
+      await requireAuth();
+      const raw = await BCApi.heatmap();
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+      const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 30);
+      incidents = raw
+        .filter(r => r.lat != null && r.lng != null)
+        .map(r => {
+          const d = new Date(r.incident_date + 'T00:00:00');
+          return {
+            id: r.id, date: r.incident_date,
+            period: d >= weekAgo ? 'week' : d >= monthAgo ? 'month' : 'older',
+            category: r.category, location: r.location,
+            lat: parseFloat(r.lat), lng: parseFloat(r.lng),
+            weight: WEIGHTS[r.priority] || 0.6,
+          };
+        });
+    }
+
+    const map = L.map('map', {
+      zoomControl: true,
+      preferCanvas: true
+    }).setView(MAP_CENTER, 16);
+
+    // The map is initialized while cdn.tailwindcss.com may still be
+    // injecting the grid/column classes that determine this card's final
+    // width, so Leaflet can compute its internal size from a stale
+    // (usually too-wide) container box. That desync is what causes the
+    // heat layer / tiles / controls to render outside the map card and
+    // overlap the header or the side rail. Force Leaflet to remeasure
+    // once the real layout has settled, and again on any resize.
+    setTimeout(() => map.invalidateSize(), 250);
+    window.addEventListener('load', () => map.invalidateSize());
+    window.addEventListener('resize', () => map.invalidateSize());
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
+    }
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let boundaryLayer = null;
+    let boundaryGeojson = null;
+    let heatLayer = null;
+    let markerLayer = L.layerGroup().addTo(map);
+
+    const periodFilter = document.getElementById('periodFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const showMarkers = document.getElementById('showMarkers');
+    const totalVisible = document.getElementById('totalVisible');
+    const topCategory = document.getElementById('topCategory');
+    const categoryList = document.getElementById('categoryList');
+    const incidentTableBody = document.getElementById('incidentTableBody');
+    const boundaryStatus = document.getElementById('boundaryStatus');
+
+    async function loadBoundary() {
+      try {
+        const res = await fetch('mapulang-lupa.geojson');
+        if (!res.ok) throw new Error('Boundary file not found.');
+
+        boundaryGeojson = await res.json();
+
+        boundaryLayer = L.geoJSON(boundaryGeojson, {
+          style: {
+            color: '#23703c',
+            weight: 3,
+            fillColor: '#4fa868',
+            fillOpacity: 0.10
+          }
+        }).addTo(map);
+
+        map.invalidateSize();
+        map.fitBounds(boundaryLayer.getBounds(), { padding: [20, 20] });
+
+        boundaryStatus.innerHTML = 'Barangay boundary loaded successfully.';
+      } catch (err) {
+        boundaryStatus.innerHTML = 'Boundary file was not loaded. Add <strong>mapulang-lupa.geojson</strong> beside this file.';
+        console.error(err);
+      }
+    }
+
+    function getFilteredIncidents() {
+      const period = periodFilter.value;
+      const category = categoryFilter.value;
+
+      let filtered = incidents.filter(item => {
+        const periodMatch = period === 'all' ? true : (period === 'month' ? (item.period === 'month' || item.period === 'week') : item.period === period);
+        const categoryMatch = category === 'all' ? true : item.category === category;
+        return periodMatch && categoryMatch;
+      });
+
+      // Only keep points inside the loaded boundary
+      if (boundaryGeojson) {
+        filtered = filtered.filter(item => {
+          const point = turf.point([item.lng, item.lat]);
+          return turf.booleanPointInPolygon(point, boundaryGeojson);
+        });
+      }
+
+      return filtered;
+    }
+
+    function getCategoryCounts(data) {
+      const counts = {};
+      data.forEach(item => {
+        counts[item.category] = (counts[item.category] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function renderHeatMap(data) {
+      if (heatLayer) map.removeLayer(heatLayer);
+
+      const heatPoints = data.map(item => [item.lat, item.lng, item.weight]);
+
+      heatLayer = L.heatLayer(heatPoints, {
+        radius: 30,
+        blur: 22,
+        maxZoom: 17,
+        minOpacity: 0.35,
+        gradient: {
+          0.20: '#4ade80',
+          0.45: '#facc15',
+          0.65: '#fb923c',
+          0.85: '#ef4444'
+        }
+      }).addTo(map);
+    }
+
+    function renderMarkers(data) {
+      markerLayer.clearLayers();
+      if (!showMarkers.checked) return;
+
+      data.forEach(item => {
+        const marker = L.circleMarker([item.lat, item.lng], {
+          radius: 6,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: '#123d22',
+          fillOpacity: 0.95
+        }).bindPopup(`
+          <div style="min-width:190px;">
+            <div style="font-weight:700; color:#123d22; margin-bottom:4px;">${item.category}</div>
+            <div><strong>ID:</strong> ${item.id}</div>
+            <div><strong>Date:</strong> ${item.date}</div>
+            <div><strong>Location:</strong> ${item.location}</div>
+            <div><strong>Coordinates:</strong> ${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}</div>
+          </div>
+        `);
+        markerLayer.addLayer(marker);
+      });
+    }
+
+    function renderSummary(data) {
+      totalVisible.textContent = data.length;
+
+      const counts = getCategoryCounts(data);
+      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      topCategory.textContent = entries.length ? `${entries[0][0]} (${entries[0][1]})` : 'No data';
+
+      categoryList.innerHTML = '';
+
+      if (!entries.length) {
+        categoryList.innerHTML = '<p class="text-sm text-forest-400">No incidents match the selected filters.</p>';
+        return;
+      }
+
+      const maxCount = entries[0][1];
+
+      entries.forEach(([category, count]) => {
+        const percent = (count / maxCount) * 100;
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span class="font-medium text-forest-700">${category}</span>
+            <span class="text-forest-400">${count}</span>
+          </div>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:${percent}%"></div>
+          </div>
+        `;
+        categoryList.appendChild(row);
+      });
+    }
+
+    function renderTable(data) {
+      incidentTableBody.innerHTML = '';
+
+      if (!data.length) {
+        incidentTableBody.innerHTML = `
+          <tr>
+            <td colspan="7">No incident data for the selected filter or inside the current boundary.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.id}</td>
+          <td>${item.date}</td>
+          <td>${item.category}</td>
+          <td>${item.location}</td>
+          <td>${item.lat.toFixed(4)}</td>
+          <td>${item.lng.toFixed(4)}</td>
+          <td>${item.weight.toFixed(2)}</td>
+        `;
+        incidentTableBody.appendChild(tr);
+      });
+    }
+
+    function updateHeatMapPage() {
+      const filtered = getFilteredIncidents();
+      renderHeatMap(filtered);
+      renderMarkers(filtered);
+      renderSummary(filtered);
+      renderTable(filtered);
+    }
+
+    periodFilter.addEventListener('change', updateHeatMapPage);
+    categoryFilter.addEventListener('change', updateHeatMapPage);
+    showMarkers.addEventListener('change', updateHeatMapPage);
+
+    (async function () {
+      try {
+        await loadIncidents();
+        await loadBoundary();
+        updateHeatMapPage();
+      } catch (err) {
+        boundaryStatus.innerHTML = 'Could not load incident data: ' + err.message;
+      }
+    })();
+  </script>
+</body>
+</html>

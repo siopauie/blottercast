@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Census — BlotterCast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link active" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Barangay Census</h1>
+      <p class="text-forest-500 text-sm">Official list of registered residents of Barangay Mapulang Lupa</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openModal('importCensusModal')" class="btn-secondary" id="importBtn"><span data-icon="folder" data-icon-size="16"></span> Import</button>
+      <button onclick="openAddResident()" class="btn-primary"><span data-icon="plus" data-icon-size="16"></span> Add Resident</button>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="px-6 pt-5 grid grid-cols-5 gap-4">
+    <div class="stat-card-grad plum">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Total Residents</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="users" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="cTotal">0</div>
+    </div>
+    <div class="stat-card-grad dark">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/70 text-sm font-medium">Households</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="building" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl text-white" id="cHousehold">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Male</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="user" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="cMale">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Female</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="user" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="cFemale">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Senior Citizens</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="shield" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="cSenior">0</div>
+    </div>
+  </div>
+
+  <main class="flex-1 p-6">
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <!-- Table Title -->
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="census" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Resident Records</h2>
+      </div>
+      <div class="filter-bar">
+        <span class="relative flex-1 min-w-52"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="resSearch" placeholder="Search name, address…" class="filter-input w-full pl-8" oninput="renderResidents()"/></span>
+        <select id="resZone" class="filter-input" onchange="renderResidents()">
+          <option value="">All Zones</option>
+          <option value="Zone 1">Zone 1</option><option value="Zone 2">Zone 2</option>
+          <option value="Zone 3">Zone 3</option><option value="Zone 4">Zone 4</option>
+          <option value="Zone 5">Zone 5</option><option value="Zone 6">Zone 6</option>
+          <option value="Zone 7">Zone 7</option><option value="Zone 8">Zone 8</option>
+        </select>
+        <select id="resSex" class="filter-input" onchange="renderResidents()">
+          <option value="">All Sex</option><option value="Male">Male</option><option value="Female">Female</option>
+        </select>
+        <select id="resStatus" class="filter-input" onchange="renderResidents()">
+          <option value="">All Status</option>
+          <option value="Active">Active</option><option value="Deceased">Deceased</option><option value="Transferred">Transferred</option>
+        </select>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead><tr>
+            <th>Resident No.</th><th>Full Name</th><th>Date of Birth</th><th>Age</th>
+            <th>Sex</th><th>Civil Status</th><th>Zone / Purok</th>
+            <th>Address</th><th>Household No.</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="residentBody"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+        <span class="text-sm text-forest-500" id="resPagInfo"></span>
+        <div class="flex gap-2" id="resPagCtrl"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit Resident Modal -->
+<div class="modal-overlay" id="residentModal">
+  <div class="modal-box" style="width:680px">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800" id="resModalTitle">Add Resident</h2>
+      <button onclick="closeModal('residentModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <form class="space-y-4">
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="form-label">Last Name <span class="text-red-500">*</span></label><input type="text" id="rf_last" class="form-input" placeholder="Apellido" data-no-numbers required/></div>
+        <div><label class="form-label">First Name <span class="text-red-500">*</span></label><input type="text" id="rf_first" class="form-input" placeholder="Pangalan" data-no-numbers required/></div>
+        <div><label class="form-label">Middle Name</label><input type="text" id="rf_mid" class="form-input" placeholder="Gitnang Pangalan (optional)" data-no-numbers/></div>
+      </div>
+      <div class="grid grid-cols-4 gap-4">
+        <div><label class="form-label">Date of Birth <span class="text-red-500">*</span></label><input type="date" id="rf_dob" class="form-input" data-no-future required/></div>
+        <div><label class="form-label">Sex <span class="text-red-500">*</span></label>
+          <select id="rf_sex" class="form-input" required><option value="" selected disabled hidden>Select…</option><option>Male</option><option>Female</option></select></div>
+        <div><label class="form-label">Civil Status <span class="text-red-500">*</span></label>
+          <select id="rf_civil" class="form-input" required><option value="" selected disabled hidden>Select…</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option></select></div>
+        <div><label class="form-label">Nationality <span class="text-red-500">*</span></label><input type="text" id="rf_nat" class="form-input" value="Filipino" required/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Zone / Purok <span class="text-red-500">*</span></label>
+          <select id="rf_zone" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="Zone 1">Zone 1</option><option value="Zone 2">Zone 2</option>
+            <option value="Zone 3">Zone 3</option><option value="Zone 4">Zone 4</option>
+            <option value="Zone 5">Zone 5</option><option value="Zone 6">Zone 6</option>
+            <option value="Zone 7">Zone 7</option><option value="Zone 8">Zone 8</option>
+          </select>
+        </div>
+        <div><label class="form-label">Street / House Address <span class="text-red-500">*</span></label><input type="text" id="rf_addr" class="form-input" placeholder="Blk, Lot, Street" required/></div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="form-label">Household No. <span class="text-red-500">*</span></label><input type="text" id="rf_hh" class="form-input" placeholder="HH-001" required/></div>
+        <div><label class="form-label">Contact Number <span class="text-red-500">*</span></label><input type="text" id="rf_contact" class="form-input" placeholder="09171234567" data-digits-only maxlength="11" required/></div>
+        <div><label class="form-label">Voter Status <span class="text-red-500">*</span></label>
+          <select id="rf_voter" class="form-input" required><option value="" selected disabled hidden>Select…</option><option>Registered Voter</option><option>Not Registered</option><option>Deactivated</option></select></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Occupation <span class="text-red-500">*</span></label><input type="text" id="rf_occ" class="form-input" placeholder="e.g. Farmer, Teacher" data-no-numbers required/></div>
+        <div><label class="form-label">Status <span class="text-red-500">*</span></label>
+          <select id="rf_status" class="form-input" required onchange="onRfStatusChange()"><option value="" selected disabled hidden>Select…</option><option>Active</option><option>Deceased</option><option>Transferred</option></select>
+          <p id="rf_deceased_hint" class="text-xs text-forest-400 mt-1 hidden">Voter Status is automatically set to Deactivated for deceased residents.</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeModal('residentModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="saveResident()" class="btn-primary">Save Resident</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importCensusModal">
+  <div class="modal-box max-w-md">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Import Resident Data</h2>
+      <button onclick="closeModal('importCensusModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div class="border-2 border-dashed border-forest-300 rounded-xl p-10 text-center bg-forest-50 hover:bg-forest-100 transition-colors cursor-pointer" onclick="document.getElementById('censusFileInput').click()">
+      <div class="flex justify-center mb-3" style="color:var(--forest-500)" data-icon="folder" data-icon-size="40"></div>
+      <div class="font-semibold text-forest-700 mb-1" id="importDropLabel">Click to choose a CSV file</div>
+      <div class="text-forest-400 text-sm">Columns: lastName, firstName, middleName, dob, sex, civilStatus, zone, address, householdNo, contactNo, voterStatus, occupation, status</div>
+      <input type="file" id="censusFileInput" accept=".csv" class="hidden" onchange="handleCensusFile(event)"/>
+      <button class="mt-4 btn-primary text-sm px-5 py-2" onclick="event.stopPropagation(); document.getElementById('censusFileInput').click()">Browse Files</button>
+    </div>
+    <p class="text-xs text-forest-400 mt-3" id="importStatus"></p>
+    <div class="mt-4 flex justify-end"><button onclick="closeModal('importCensusModal')" class="btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+let censusData = [];
+
+function mapResident(r) {
+  const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+  return {
+    id: Number(r.id), resNo: r.resident_no, lastName: r.last_name, firstName: r.first_name, midName: r.middle_name || '',
+    dob: r.date_of_birth || '', age: age ?? '—',
+    sex: r.sex, civil: r.civil_status, nationality: r.nationality || 'Filipino', zone: r.zone_id || '',
+    address: r.address || '', household: r.household_no || '', contact: r.contact_no || '',
+    voter: r.voter_status, occupation: r.occupation || '', status: r.status,
+  };
+}
+
+async function loadResidents() {
+  const raw = await BCApi.docList('census');
+  censusData = raw.map(mapResident);
+  calcStats();
+  renderResidents();
+}
+
+const ROWS=8; let curPage=1; let editId=null; let currentRole=null;
+
+// Fields a Desk Officer is allowed to edit are just Status (and, as its
+// automatic consequence, Voter Status). Every other field in the form is
+// locked read-only for them so the modal can only be used to change a
+// resident's status.
+const RF_LOCKABLE_FIELDS = ['rf_last','rf_first','rf_mid','rf_dob','rf_sex','rf_civil','rf_nat','rf_zone','rf_addr','rf_hh','rf_contact','rf_voter','rf_occ'];
+function setResidentFormLock(locked){
+  RF_LOCKABLE_FIELDS.forEach(id => { document.getElementById(id).disabled = locked; });
+}
+
+// When a resident is marked Deceased, they can no longer be an active
+// registered voter, so Voter Status is forced to Deactivated and locked
+// (re-enabled automatically if Status is changed away from Deceased,
+// unless a Desk Officer has the form locked to Status-only anyway).
+function onRfStatusChange(){
+  const status = document.getElementById('rf_status').value;
+  const voterField = document.getElementById('rf_voter');
+  const hint = document.getElementById('rf_deceased_hint');
+  if (status === 'Deceased') {
+    voterField.value = 'Deactivated';
+    voterField.disabled = true;
+    hint.classList.remove('hidden');
+  } else {
+    hint.classList.add('hidden');
+    if (currentRole !== 'Desk Officer') voterField.disabled = false;
+  }
+}
+
+function calcStats(){
+  document.getElementById('cTotal').textContent=censusData.length;
+  const hhs=new Set(censusData.map(r=>r.household).filter(Boolean));
+  document.getElementById('cHousehold').textContent=hhs.size;
+  document.getElementById('cMale').textContent=censusData.filter(r=>r.sex==='Male').length;
+  document.getElementById('cFemale').textContent=censusData.filter(r=>r.sex==='Female').length;
+  document.getElementById('cSenior').textContent=censusData.filter(r=>typeof r.age==='number' && r.age>=60).length;
+}
+
+function getFiltered(){
+  const s=document.getElementById('resSearch').value.toLowerCase();
+  const z=document.getElementById('resZone').value;
+  const sx=document.getElementById('resSex').value;
+  const st=document.getElementById('resStatus').value;
+  return censusData.filter(r=>
+    (!s||(r.lastName+' '+r.firstName).toLowerCase().includes(s)||r.address.toLowerCase().includes(s))&&
+    (!z||r.zone===z)&&(!sx||r.sex===sx)&&(!st||r.status===st));
+}
+
+function renderResidents(){
+  const f=getFiltered(); const total=f.length;
+  const start=(curPage-1)*ROWS;
+  const page=f.slice(start,start+ROWS);
+  const tb=document.getElementById('residentBody');
+  tb.innerHTML=page.length===0
+    ?`<tr><td colspan="11" class="text-center py-10 text-forest-400">No residents found.</td></tr>`
+    :page.map(r=>`<tr>
+      <td class="font-semibold text-forest-700">${r.resNo}</td>
+      <td class="font-semibold text-forest-800">${r.lastName}, ${r.firstName}</td>
+      <td class="text-xs">${r.dob}</td>
+      <td class="font-semibold text-center">${r.age}${typeof r.age==='number' && r.age>=60?' <span class="badge badge-ongoing text-xs ml-1">Senior</span>':''}</td>
+      <td><span class="badge ${r.sex==='Male'?'badge-ongoing':'badge-pending'}">${r.sex}</span></td>
+      <td class="text-xs">${r.civil}</td>
+      <td class="text-xs font-medium">${r.zone}</td>
+      <td class="text-xs text-forest-400">${r.address}</td>
+      <td class="text-xs font-mono">${r.household}</td>
+      <td><span class="badge ${r.status==='Active'?'badge-resolved':r.status==='Deceased'?'badge-not-complied':'badge-pending'}">${r.status}</span></td>
+      <td>
+        <div class="row-actions">
+          <button onclick="issueDoc(${r.id})" class="icon-btn" title="Issue Document"><span data-icon="reports" data-icon-size="16"></span></button>
+          <button onclick="editResident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
+          <button onclick="deleteResident(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('resPagInfo').textContent=`Showing ${Math.min(start+1,total)||0}–${Math.min(start+ROWS,total)} of ${total}`;
+  const tp=Math.ceil(total/ROWS)||1;
+  bcRenderPagination(document.getElementById('resPagCtrl'), curPage, tp, (p) => { curPage = p; renderResidents(); });
+}
+
+function openAddResident(){
+  editId=null; document.getElementById('resModalTitle').textContent='Add Resident';
+  ['rf_last','rf_first','rf_mid','rf_dob','rf_addr','rf_hh','rf_contact','rf_occ'].forEach(id=>document.getElementById(id).value='');
+  ['rf_sex','rf_civil','rf_zone','rf_voter','rf_status'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rf_nat').value='Filipino';
+  document.getElementById('rf_deceased_hint').classList.add('hidden');
+  setResidentFormLock(false); // Desk Officer's restriction only applies to editing existing residents
+  openModal('residentModal');
+}
+function editResident(id){
+  editId=id; const r=censusData.find(x=>x.id===id);
+  document.getElementById('resModalTitle').textContent='Edit Resident';
+  document.getElementById('rf_last').value=r.lastName;
+  document.getElementById('rf_first').value=r.firstName;
+  document.getElementById('rf_mid').value=r.midName;
+  document.getElementById('rf_dob').value=r.dob;
+  document.getElementById('rf_sex').value=r.sex;
+  document.getElementById('rf_civil').value=r.civil;
+  document.getElementById('rf_nat').value=r.nationality || 'Filipino';
+  document.getElementById('rf_zone').value=r.zone;
+  document.getElementById('rf_addr').value=r.address;
+  document.getElementById('rf_hh').value=r.household;
+  document.getElementById('rf_contact').value=r.contact;
+  document.getElementById('rf_voter').value=r.voter;
+  document.getElementById('rf_occ').value=r.occupation;
+  document.getElementById('rf_status').value=r.status;
+  document.getElementById('rf_deceased_hint').classList.toggle('hidden', r.status !== 'Deceased');
+  setResidentFormLock(currentRole === 'Desk Officer');
+  if (r.status === 'Deceased') document.getElementById('rf_voter').disabled = true;
+  openModal('residentModal');
+}
+async function saveResident(){
+  const vals={
+    lastName:document.getElementById('rf_last').value.trim(),
+    firstName:document.getElementById('rf_first').value.trim(),
+    middleName:document.getElementById('rf_mid').value.trim(),
+    dob:document.getElementById('rf_dob').value,
+    sex:document.getElementById('rf_sex').value,
+    civilStatus:document.getElementById('rf_civil').value,
+    nationality:document.getElementById('rf_nat').value.trim(),
+    zone:document.getElementById('rf_zone').value,
+    address:document.getElementById('rf_addr').value.trim(),
+    householdNo:document.getElementById('rf_hh').value.trim(),
+    contactNo:document.getElementById('rf_contact').value.trim(),
+    voterStatus:document.getElementById('rf_voter').value,
+    occupation:document.getElementById('rf_occ').value.trim(),
+    status:document.getElementById('rf_status').value,
+  };
+  // Every field is required except Middle Name — some residents genuinely
+  // don't have one, so that's the one intentional exception.
+  const missing = [];
+  if (!vals.lastName) missing.push('Last Name');
+  if (!vals.firstName) missing.push('First Name');
+  if (!vals.dob) missing.push('Date of Birth');
+  if (!vals.sex) missing.push('Sex');
+  if (!vals.civilStatus) missing.push('Civil Status');
+  if (!vals.nationality) missing.push('Nationality');
+  if (!vals.zone) missing.push('Zone / Purok');
+  if (!vals.address) missing.push('Street / House Address');
+  if (!vals.householdNo) missing.push('Household No.');
+  if (!vals.contactNo) missing.push('Contact Number');
+  if (!vals.voterStatus) missing.push('Voter Status');
+  if (!vals.occupation) missing.push('Occupation');
+  if (!vals.status) missing.push('Status');
+  if (missing.length) {
+    await bcAlert('Please fill in all required fields:\n\n' + missing.join(', '));
+    return;
+  }
+
+  // Format checks — run only once every required field is present, so a
+  // format error never masks/precedes a "this is empty" one.
+  const formatErrors = [];
+  if (vals.lastName && !bcIsValidName(vals.lastName)) formatErrors.push('Last Name should only contain letters (no numbers).');
+  if (vals.firstName && !bcIsValidName(vals.firstName)) formatErrors.push('First Name should only contain letters (no numbers).');
+  if (vals.middleName && !bcIsValidName(vals.middleName)) formatErrors.push('Middle Name should only contain letters (no numbers).');
+  if (vals.dob && bcIsFutureDate(vals.dob)) formatErrors.push('Date of Birth cannot be in the future.');
+  if (vals.contactNo && !bcIsValidContact(vals.contactNo)) formatErrors.push('Contact Number should be a valid PH mobile number (e.g. 09171234567).');
+  if (vals.occupation && /[0-9]/.test(vals.occupation)) formatErrors.push('Occupation should not contain numbers.');
+  if (formatErrors.length) {
+    await bcAlert('Please correct the following:\n\n' + formatErrors.join('\n'));
+    return;
+  }
+  try {
+    if(editId){
+      await BCApi.docUpdate('census', editId, vals);
+      showToast('Resident updated!');
+    } else {
+      await BCApi.docCreate('census', vals);
+      showToast('Resident added!');
+    }
+    closeModal('residentModal');
+    await loadResidents();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+async function deleteResident(id){
+  if (!(await bcConfirm('Remove this resident from Census? This cannot be undone.', { title: 'Remove Resident', okLabel: 'Remove', danger: true }))) return;
+  try {
+    await BCApi.docDelete('census', id);
+    showToast('Resident removed.');
+    await loadResidents();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+function issueDoc(id){
+  const r=censusData.find(x=>x.id===id);
+  showToast(`Redirecting to issue a document for ${r.firstName} ${r.lastName}…`);
+  sessionStorage.setItem('bc_prefill_resident_id', String(id));
+  setTimeout(()=>{ window.location.href='clearance.html'; },900);
+}
+
+function parseCsv(text) {
+  const lines = text.split(/\\r?\\n/).filter(l => l.trim() !== '');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const cells = line.split(',').map(c => c.trim());
+    const row = {};
+    headers.forEach((h, i) => { row[h] = cells[i] ?? ''; });
+    return row;
+  });
+}
+
+async function handleCensusFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const me = await BCApi._fetch('api/auth.php?action=me');
+  if (!roleCan(me.user.role, 'import_data')) {
+    showToast('Your role does not have permission to import data.', 'error');
+    e.target.value = '';
+    return;
+  }
+  const status = document.getElementById('importStatus');
+  status.textContent = 'Reading file…';
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (rows.length === 0) { status.textContent = 'No data rows found in that CSV.'; return; }
+
+  let ok = 0, failed = 0;
+  for (const row of rows) {
+    if (!row.lastName || !row.firstName) { failed++; continue; }
+    try {
+      await BCApi.docCreate('census', row, true);
+      ok++;
+    } catch (err) {
+      failed++;
+    }
+    status.textContent = `Importing… ${ok + failed}/${rows.length} processed`;
+  }
+  status.textContent = `Done: ${ok} imported, ${failed} skipped.`;
+  showToast(`Imported ${ok} resident${ok !== 1 ? 's' : ''}${failed ? `, ${failed} skipped` : ''}.`);
+  await loadResidents();
+  e.target.value = '';
+}
+
+(async function () {
+  const user = await requireAuth();
+  if (user) currentRole = user.role;
+  if (user && !roleCan(user.role, 'import_data')) {
+    const btn = document.getElementById('importBtn');
+    if (btn) btn.style.display = 'none';
+  }
+  try { await loadResidents(); } catch (err) { showToast('Could not load residents: ' + err.message, 'error'); }
+})();
+</script>
+</body>
+</html>

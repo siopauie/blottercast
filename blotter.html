@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blotter Records — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
+        sage:   { 50:'#fdf6e3',100:'#f5e6b8',200:'#ecd37a' },
+      }, fontFamily: { display:['DM Serif Display','serif'], body:['DM Sans','sans-serif'] } } }
+    }
+  </script>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link active" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Blotter Entry Records</h1>
+      <p class="text-forest-500 text-sm">Manage all barangay blotter entries for 2025</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative" data-perm="generate_reports">
+        <button onclick="toggleExportMenu()" class="btn-secondary flex items-center gap-2">
+          <span data-icon="download" data-icon-size="16"></span> Export to Excel
+        </button>
+        <div id="exportMenu" class="hidden absolute right-0 top-full mt-2 w-64 bg-white border border-forest-100 rounded-xl shadow-lg z-20 overflow-hidden">
+          <a href="#" onclick="event.preventDefault(); toggleExportMenu(); openExportFilter('api/exports.php?action=blotter_record', 'Export Blotter Record')" class="block px-4 py-3 text-sm text-forest-700 hover:bg-forest-50 border-b border-forest-50">Blotter Record<br/><span class="text-xs text-forest-400">Wide form with settlement tracking</span></a>
+          <a href="#" onclick="event.preventDefault(); toggleExportMenu(); openExportFilter('api/exports.php?action=blotter_entry_2025', 'Export Blotter Entry Record')" class="block px-4 py-3 text-sm text-forest-700 hover:bg-forest-50">Blotter Entry Record<br/><span class="text-xs text-forest-400">Docket-style logbook format</span></a>
+        </div>
+      </div>
+      <button onclick="openModal('importModal')" class="btn-secondary flex items-center gap-2" data-perm="import_data">
+        <span data-icon="folder" data-icon-size="16"></span> Import
+      </button>
+      <button onclick="openModal('blotterModal')" class="btn-primary flex items-center gap-2">
+        <span data-icon="plus" data-icon-size="16"></span> New Blotter Entry
+      </button>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="px-6 pt-6 grid grid-cols-4 gap-4">
+    <div class="stat-card-grad plum">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Total Blotters</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="blotter" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="blTotalCount">0</div>
+    </div>
+    <div class="stat-card-grad moss">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Ongoing</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="play" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="blOngoingCount">0</div>
+    </div>
+    <div class="stat-card-grad sunset">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/80 text-sm font-medium">Pending</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl" id="blPendingCount">0</div>
+    </div>
+    <div class="stat-card-grad dark">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-white/70 text-sm font-medium">Resolved</span>
+        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+      </div>
+      <div class="font-display text-3xl text-white" id="blResolvedCount">0</div>
+    </div>
+  </div>
+
+  <main class="flex-1 p-6">
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+
+      <!-- Table Title -->
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
+        <div class="stat-icon-badge" data-icon="blotter" data-icon-size="17"></div>
+        <h2 class="font-display text-lg text-forest-800">Blotter Records</h2>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <span class="relative flex-1 min-w-48"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="searchInput" placeholder="Search docket, name…" class="filter-input w-full pl-8" oninput="renderTable()"/></span>
+        <select id="typeFilter" class="filter-input" onchange="renderTable()">
+          <option value="">All Types</option>
+          <option value="CRIM">Criminal</option>
+          <option value="CIVIL">Civil</option>
+        </select>
+        <select id="statusFilter" class="filter-input" onchange="renderTable()">
+          <option value="">All Statuses</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Pending">Pending</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+        <div class="text-forest-500 text-sm ml-auto" id="recordCount"></div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Docket No.</th>
+              <th>Date Filed</th>
+              <th>Complainant</th>
+              <th>Address</th>
+              <th>Respondent</th>
+              <th>Address</th>
+              <th>Nature of Case</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="blotterTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-5 py-4 border-t border-forest-50">
+        <span class="text-sm text-forest-500" id="paginationInfo"></span>
+        <div class="flex gap-2" id="paginationControls"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="blotterModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-display text-xl text-forest-800" id="modalTitle">New Blotter Entry</h2>
+      <button onclick="closeModal('blotterModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <form id="blotterForm" class="space-y-4">
+      <input type="hidden" id="editId"/>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Docket No.</label><input type="text" id="f_docketNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/></div>
+        <div><label class="form-label">Date Filed</label><input type="date" id="f_dateFiled" class="form-input" data-no-future/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="relative">
+          <div class="flex items-center justify-between">
+            <label class="form-label mb-0">Name of Complainant <span class="text-red-500">*</span></label>
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer" id="f_complainantOutsideLabel">
+              <input type="checkbox" id="f_complainantOutside" class="rounded" onchange="toggleComplainantOutside()"/> Not a resident / outside party
+            </label>
+          </div>
+          <input type="text" id="f_complainantSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers/>
+          <input type="text" id="f_complainantFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers/>
+          <input type="hidden" id="f_complainant"/>
+          <input type="hidden" id="f_complainantId"/>
+          <div id="f_complainantSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
+        </div>
+        <div><label class="form-label">Complainant Address</label><input type="text" id="f_complainantAddr" class="form-input" placeholder="Address"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="relative">
+          <div class="flex items-center justify-between">
+            <label class="form-label mb-0">Name of Respondent <span class="text-red-500">*</span></label>
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer" id="f_respondentOutsideLabel">
+              <input type="checkbox" id="f_respondentOutside" class="rounded" onchange="toggleRespondentOutside()"/> Not a resident / outside party
+            </label>
+          </div>
+          <input type="text" id="f_respondentSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers/>
+          <input type="text" id="f_respondentFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers/>
+          <input type="hidden" id="f_respondent"/>
+          <input type="hidden" id="f_respondentId"/>
+          <div id="f_respondentSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
+        </div>
+        <div><label class="form-label">Respondent Address</label><input type="text" id="f_respondentAddr" class="form-input" placeholder="Address"/></div>
+      </div>
+      <p class="text-xs text-forest-400 -mt-2">Either the complainant or the respondent can be marked "Not a resident" if they're from outside the barangay — but not both, since at least one party must be a registered Census resident.</p>
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="form-label">Nature of Case</label><input type="text" id="f_nature" class="form-input" placeholder="e.g. Pag-aaway" data-no-numbers/></div>
+        <div>
+          <label class="form-label">Type</label>
+          <select id="f_type" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="CRIM">Criminal</option>
+            <option value="CIVIL">Civil</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select id="f_status" class="form-input" required>
+            <option value="" selected disabled hidden>Select…</option>
+            <option value="Pending">Pending</option>
+            <option value="Ongoing">Ongoing</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeModal('blotterModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="saveBlotter()" class="btn-primary">Save Entry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box max-w-md">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Import Blotter Records</h2>
+      <button onclick="closeModal('importModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <p class="text-sm text-forest-500 mb-4">Uses the same columns as the <strong>Blotter Record</strong> export (Case No., Case Title, Complaint Title, Nature, dates, Action Taken, Main Point, Status). If a row's settlement columns have data, a linked Settlement Monitor record is created automatically.</p>
+    <div id="importDropzone" onclick="document.getElementById('blotterImportFile').click()" class="border-2 border-dashed border-forest-300 rounded-xl p-10 text-center bg-forest-50 hover:bg-forest-100 transition-colors cursor-pointer">
+      <div class="flex justify-center mb-3" style="color:var(--forest-500)" data-icon="folder" data-icon-size="40"></div>
+      <div class="font-semibold text-forest-700 mb-1" id="importDropLabel">Click to choose a file</div>
+      <div class="text-forest-400 text-sm">Supports .xlsx and .csv</div>
+      <input type="file" id="blotterImportFile" accept=".xlsx,.csv" class="hidden" onchange="handleBlotterImportFile(event)"/>
+    </div>
+    <div id="importStatus" class="mt-4 text-sm text-forest-600"></div>
+    <div class="mt-4 flex justify-end">
+      <button onclick="closeModal('importModal')" class="btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-display text-xl text-forest-800">Blotter Entry Details</h2>
+      <button onclick="closeModal('viewModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+    </div>
+    <div id="viewContent" class="space-y-3 text-sm text-forest-700"></div>
+    <div class="mt-6 flex justify-end"><button onclick="closeModal('viewModal')" class="btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+  const ROWS_PER_PAGE = 6;
+  let currentPage = 1;
+  let editingId = null;
+  let blotterData = [];
+
+  function mapRow(r) {
+    // normalize PHP snake_case -> camelCase used by the existing UI code
+    const [y, m, d] = (r.date_filed || '').split('-');
+    return {
+      id: Number(r.id), docketNo: r.docket_no, dateFiled: (m && d) ? `${m}/${d}/${y}` : r.date_filed,
+      date: r.date_filed, complainant: r.complainant, complainantId: r.complainant_id ? Number(r.complainant_id) : null, complainantAddr: r.complainant_addr,
+      respondent: r.respondent, respondentId: r.respondent_id ? Number(r.respondent_id) : null, respondentAddr: r.respondent_addr, nature: r.nature,
+      type: r.case_type, status: r.status, zone: r.zone_id,
+    };
+  }
+
+  async function loadBlotter() {
+    const raw = await BCApi.list('blotter');
+    blotterData = raw.map(mapRow);
+    renderSummaryCards();
+    renderTable();
+  }
+
+  function renderSummaryCards() {
+    document.getElementById('blTotalCount').textContent = blotterData.length;
+    document.getElementById('blOngoingCount').textContent = blotterData.filter(r => r.status === 'Ongoing').length;
+    document.getElementById('blPendingCount').textContent = blotterData.filter(r => r.status === 'Pending').length;
+    document.getElementById('blResolvedCount').textContent = blotterData.filter(r => r.status === 'Resolved').length;
+  }
+
+  let censusResidentsForBlotter = []; // shared options list for both complainant and respondent pickers
+
+  async function loadCensusResidentsForBlotterPickers() {
+    const raw = await BCApi.docList('census');
+    censusResidentsForBlotter = raw.map(r => {
+      const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+      return {
+        id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
+        age, address: r.address || '', householdNo: r.household_no || '',
+      };
+    });
+    bcInitResidentPicker('f_complainantSearch', 'f_complainantId', 'f_complainantSuggestions', censusResidentsForBlotter, onComplainantPicked);
+    bcInitResidentPicker('f_respondentSearch', 'f_respondentId', 'f_respondentSuggestions', censusResidentsForBlotter, onRespondentPicked);
+  }
+
+  function onComplainantPicked(r) {
+    document.getElementById('f_complainant').value = r ? `${r.lastName}, ${r.firstName} ${r.middleName}`.trim() : '';
+    if (r && r.address && !document.getElementById('f_complainantAddr').value) {
+      document.getElementById('f_complainantAddr').value = r.address;
+    }
+  }
+
+  function onRespondentPicked(r) {
+    document.getElementById('f_respondent').value = r ? `${r.lastName}, ${r.firstName} ${r.middleName}`.trim() : '';
+    if (r && r.address && !document.getElementById('f_respondentAddr').value) {
+      document.getElementById('f_respondentAddr').value = r.address;
+    }
+  }
+
+  // Both complainant and respondent can be marked "outside party," but not
+  // at the same time — at least one side must stay a Census resident pick,
+  // matching the server-side rule enforced in api/records.php. Checking one
+  // box disables the other so this can't be bypassed from the UI.
+  function _setOutsideMode(role, outside) {
+    const checkboxId = `f_${role}Outside`;
+    const searchId = `f_${role}Search`;
+    const freeTextId = `f_${role}FreeText`;
+    const valueId = `f_${role}`;
+    document.getElementById(searchId).classList.toggle('hidden', outside);
+    document.getElementById(freeTextId).classList.toggle('hidden', !outside);
+    if (outside) {
+      bcResidentPickerClear(searchId);
+      document.getElementById(freeTextId).focus();
+    } else {
+      document.getElementById(valueId).value = '';
+      document.getElementById(freeTextId).value = '';
+    }
+  }
+
+  function _updateOutsideToggleAvailability() {
+    const complainantOutside = document.getElementById('f_complainantOutside').checked;
+    const respondentOutside = document.getElementById('f_respondentOutside').checked;
+    const complainantCheckbox = document.getElementById('f_complainantOutside');
+    const respondentCheckbox = document.getElementById('f_respondentOutside');
+    complainantCheckbox.disabled = respondentOutside;
+    respondentCheckbox.disabled = complainantOutside;
+    document.getElementById('f_complainantOutsideLabel').classList.toggle('opacity-40', respondentOutside);
+    document.getElementById('f_respondentOutsideLabel').classList.toggle('opacity-40', complainantOutside);
+  }
+
+  function toggleComplainantOutside() {
+    _setOutsideMode('complainant', document.getElementById('f_complainantOutside').checked);
+    _updateOutsideToggleAvailability();
+  }
+
+  function toggleRespondentOutside() {
+    _setOutsideMode('respondent', document.getElementById('f_respondentOutside').checked);
+    _updateOutsideToggleAvailability();
+  }
+
+  function getFiltered() {
+    const s = document.getElementById('searchInput').value.toLowerCase();
+    const t = document.getElementById('typeFilter').value;
+    const st = document.getElementById('statusFilter').value;
+    return blotterData.filter(r =>
+      (!s || r.docketNo.toLowerCase().includes(s) || r.complainant.toLowerCase().includes(s) || r.respondent.toLowerCase().includes(s)) &&
+      (!t || r.type === t) &&
+      (!st || r.status === st)
+    );
+  }
+
+  function renderTable() {
+    const filtered = getFiltered();
+    const total = filtered.length;
+    const start = (currentPage - 1) * ROWS_PER_PAGE;
+    const page = filtered.slice(start, start + ROWS_PER_PAGE);
+
+    const tbody = document.getElementById('blotterTableBody');
+    tbody.innerHTML = page.length === 0
+      ? `<tr><td colspan="10" class="text-center py-10 text-forest-400">No records found.</td></tr>`
+      : page.map(r => `
+        <tr>
+          <td class="font-semibold text-forest-700">${r.docketNo}</td>
+          <td>${r.dateFiled}</td>
+          <td>${r.complainant}</td>
+          <td class="text-xs text-forest-400">${r.complainantAddr}</td>
+          <td>${r.respondent}</td>
+          <td class="text-xs text-forest-400">${r.respondentAddr}</td>
+          <td>${r.nature}</td>
+          <td><span class="badge ${r.type==='CRIM'?'badge-ongoing':'badge-pending'}">${r.type}</span></td>
+          <td><span class="badge ${r.status==='Resolved'?'badge-resolved':r.status==='Ongoing'?'badge-ongoing':'badge-pending'}">${r.status}</span></td>
+          <td>
+            <div class="row-actions">
+              <button onclick="viewRecord(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
+              <button onclick="editRecord(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
+              <button onclick="deleteRecord(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+    document.getElementById('recordCount').textContent = `${total} record${total!==1?'s':''}`;
+    document.getElementById('paginationInfo').textContent = `Showing ${Math.min(start+1,total)}–${Math.min(start+ROWS_PER_PAGE,total)} of ${total}`;
+
+    const totalPages = Math.ceil(total / ROWS_PER_PAGE);
+    bcRenderPagination(document.getElementById('paginationControls'), currentPage, totalPages, (p) => { currentPage = p; renderTable(); });
+  }
+
+  async function openAdd() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'New Blotter Entry';
+    document.getElementById('blotterForm').reset();
+    bcResidentPickerClear('f_complainantSearch');
+    bcResidentPickerClear('f_respondentSearch');
+    document.getElementById('f_complainantOutside').checked = false;
+    document.getElementById('f_complainantSearch').classList.remove('hidden');
+    document.getElementById('f_complainantFreeText').classList.add('hidden');
+    document.getElementById('f_complainantFreeText').value = '';
+    document.getElementById('f_respondentOutside').checked = false;
+    document.getElementById('f_respondentSearch').classList.remove('hidden');
+    document.getElementById('f_respondentFreeText').classList.add('hidden');
+    document.getElementById('f_respondentFreeText').value = '';
+    _updateOutsideToggleAvailability();
+    openModal('blotterModal');
+
+    // Show what the Docket No. will be, rather than leaving it blank
+    // until after saving. This is a look-ahead preview only — the actual
+    // number is (re)generated at save time, so it can't go stale/collide
+    // even if two "New Entry" forms happen to be open at once.
+    const docketField = document.getElementById('f_docketNo');
+    docketField.value = 'Loading…';
+    try {
+      const { seqNo } = await BCApi.peekSeq('blotter');
+      if (editingId === null) docketField.value = seqNo; // still on the "new" form, not switched to editing meanwhile
+    } catch (err) {
+      docketField.value = '';
+    }
+  }
+
+  function editRecord(id) {
+    const r = blotterData.find(x => x.id === id);
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Blotter Entry';
+    document.getElementById('f_docketNo').value = r.docketNo;
+    document.getElementById('f_dateFiled').value = r.date;
+
+    // Prefer the resident id actually stored on this record; only fall back
+    // to name-matching for older records saved before these columns existed
+    // (name-matching is inherently ambiguous if two residents share a name
+    // — exactly what storing a real id is meant to avoid going forward).
+    const findMatch = (name) => censusResidentsForBlotter.find(res =>
+      `${res.lastName}, ${res.firstName} ${res.middleName}`.trim().toLowerCase() === (name || '').trim().toLowerCase()
+    );
+
+    const compMatch = r.complainantId ? censusResidentsForBlotter.find(res => res.id === r.complainantId) : findMatch(r.complainant);
+    if (compMatch) {
+      document.getElementById('f_complainantOutside').checked = false;
+      document.getElementById('f_complainantSearch').classList.remove('hidden');
+      document.getElementById('f_complainantFreeText').classList.add('hidden');
+      document.getElementById('f_complainantSearch').value = r.complainant;
+      document.getElementById('f_complainantId').value = String(compMatch.id);
+    } else {
+      document.getElementById('f_complainantOutside').checked = true;
+      document.getElementById('f_complainantSearch').classList.add('hidden');
+      document.getElementById('f_complainantFreeText').classList.remove('hidden');
+      document.getElementById('f_complainantFreeText').value = r.complainant;
+    }
+    document.getElementById('f_complainant').value = r.complainant;
+    document.getElementById('f_complainantAddr').value = r.complainantAddr;
+
+    const respMatch = r.respondentId ? censusResidentsForBlotter.find(res => res.id === r.respondentId) : findMatch(r.respondent);
+    if (respMatch) {
+      document.getElementById('f_respondentOutside').checked = false;
+      document.getElementById('f_respondentSearch').classList.remove('hidden');
+      document.getElementById('f_respondentFreeText').classList.add('hidden');
+      document.getElementById('f_respondentSearch').value = r.respondent;
+      document.getElementById('f_respondentId').value = String(respMatch.id);
+    } else {
+      document.getElementById('f_respondentOutside').checked = true;
+      document.getElementById('f_respondentSearch').classList.add('hidden');
+      document.getElementById('f_respondentFreeText').classList.remove('hidden');
+      document.getElementById('f_respondentFreeText').value = r.respondent;
+    }
+    document.getElementById('f_respondent').value = r.respondent;
+    document.getElementById('f_respondentAddr').value = r.respondentAddr;
+
+    _updateOutsideToggleAvailability();
+    document.getElementById('f_nature').value = r.nature;
+    document.getElementById('f_type').value = r.type;
+    document.getElementById('f_status').value = r.status;
+    openModal('blotterModal');
+  }
+
+  async function saveBlotter() {
+    const complainantOutside = document.getElementById('f_complainantOutside').checked;
+    const respondentOutside = document.getElementById('f_respondentOutside').checked;
+    const complainantName = complainantOutside
+      ? document.getElementById('f_complainantFreeText').value.trim()
+      : document.getElementById('f_complainant').value.trim();
+    const respondentName = respondentOutside
+      ? document.getElementById('f_respondentFreeText').value.trim()
+      : document.getElementById('f_respondent').value.trim();
+    const complainantId = complainantOutside ? null : (document.getElementById('f_complainantId').value || null);
+    const respondentId = respondentOutside ? null : (document.getElementById('f_respondentId').value || null);
+    const vals = {
+      // On create, the Docket No. field only ever shows a preview (see
+      // openAdd()) — it must NOT be sent as-is, or two people opening
+      // "New Entry" around the same time would both submit the same
+      // previewed number and collide. Sending '' here makes the server
+      // mint the real, authoritative number fresh at save time, exactly
+      // like before this preview existed. On edit, the field holds the
+      // record's real existing docket_no, but the PUT endpoint doesn't
+      // use/overwrite it anyway, so it's harmless either way.
+      docketNo: editingId ? document.getElementById('f_docketNo').value.trim() : '',
+      dateFiled: document.getElementById('f_dateFiled').value,
+      complainant: complainantName,
+      complainantId,
+      complainantAddr: document.getElementById('f_complainantAddr').value.trim(),
+      respondent: respondentName,
+      respondentId,
+      respondentAddr: document.getElementById('f_respondentAddr').value.trim(),
+      nature: document.getElementById('f_nature').value.trim(),
+      type: document.getElementById('f_type').value,
+      status: document.getElementById('f_status').value,
+    };
+    if (complainantOutside && respondentOutside) {
+      await bcAlert('At least one of the complainant or respondent must be a registered Census resident.'); return;
+    }
+    if (!vals.complainant) {
+      await bcAlert(complainantOutside ? 'Please enter the complainant\'s name.' : 'Please select the complainant from Census, or check "Not a resident" to enter their name directly.');
+      return;
+    }
+    if (!vals.respondent) {
+      await bcAlert(respondentOutside ? 'Please enter the respondent\'s name.' : 'Please select the respondent from Census, or check "Not a resident" to enter their name directly.');
+      return;
+    }
+    if (!vals.type) { await bcAlert('Please select the case Type.'); return; }
+    if (!vals.status) { await bcAlert('Please select the Status.'); return; }
+    const sameCensusPerson = complainantId && respondentId && complainantId === respondentId;
+    const sameNameTyped = vals.complainant && vals.respondent && vals.complainant.trim().toLowerCase() === vals.respondent.trim().toLowerCase();
+    if (sameCensusPerson || sameNameTyped) {
+      await bcAlert('Complainant and respondent cannot be the same person.'); return;
+    }
+    if (complainantOutside && vals.complainant && !bcIsValidName(vals.complainant)) {
+      await bcAlert('Complainant name should only contain letters (no numbers).'); return;
+    }
+    if (respondentOutside && vals.respondent && !bcIsValidName(vals.respondent)) {
+      await bcAlert('Respondent name should only contain letters (no numbers).'); return;
+    }
+    if (vals.dateFiled && bcIsFutureDate(vals.dateFiled)) {
+      await bcAlert('Date Filed cannot be in the future.'); return;
+    }
+    if (vals.nature && /[0-9]/.test(vals.nature)) {
+      await bcAlert('Nature of Case should not contain numbers.'); return;
+    }
+    try {
+      if (editingId) {
+        await BCApi.update('blotter', editingId, vals);
+        showToast('Blotter entry updated!');
+      } else {
+        await BCApi.create('blotter', vals);
+        showToast('New blotter entry added!');
+      }
+      closeModal('blotterModal');
+      await loadBlotter();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteRecord(id) {
+    if (!(await bcConfirm('Delete this blotter entry? This cannot be undone.', { title: 'Delete Blotter Entry', okLabel: 'Delete', danger: true }))) return;
+    try {
+      await BCApi.remove('blotter', id);
+      showToast('Entry deleted.');
+      await loadBlotter();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  function viewRecord(id) {
+    const r = blotterData.find(x => x.id === id);
+    const rows = [
+      ['Docket No.', r.docketNo], ['Date Filed', r.dateFiled],
+      ['Complainant', r.complainant], ['Complainant Address', r.complainantAddr],
+      ['Respondent', r.respondent], ['Respondent Address', r.respondentAddr],
+      ['Nature of Case', r.nature], ['Type', r.type], ['Status', r.status],
+    ];
+    document.getElementById('viewContent').innerHTML = rows.map(([k,v]) => `
+      <div class="flex gap-4 py-2 border-b border-forest-50">
+        <span class="w-44 text-forest-500 font-semibold text-xs uppercase tracking-wide flex-shrink-0">${k}</span>
+        <span class="text-forest-800">${v}</span>
+      </div>`).join('');
+    openModal('viewModal');
+  }
+
+  async function handleBlotterImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('importStatus');
+    const labelEl = document.getElementById('importDropLabel');
+    labelEl.textContent = 'Importing ' + file.name + '…';
+    statusEl.textContent = '';
+    try {
+      const result = await BCApi.importBlotterFile(file);
+      let msg = `Imported ${result.imported} blotter record${result.imported === 1 ? '' : 's'}`;
+      if (result.settlementsCreated > 0) {
+        msg += ` (${result.settlementsCreated} linked settlement${result.settlementsCreated === 1 ? '' : 's'} created)`;
+      }
+      if (result.skipped > 0) msg += `, ${result.skipped} row${result.skipped === 1 ? '' : 's'} skipped`;
+      statusEl.innerHTML = `<span class="text-forest-600">${msg}.</span>` +
+        (result.errors.length ? `<ul class="mt-2 text-xs text-red-500 list-disc pl-4">${result.errors.map(x=>`<li>${x}</li>`).join('')}</ul>` : '');
+      labelEl.textContent = 'Click to choose a file';
+      showToast(msg);
+      await loadBlotter();
+    } catch (err) {
+      statusEl.innerHTML = `<span class="text-red-500">${err.message}</span>`;
+      labelEl.textContent = 'Click to choose a file';
+      showToast(err.message, 'error');
+    } finally {
+      e.target.value = '';
+    }
+  }
+
+  function toggleExportMenu() {
+    document.getElementById('exportMenu').classList.toggle('hidden');
+  }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('exportMenu');
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (!e.target.closest('#exportMenu') && !e.target.closest('[onclick="toggleExportMenu()"]')) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  document.querySelector('[onclick="openModal(\'blotterModal\')"]').onclick = openAdd;
+  (async function () {
+    await requireAuth();
+    try { await loadCensusResidentsForBlotterPickers(); } catch (err) { showToast('Could not load residents: ' + err.message, 'error'); }
+    try { await loadBlotter(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
+  })();
+</script>
+</body>
+</html>

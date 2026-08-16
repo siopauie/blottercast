@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predictions — Barangay System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <style>
+    .risk-bar { height:8px; border-radius:99px; background:#dcf0e0; overflow:hidden; }
+    .risk-bar-fill { height:100%; border-radius:99px; transition: width 0.8s ease; }
+    .pulse-dot { width:8px;height:8px;border-radius:50%;background:#4fa868;display:inline-block;animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  </style>
+</head>
+<body class="font-body bg-forest-50 min-h-screen">
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+    <!-- Logo -->
+    <div class="px-6 py-8 border-b border-forest-700">
+      <div class="flex items-center gap-3">
+        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="nav-section-label">Main Menu</p>
+      <a href="dashboard.html" class="nav-link" data-page="dashboard">
+        <span class="nav-icon" data-icon="dashboard"></span> Dashboard
+      </a>
+      <a href="blotter.html" class="nav-link" data-page="blotter">
+        <span class="nav-icon" data-icon="blotter"></span> Blotter Records
+      </a>
+      <a href="incident.html" class="nav-link" data-page="incident">
+        <span class="nav-icon" data-icon="incident"></span> Incident Reports
+      </a>
+      <a href="settlement.html" class="nav-link" data-page="settlement">
+        <span class="nav-icon" data-icon="settlement"></span> Settlement Monitor
+      </a>
+
+      <p class="nav-section-label">Documents</p>
+      <a href="census.html" class="nav-link" data-page="census">
+        <span class="nav-icon" data-icon="census"></span> Census
+      </a>
+      <a href="clearance.html" class="nav-link" data-page="clearance">
+        <span class="nav-icon" data-icon="clearance"></span> Brgy Clearance
+      </a>
+      <a href="residency.html" class="nav-link" data-page="residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Residency
+      </a>
+      <a href="non_residency.html" class="nav-link" data-page="non_residency">
+        <span class="nav-icon" data-icon="clearance"></span> Cert. of Non-Residency
+      </a>
+      <a href="indigency.html" class="nav-link" data-page="indigency">
+        <span class="nav-icon" data-icon="indigency"></span> Cert. of Indigency
+      </a>
+
+      <p class="nav-section-label">Analytics</p>
+      <a href="heatmap.html" class="nav-link" data-page="heatmap">
+        <span class="nav-icon" data-icon="heatmap"></span> Heat Map
+      </a>
+      <a href="trends.html" class="nav-link" data-page="trends">
+        <span class="nav-icon" data-icon="trends"></span> Trends
+      </a>
+      <a href="predictions.html" class="nav-link active" data-page="predictions">
+        <span class="nav-icon" data-icon="predictions"></span> Predictions
+      </a>
+
+      <p class="nav-section-label">System</p>
+      <a href="users.html" class="nav-link" data-page="users">
+        <span class="nav-icon" data-icon="users"></span> Users &amp; Roles
+      </a>
+      <a href="reports.html" class="nav-link" data-page="reports">
+        <span class="nav-icon" data-icon="reports"></span> Reports
+      </a>
+      <a href="settings.html" class="nav-link" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span> Settings
+      </a>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4 border-t border-forest-700">
+      <div class="flex items-center gap-3">
+        <div class="sidebar-user-avatar" data-user-avatar>JD</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" data-user-name>Juan Dela Cruz</div>
+          <div class="text-forest-400 text-xs" data-user-role>Desk Officer</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Log out"><span data-icon="logout" data-icon-size="16"></span></button>
+      </div>
+    </div>
+  </aside>
+
+<div class="ml-64 flex flex-col min-h-screen">
+  <header class="page-header">
+    <div>
+      <h1 class="font-display text-2xl text-forest-800">Predictive Insights</h1>
+      <p class="text-forest-500 text-sm">ML-based incident risk forecasting by zone, time, and category</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-forest-50 border border-forest-200 rounded-xl px-4 py-2 text-sm text-forest-600">
+        <span class="pulse-dot"></span>
+        <span id="trainedStamp">Training models…</span>
+      </div>
+      <button onclick="retrain()" class="btn-primary flex items-center gap-2" id="retrainBtn">
+        <span data-icon="refresh" data-icon-size="15"></span> Retrain Model
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6">
+
+    <!-- Active Models — one fixed algorithm per task, no comparison/selection -->
+    <div class="grid grid-cols-3 gap-4" id="modelCardGroups"></div>
+
+    <!-- Risk Forecast + Patrol Recommendations -->
+    <div class="grid grid-cols-3 gap-6">
+
+      <!-- Zone Risk Forecast -->
+      <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="stat-icon-badge" data-icon="trends" data-icon-size="17"></div>
+            <h2 class="font-display text-lg text-forest-800">7-Day Forecast — Expected Incidents (Top Risk Zones)</h2>
+          </div>
+          <select id="horizonSel" class="filter-input text-xs" onchange="renderOutputs()">
+            <option value="7">Next 7 Days</option><option value="14">Next 14 Days</option>
+          </select>
+        </div>
+        <canvas id="forecastChart" height="120"></canvas>
+      </div>
+
+      <!-- Patrol Deployment -->
+      <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-5">
+        <h2 class="font-display text-base text-forest-800 mb-4 flex items-center gap-2"><span data-icon="shield" data-icon-size="18"></span> Patrol Recommendations</h2>
+        <div class="space-y-3" id="patrolRecs"></div>
+      </div>
+    </div>
+
+    <!-- Per-Zone Category Forecast -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon-badge" data-icon="incident" data-icon-size="17"></div>
+          <div>
+            <h2 class="font-display text-lg text-forest-800">Category Forecast by Zone</h2>
+            <p class="text-xs text-forest-400">Expected incidents per day, broken down by category, for the selected zone</p>
+          </div>
+        </div>
+        <select id="categoryZoneSel" class="filter-input text-xs" onchange="renderCategoryChart()"></select>
+      </div>
+      <canvas id="categoryChart" height="110"></canvas>
+    </div>
+
+    <!-- Zone Risk Table -->
+    <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-forest-50 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon-badge" data-icon="heatmap" data-icon-size="17"></div>
+          <h2 class="font-display text-lg text-forest-800">Predicted Incident Risk by Zone</h2>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Hotspot Probability</th>
+              <th>Expected Incidents (7d)</th>
+              <th>Risk Level</th>
+              <th>Predicted Top Category</th>
+              <th>Peak Time Window</th>
+              <th>14-Day Trend</th>
+            </tr>
+          </thead>
+          <tbody id="predTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Training Modal -->
+<div class="modal-overlay" id="trainModal">
+  <div class="modal-box max-w-sm text-center">
+    <div class="flex justify-center mb-4" style="color:var(--forest-500)" data-icon="predictions" data-icon-size="56"></div>
+    <h2 class="font-display text-xl text-forest-800 mb-2">Model Retraining</h2>
+    <p class="text-forest-500 text-sm mb-5">Processing historical data and updating prediction weights…</p>
+    <div class="w-full bg-forest-100 rounded-full h-3 mb-3">
+      <div id="trainProgress" class="h-3 rounded-full bg-forest-500 transition-all duration-300" style="width:0%"></div>
+    </div>
+    <p class="text-xs text-forest-400" id="trainStatus">Initializing…</p>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="permissions.js"></script>
+<script src="app.js"></script>
+<script src="icons.js"></script>
+<script src="custom-controls.js"></script>
+<script>
+// ============================================================
+// Predictions page — trains real scikit-learn models via the
+// Python ML microservice (ml/service.py), on live MySQL records.
+// Each task now has exactly one designated algorithm (no comparison,
+// no switching):
+//   occurrence: random_forest
+//   type:       gradient_boosting
+//   hotspot:    gradient_boosting
+// ============================================================
+const TASKS = {
+  occurrence: { label: 'Incident Occurrence', models: ['random_forest'], metricKey: 'f1' },
+  type:       { label: 'Incident Type', models: ['gradient_boosting'], metricKey: 'macroF1' },
+  hotspot:    { label: 'Hotspot Risk', models: ['gradient_boosting'], metricKey: 'f1' },
+};
+const MODEL_LABELS = { random_forest: 'Random Forest', gradient_boosting: 'Gradient Boosting' };
+let RESULT = null;
+// Fixed per-task model — no user selection anymore.
+const ACTIVE = { occurrence: 'random_forest', type: 'gradient_boosting', hotspot: 'gradient_boosting' };
+let CAN_RETRAIN = false; // set from the signed-in user's role before first render
+let forecastChart = null;
+let categoryChart = null;
+const CATEGORY_COLORS = {
+  'Physical Assault': '#1a5730', 'Theft': '#c9a84c', 'Domestic Dispute': '#0e7c86',
+  'Vandalism': '#4fa868', 'Trespassing': '#8a6a2e', 'Drug-Related Activity': '#23703c',
+  'Public Disturbance': '#86c895', 'Other': '#94a3b8',
+};
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#5a7a64';
+
+const pct = v => (v * 100).toFixed(1) + '%';
+
+function renderModelCards() {
+  const el = document.getElementById('modelCardGroups');
+  const grads = ['plum', 'sunset', 'dark'];
+  const icons = ['incident', 'predictions', 'heatmap'];
+  el.innerHTML = Object.entries(TASKS).map(([task, cfg], i) => {
+    const key = cfg.models[0];
+    const m = RESULT && RESULT[task] && RESULT[task].metrics[key];
+    const scoreLabel = task === 'type' ? 'Macro F1' : 'Accuracy';
+    const score = m ? pct(task === 'type' ? m.macroF1 : m.accuracy) : '…';
+    return `
+      <div class="stat-card-grad ${grads[i % grads.length]}">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs font-bold text-white/75 uppercase tracking-wide">${cfg.label}</div>
+          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="${icons[i % icons.length]}" data-icon-size="16"></div>
+        </div>
+        <div class="font-display text-3xl text-white">${score}</div>
+        <div class="text-xs text-white/70 mt-1">${scoreLabel} · ${MODEL_LABELS[key]}</div>
+      </div>`;
+  }).join('');
+}
+
+function riskLevel(p) { return p >= 0.20 ? 'High' : p >= 0.13 ? 'Moderate' : 'Low'; }
+
+function renderOutputs() {
+  if (!RESULT) return;
+  const horizon = Number(document.getElementById('horizonSel').value || 7);
+  const ranked = [...RESULT.zoneRisk].sort((a, b) => b.meanDailyProb - a.meanDailyProb);
+
+  // Forecast chart — top 4 risk zones, actual day-by-day forecast probabilities
+  const top4 = ranked.slice(0, 4);
+  const scale = horizon / 7;
+  const labels = dayLabels(top4[0], horizon);
+  const zoneColors = ['#1a5730', '#c9a84c', '#0e7c86', '#8a6a2e'];
+  if (forecastChart) forecastChart.destroy();
+  forecastChart = new Chart(document.getElementById('forecastChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: top4.map((z, i) => ({
+        label: z.zone,
+        data: (z.dailyProbs || []).slice(0, horizon).map(p => +p.toFixed(3)),
+        borderColor: zoneColors[i], backgroundColor: 'transparent',
+        tension: 0.4, pointRadius: 3, borderWidth: 2.5,
+      })),
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true } }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false }, title: { display: true, text: 'Daily occurrence probability' } }, x: { grid: { display: false }, border: { display: false } } },
+    },
+  });
+
+  // Risk table
+  document.getElementById('predTableBody').innerHTML = ranked.map(h => {
+    const risk = riskLevel(h.meanDailyProb);
+    const expected = h.expectedCount7d * scale;
+    return `<tr>
+      <td class="font-semibold text-forest-700">${h.zone}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <div class="risk-bar w-20"><div class="risk-bar-fill" style="width:${Math.min(100, h.meanDailyProb * 300)}%;background:${risk === 'High' ? '#ef4444' : risk === 'Moderate' ? '#fbbf24' : '#23703c'}"></div></div>
+          <span class="text-xs font-bold text-forest-700">${pct(h.meanDailyProb)}<span class="text-forest-400 font-normal"> /day</span></span>
+        </div>
+      </td>
+      <td><span class="font-bold text-forest-800">${expected.toFixed(1)}</span></td>
+      <td><span class="badge ${risk === 'High' ? 'badge-not-complied' : risk === 'Moderate' ? 'badge-ongoing' : 'badge-resolved'}">${risk}</span></td>
+      <td class="text-sm">${h.topCategory} <span class="text-xs text-forest-400">(${pct(h.topCategoryProb)})</span></td>
+      <td class="text-xs text-forest-500">${h.peakWindow}</td>
+      <td class="font-bold text-lg ${h.trend === '↑' ? 'text-red-500' : h.trend === '↓' ? 'text-forest-600' : 'text-amber-500'}">${h.trend}</td>
+    </tr>`;
+  }).join('');
+
+  // Patrol recommendations — top 4 risk zones, real peak windows
+  const prios = ['Critical', 'High', 'High', 'Medium'];
+  document.getElementById('patrolRecs').innerHTML = top4.map((h, i) => `
+    <div class="bg-forest-50 rounded-xl p-3 border border-forest-100">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold text-forest-800 text-sm">${h.zone}</span>
+        <span class="badge ${prios[i] === 'Critical' ? 'badge-not-complied' : prios[i] === 'High' ? 'badge-ongoing' : 'badge-resolved'} text-xs">${prios[i]}</span>
+      </div>
+      <div class="text-xs text-forest-500">⏰ ${h.peakWindow}</div>
+      <div class="text-xs text-forest-500 flex items-center gap-1"><span data-icon="shield" data-icon-size="13"></span> ${Math.max(1, Math.round(h.expectedCount7d / 1.2))} officer(s) · ${h.expectedCount7d.toFixed(1)} expected incidents/7d</div>
+    </div>`).join('');
+
+  populateCategoryZoneSelect();
+  renderCategoryChart();
+}
+
+// Forecast day labels, using the zone's own forecastDates if the server
+// sent them (so labels line up with the actual dailyProbs/categorySeries
+// array position), falling back to "today + N" if not available.
+function dayLabels(zone, horizon) {
+  if (zone && Array.isArray(zone.forecastDates) && zone.forecastDates.length >= horizon) {
+    return zone.forecastDates.slice(0, horizon).map(ds => {
+      const d = new Date(ds + 'T00:00:00');
+      return d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
+    });
+  }
+  return Array.from({ length: horizon }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() + i + 1);
+    return d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
+  });
+}
+
+function populateCategoryZoneSelect() {
+  const sel = document.getElementById('categoryZoneSel');
+  if (!RESULT || !RESULT.zoneRisk) return;
+  if (sel.options.length) return; // keep the user's current selection across re-renders
+  const ranked = [...RESULT.zoneRisk].sort((a, b) => b.meanDailyProb - a.meanDailyProb);
+  sel.innerHTML = ranked.map(z => `<option value="${z.zone}">${z.zone}</option>`).join('');
+}
+
+function renderCategoryChart() {
+  if (!RESULT || !RESULT.zoneRisk) return;
+  const horizon = Number(document.getElementById('horizonSel').value || 7);
+  const sel = document.getElementById('categoryZoneSel');
+  const zone = RESULT.zoneRisk.find(z => z.zone === sel.value) || RESULT.zoneRisk[0];
+  if (!zone || !zone.categorySeries) return;
+
+  const labels = dayLabels(zone, horizon);
+  const categories = Object.keys(zone.categorySeries);
+
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: categories.map(cat => ({
+        label: cat,
+        data: zone.categorySeries[cat].slice(0, horizon).map(v => +v.toFixed(4)),
+        borderColor: CATEGORY_COLORS[cat] || '#6b7280', backgroundColor: 'transparent',
+        tension: 0.4, pointRadius: 2, borderWidth: 2,
+      })),
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true } }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false }, title: { display: true, text: 'Expected incidents/day' } },
+        x: { grid: { display: false }, border: { display: false } },
+      },
+    },
+  });
+}
+
+async function trainAll(fromButton) {
+  if (fromButton) openModal('trainModal');
+  const bar = document.getElementById('trainProgress');
+  const status = document.getElementById('trainStatus');
+  const stamp = document.getElementById('trainedStamp');
+  stamp.textContent = 'Loading model results…';
+  if (fromButton) { status.textContent = 'Starting the prediction engine…'; bar.style.width = '15%'; }
+
+  try {
+    if (!CAN_RETRAIN) {
+      // View-only role: never trigger a fresh training run, just read
+      // whatever the last admin/captain retrain produced.
+      RESULT = await BCApi.mlLatest();
+      if (!RESULT) throw new Error('No trained model yet. Ask an Admin or Barangay Captain to train one from this page.');
+    } else {
+      // mlTrain() transparently starts the Python service if it isn't
+      // already running (see api/ml_proxy.php) — first run can take a
+      // few seconds while it spins up, same as any app opening for the
+      // first time. No terminal or manual step needed from the user.
+      if (fromButton) { status.textContent = 'Training prediction models…'; bar.style.width = '45%'; }
+      RESULT = await BCApi.mlTrain(ACTIVE);
+      if (fromButton) { status.textContent = 'Computing hotspot forecasts…'; bar.style.width = '85%'; }
+    }
+
+    bar.style.width = '100%';
+    const now = new Date(RESULT.trainedAt);
+    stamp.innerHTML = 'Model trained: <strong class="ml-1">' +
+      now.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) +
+      '</strong> · ' + RESULT.recordCount + ' records';
+    renderModelCards();
+    renderOutputs();
+    if (fromButton) {
+      setTimeout(() => {
+        closeModal('trainModal');
+        const occAcc = RESULT.occurrence.metrics[ACTIVE.occurrence].accuracy;
+        showToast('Models retrained on ' + RESULT.recordCount + ' records. Occurrence accuracy: ' + pct(occAcc));
+      }, 400);
+    }
+  } catch (err) {
+    stamp.textContent = 'Training failed';
+    if (fromButton) {
+      closeModal('trainModal');
+      showToast(err.message, 'error');
+    } else {
+      showToast(err.message, 'error');
+    }
+  }
+}
+
+function retrain() { trainAll(true); }
+
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+  CAN_RETRAIN = roleCan(user.role, 'retrain_ml');
+  if (!CAN_RETRAIN) {
+    const btn = document.getElementById('retrainBtn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  renderModelCards();
+  await trainAll(false);
+})();
+</script>
+</body>
+</html>

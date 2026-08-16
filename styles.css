@@ -1,0 +1,983 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ============================================================
+   BlotterCast Design System
+   Civic records + ML platform for Barangay Mapulang Lupa.
+   Palette: forest green (trust, official records, community).
+   Type: DM Serif Display (headings) + DM Sans (body/UI).
+   Icons: single-weight line icons (see icons.js), no emoji.
+   ============================================================ */
+
+:root {
+  /* Core palette (mirrors the tailwind.config forest scale) */
+  --forest-50:  #f0f9f2;
+  --forest-100: #dcf0e0;
+  --forest-200: #b8e0c0;
+  --forest-300: #86c895;
+  --forest-400: #4fa868;
+  --forest-500: #2f8a4c;
+  --forest-600: #23703c;
+  --forest-700: #1a5730;
+  --forest-800: #123d22;
+  --forest-900: #0a2414;
+
+  /* Semantic accents (used sparingly, never introduced beyond these) */
+  --amber-600: #d97706;
+  --amber-100: #fef3c7;
+  --red-600:   #dc2626;
+  --red-100:   #fee2e2;
+  --blue-600:  #2563eb;
+  --blue-100:  #dbeafe;
+  --violet-600:#7c3aed;
+  --violet-100:#ede9fe;
+  --slate-500: #6b7280;
+  --slate-100: #f3f4f6;
+  --success-600: #16a34a;
+  --success-100: #dcfce7;
+
+  /* Signature gradients for the dashboard's "vibe" cards */
+  --grad-plum:   linear-gradient(135deg, #1a5730 0%, #2f8a4c 100%);
+  --grad-sunset: linear-gradient(135deg, #2f8a4c 0%, #c9a84c 100%);
+  --grad-dark:   linear-gradient(135deg, #0a2414 0%, #1a5730 100%);
+  --grad-moss:   linear-gradient(135deg, #0e7c86 0%, #2f8a4c 100%);
+
+  --shadow-sm: 0 1px 4px rgba(10, 36, 20, 0.08);
+  --shadow-md: 0 4px 16px rgba(10, 36, 20, 0.14);
+  --shadow-lg: 0 20px 60px rgba(10, 36, 20, 0.24);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'DM Sans', sans-serif; }
+
+/* ---------------- Icons ---------------- */
+/* Every icon renders through icons.js as inline SVG; this just
+   ensures consistent sizing/alignment wherever [data-icon] appears. */
+.bc-icon { display: block; flex-shrink: 0; }
+[data-icon] { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+
+/* ---------------- Sidebar & brand ---------------- */
+/* Same gradient family as the hero KPI cards ("dark" variant), run
+   top-to-bottom to suit the sidebar's vertical shape. */
+.sidebar-grad {
+  background: linear-gradient(180deg, var(--forest-900) 0%, var(--forest-800) 55%, var(--forest-700) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-grad::before {
+  content: '';
+  position: absolute;
+  width: 220px; height: 220px;
+  right: -90px; top: -80px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+.sidebar-grad::after {
+  content: '';
+  position: absolute;
+  width: 180px; height: 180px;
+  left: -70px; bottom: -60px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.12);
+  pointer-events: none;
+}
+.sidebar-grad > * { position: relative; z-index: 1; }
+
+.sidebar-brand-lockup { height: 38px; width: auto; display: block; }
+
+.nav-section-label {
+  color: var(--forest-400);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 10px 14px 6px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #a3c8a3;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-link.active { background: rgba(255,255,255,0.14); color: #fff; }
+.nav-link .bc-icon { color: currentColor; opacity: 0.9; }
+.nav-icon { width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.sidebar-user-avatar {
+  width: 36px; height: 36px; border-radius: 999px;
+  background: var(--forest-500);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 600; font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.logout-btn {
+  color: #a3c8a3; background: transparent; border: none; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* ---------------- Stat cards ---------------- */
+.stat-card {
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-icon-badge {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--forest-100); color: var(--forest-700);
+  flex-shrink: 0;
+}
+
+/* Permission matrix yes/no indicators */
+.perm-yes {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--forest-100); color: var(--forest-600);
+}
+.perm-no {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--slate-100); color: var(--slate-500);
+  font-weight: 700; font-size: 0.9rem;
+}
+
+/* Gradient "hero" stat cards — the vivid plum/sunset cards up top */
+.stat-card-grad {
+  border-radius: 1.1rem;
+  padding: 1.25rem 1.5rem;
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card-grad:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.stat-card-grad.plum   { background: var(--grad-plum); }
+.stat-card-grad.sunset { background: var(--grad-sunset); }
+.stat-card-grad.dark   { background: var(--grad-dark); }
+.stat-card-grad.moss   { background: var(--grad-moss); }
+.stat-card-grad::after {
+  content: ''; position: absolute; width: 120px; height: 120px;
+  right: -30px; bottom: -40px; border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+}
+.stat-card-grad .stat-icon-badge {
+  background: rgba(255,255,255,0.18); color: #fff;
+}
+
+/* Quick-action colour tiles (User Panel / Cloud Storage style grid) */
+.tile-action {
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 14px; padding: 1.1rem; border-radius: 1rem; color: #fff;
+  text-decoration: none; min-height: 108px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.tile-action:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.tile-action .tile-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: rgba(255,255,255,0.22);
+  display: flex; align-items: center; justify-content: center;
+}
+.tile-action .tile-label { font-size: 0.82rem; font-weight: 600; line-height: 1.25; }
+.tile-plum    { background: var(--grad-plum); }
+.tile-sunset  { background: var(--grad-sunset); }
+.tile-dark    { background: var(--grad-dark); }
+.tile-outline { background: #fff; border: 1.5px solid var(--forest-100); color: var(--forest-700); }
+.tile-outline .tile-icon { background: var(--forest-50); color: var(--forest-600); }
+
+/* Donut / circular progress (Resolution Rate) */
+.donut-wrap { position: relative; width: 128px; height: 128px; margin: 0 auto; }
+.donut-wrap svg { transform: rotate(-90deg); }
+.donut-track { fill: none; stroke: var(--forest-50); stroke-width: 12; }
+.donut-fill  { fill: none; stroke: url(#donutGradient); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.donut-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.donut-center .donut-value { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--forest-800); line-height: 1; }
+.donut-center .donut-label { font-size: 0.65rem; color: var(--slate-500); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Small metric row (This Week / At a Glance widget) */
+.mini-metric-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+.mini-metric-row + .mini-metric-row { border-top: 1px solid var(--forest-50); }
+.mini-metric-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ---------------- Quick action buttons ---------------- */
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+  cursor: pointer;
+}
+.quick-action-btn:hover { transform: translateX(2px); }
+
+/* ---------------- Badges ---------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.badge-resolved     { background: var(--forest-100); color: var(--forest-600); }
+.badge-complied      { background: var(--forest-100); color: var(--forest-600); }
+.badge-ongoing       { background: var(--amber-100); color: var(--amber-600); }
+.badge-referred      { background: var(--amber-100); color: var(--amber-600); }
+.badge-pending       { background: var(--red-100); color: var(--red-600); }
+.badge-not-complied  { background: var(--red-100); color: var(--red-600); }
+.badge-closed        { background: var(--slate-100); color: var(--slate-500); }
+
+/* Priority / status chips (Incident Reports) */
+.priority-high   { background: var(--red-100); color: var(--red-600); }
+.priority-medium { background: var(--amber-100); color: var(--amber-600); }
+.priority-low    { background: var(--blue-100); color: var(--blue-600); }
+.status-investigating { background: var(--violet-100); color: var(--violet-600); }
+.status-resolved       { background: var(--forest-100); color: var(--forest-600); }
+.status-closed         { background: var(--slate-100); color: var(--slate-500); }
+.status-referred       { background: var(--amber-100); color: var(--amber-600); }
+
+/* ---------------- Tables ---------------- */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.data-table thead th {
+  background: var(--forest-50);
+  color: var(--forest-600);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--forest-100);
+  white-space: nowrap;
+}
+.data-table thead th:first-child { border-top-left-radius: 0; }
+.data-table tbody tr {
+  border-bottom: 1px solid var(--forest-50);
+  transition: background 0.12s;
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--forest-50); }
+.data-table tbody td { padding: 11px 14px; color: #374151; vertical-align: middle; }
+.data-table tbody td[colspan] { color: var(--slate-500); text-align: center; padding: 32px 14px; font-size: 0.85rem; }
+.data-table tbody td.text-center { text-align: center; }
+.data-table tbody td.perm-cell { text-align: center; padding: 11px 14px; }
+
+/* Row action icon buttons (view / edit / delete) */
+.row-actions { display: flex; gap: 4px; }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: none; cursor: pointer; transition: background 0.15s, color 0.15s;
+  background: var(--forest-50); color: var(--forest-600);
+}
+.icon-btn:hover { background: var(--forest-100); }
+.icon-btn.edit  { background: var(--amber-100); color: var(--amber-600); }
+.icon-btn.edit:hover { background: #fde68a; }
+.icon-btn.danger { background: var(--red-100); color: var(--red-600); }
+.icon-btn.danger:hover { background: #fecaca; }
+
+/* ---------------- Modal ---------------- */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(9, 41, 9, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: #fff;
+  border-radius: 1.25rem;
+  padding: 2rem;
+  width: 640px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-lg);
+}
+.modal-overlay.open .modal-box { transform: translateY(0); }
+.modal-close-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  border: none; background: transparent; color: #9ca3af; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.modal-close-btn:hover { background: var(--forest-50); color: var(--forest-700); }
+
+/* ---------------- Custom alert/confirm dialog (replaces native alert()/confirm()) ---------------- */
+.bc-dialog-box {
+  background: #fff;
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  width: 400px;
+  max-width: 90vw;
+  transform: translateY(20px);
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-lg);
+}
+.modal-overlay.open .bc-dialog-box { transform: translateY(0); }
+.bc-dialog-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; }
+.bc-dialog-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+  background: var(--forest-100); color: var(--forest-700);
+}
+.bc-dialog-icon.danger { background: var(--red-100); color: var(--red-600); }
+.bc-dialog-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: #111827; margin: 0; }
+.bc-dialog-message { font-size: 0.875rem; color: #4b5563; line-height: 1.5; margin: 0 0 1.4rem 0; white-space: pre-line; }
+.bc-dialog-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+
+/* ---------------- Forms ---------------- */
+.form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.form-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--forest-100);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: var(--forest-50);
+  transition: border-color 0.15s, background 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.form-input:focus { outline: none; border-color: var(--forest-500); background: #fff; }
+.form-input:focus-visible { outline: 2px solid var(--forest-400); outline-offset: 1px; }
+select.form-input { cursor: pointer; }
+
+/* ---------------- Buttons ---------------- */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--forest-600);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-primary:hover { background: var(--forest-700); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--forest-50);
+  color: var(--forest-600);
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1.5px solid var(--forest-100);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--forest-100); }
+.btn-danger {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--red-100);
+  color: var(--red-600);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger:hover { background: #fecaca; }
+.btn-edit {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--amber-100);
+  color: var(--amber-600);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-edit:hover { background: #fde68a; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--forest-400); outline-offset: 2px;
+}
+
+/* ---------------- Page header ---------------- */
+.page-header {
+  position: sticky; top: 0; z-index: 20;
+  background: white;
+  border-bottom: 1px solid var(--forest-100);
+  padding: 1rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------------- Toast ---------------- */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--forest-700);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 999;
+  max-width: 420px;
+}
+.toast .bc-icon { flex-shrink: 0; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { background: var(--red-600); }
+
+/* ---------------- Pagination ---------------- */
+.pagination-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--forest-100);
+  background: white;
+  color: var(--forest-600);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pagination-btn:hover, .pagination-btn.active { background: var(--forest-600); color: white; }
+.pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-btn.pagination-ellipsis {
+  border: none; background: transparent; opacity: 1; cursor: default;
+  color: var(--forest-300); padding: 6px 2px;
+}
+.pagination-btn.pagination-ellipsis:hover { background: transparent; color: var(--forest-300); }
+
+/* ---------------- Filter bar ---------------- */
+.filter-bar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  padding: 16px 20px;
+  background: #fdf6e3;
+  border-bottom: 1px solid var(--forest-100);
+}
+.filter-input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--forest-100);
+  border-radius: 9px;
+  font-size: 0.82rem;
+  background: white;
+  color: #374151;
+  font-family: 'DM Sans', sans-serif;
+}
+.filter-input:focus { outline: none; border-color: var(--forest-500); }
+
+/* ---------------- Toggle switches (Settings) ---------------- */
+.settings-section {
+  background: #fff; border-radius: 1rem;
+  border: 1.5px solid var(--forest-100); padding: 1.5rem;
+}
+.settings-section h3 {
+  font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--forest-800);
+  margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--forest-50);
+  display: flex; align-items: center; gap: 8px;
+}
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--forest-50); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.toggle-desc { font-size: 0.75rem; color: #9ca3af; margin-top: 1px; }
+.toggle-switch { width: 44px; height: 24px; border-radius: 99px; border: none; cursor: pointer; transition: background 0.2s; position: relative; flex-shrink: 0; }
+.toggle-switch.on  { background: var(--forest-600); }
+.toggle-switch.off { background: #d1d5db; }
+.toggle-switch::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: left 0.2s; }
+.toggle-switch.on::after { left: 23px; }
+.settings-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: 10px; font-size: 0.875rem; font-weight: 500;
+  cursor: pointer; border: none; background: transparent; color: #4b5563; transition: all 0.15s;
+}
+.settings-tab.active { background: var(--forest-600); color: white; }
+
+/* ---------------- Risk / mini bars (Predictions, Heatmap) ---------------- */
+.risk-bar { height: 8px; border-radius: 999px; background: var(--forest-50); overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+.mini-bar-wrap { height: 6px; border-radius: 999px; background: var(--forest-50); overflow: hidden; margin-bottom: 8px; }
+.mini-bar { height: 100%; background: var(--forest-500); border-radius: 999px; transition: width 0.4s; }
+
+/* ---------------- Model cards (Predictions) ---------------- */
+.model-card {
+  display: block; width: 100%;
+  background: white; border: 1.5px solid var(--forest-100); border-radius: 1rem;
+  padding: 1rem 1.1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.model-card:hover { border-color: var(--forest-300); }
+.model-card.active { border-color: var(--forest-500); box-shadow: var(--shadow-sm); }
+
+/* ---------------- Login page ---------------- */
+.role-btn {
+  padding: 8px 16px; border-radius: 10px; border: 1.5px solid var(--forest-100);
+  background: white; color: var(--forest-600); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.role-btn:hover { border-color: var(--forest-300); }
+.role-btn.active { background: var(--forest-700); border-color: var(--forest-700); color: white; }
+.demo-accounts { text-align: center; }
+.demo-label { font-size: 0.75rem; color: #9ca3af; margin-bottom: 8px; }
+.demo-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.demo-pill {
+  font-size: 0.75rem; font-weight: 600; color: var(--forest-600);
+  background: var(--forest-50); border: 1px solid var(--forest-100);
+  padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: background 0.15s;
+}
+.demo-pill:hover { background: var(--forest-100); }
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.animate-in { animation: fadeUp 0.5s ease both; }
+.animate-in.delay-2 { animation-delay: 0.1s; }
+.animate-in.delay-3 { animation-delay: 0.2s; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.alert-error {
+  display: none; align-items: center; gap: 8px;
+  background: var(--red-100); color: var(--red-600);
+  padding: 10px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 500;
+}
+.alert-error.show { display: flex; }
+
+/* ---------------- Certificates (Clearance, Indigency) ----------------
+   The letterhead (seals, watermark, green bars, footer) is the client's
+   actual official document image (assets/*-letterhead.jpg). Dynamic
+   text is positioned on top with percentage coordinates so it lines up
+   with the blank areas of that image at any render size, on screen and
+   in print. Coordinates were measured directly from the source image
+   (1795x2539px, ratio 0.707) — do not change .cert-sheet's aspect-ratio
+   without re-measuring, or the overlay will drift off the letterhead. */
+@media print {
+  body * { visibility: hidden; }
+  #certPrint, #certPrint * { visibility: visible; }
+  #certPrint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .cert-sheet { box-shadow: none !important; }
+}
+.cert-sheet {
+  position: relative; width: 680px; aspect-ratio: 1795 / 2539;
+  background: white; box-shadow: var(--shadow-md);
+}
+.cert-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cert-ov {
+  position: absolute; font-family: 'Georgia', serif; color: #1a1a1a;
+  left: 8%; right: 8%; width: 84%;
+}
+.cert-ov-or {
+  top: 20%; left: 6%; right: 6%; width: 88%;
+  font-size: 0.6rem; color: #555; text-align: right;
+}
+.cert-ov-title {
+  top: 22.8%; font-size: 1.55rem; font-weight: 700; color: #111;
+  text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 6px;
+}
+.cert-ov-title-non{
+  top: 19.8%; font-size: 1.55rem; font-weight: 700; color: #111;
+  text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 6px;
+}
+.cert-ov-body {
+  top: 28.2%; font-size: 0.8rem; line-height: 1.85; text-align: justify;
+}
+.cert-ov-body p { text-indent: 2.4em; margin-bottom: 0.85em; }
+.cert-ov-body p.no-indent { text-indent: 0; }
+.cert-name { font-weight: 700; text-decoration: underline; text-transform: uppercase; }
+.cert-blank { border-bottom: 1px solid #333; display: inline-block; min-width: 100px; text-align: center; font-weight: 600; }
+.cert-ov-voter {
+  top: 70.3%; left: 54%; right: 5%; width: 41%;
+  font-size: 0.95rem; font-weight: 700; color: #1e5c1e; text-align: left;
+}
+.cert-ov-sigimg {
+  top: 82.3%; left: 53%; width: 38%; height: 4.2%;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.cert-ov-sigimg img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cert-ov-sigblock {
+  top: 86.8%; left: 50%; right: 5%; width: 45%; text-align: center;
+}
+.cert-ov-chairman-name {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #111;
+  border-bottom: 1.5px solid #222; padding-bottom: 2px;
+  line-height: 1.3;
+}
+.cert-ov-chairman-title {
+  font-size: 0.65rem; color: #444; margin-top: 2px; letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+
+/* Applicant's "Signature over Printed Name" — mirrors the Chairman's
+   sigblock (same row, same top offset) but sits on the LEFT so the two
+   signature blocks flank each other, the same pairing Non-Residency
+   already uses (its own applicant-name line sits above the Chairman's
+   signature). Residency/Clearance/Indigency's letterheads don't have a
+   pre-printed line here, so both the underline (via border-bottom on the
+   name itself, same technique as .cert-ov-chairman-name) and the label
+   are rendered live. */
+.cert-ov-applicant-sigblock {
+  top: 86.8%; left: 8%; right: auto; width: 40%; text-align: center;
+}
+.cert-ov-applicant-name {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #111;
+  border-bottom: 1.5px solid #222; padding-bottom: 2px; min-height: 1.1em;
+  line-height: 1.3;
+}
+.cert-ov-applicant-title {
+  font-size: 0.65rem; color: #444; margin-top: 2px; letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+
+/* Certificate of Non-Residency's body text sits in a narrower column to
+   the RIGHT of the green photo/council panel — not centered full-width
+   like Clearance/Residency/Indigency — measured directly from the panel's
+   right edge (~38%), so the text column runs from ~39% to ~95% (its own
+   left/right/width, overriding the shared .cert-ov's 8%/8%/84%). */
+.cert-ov-nr-body {
+  top: 28%; left: 39%; right: 5%; width: 56%;
+  font-size: 0.82rem; line-height: 1.55; text-align: justify;
+}
+.cert-ov-nr-body p { text-indent: 2em; margin-bottom: 0.6em; }
+.cert-ov-nr-body p.no-indent { text-indent: 0; }
+
+/* Small, unobtrusive control-number line — the reference certificate the
+   client actually issues doesn't show O.R./Amount at all in this spot,
+   so this is deliberately minimal (control number only) and tucked above
+   the title rather than styled as a prominent form field. */
+.cert-ov-nr-ctrl {
+  top: 19.3%; left: 8%; right: 8%; width: 84%;
+  font-size: 0.6rem; color: #888; text-align: right;
+}
+.cert-ov-nr-ctrl-non {
+  top: 18%; left: 8%; right: 8%; width: 84%;
+  font-size: 0.6rem; color: #888; text-align: right;
+}
+
+/* "( ) VOTER  ( ) NON-VOTER" is baked into the letterhead image itself
+   (unlike Clearance, which has no such text on its background). Rather
+   than only overlaying a checkmark into the static parentheses, this
+   covers the baked-in text with a solid patch matching the paper color
+   (sampled directly from assets/non-residency-letterhead.jpg just above/
+   below the line, ~rgb(235,239,235)) and re-renders the whole "( ) VOTER
+   ( ) NON-VOTER" line as live text on top — the same approach Clearance
+   uses on a blank part of its own letterhead. Box measured directly from
+   the image via pixel analysis of where the baked text actually sits
+   (~43.9%-75.3% horizontally, ~68.5%-71.4% vertically) — an earlier pass
+   mistook the green council panel's own right border line (~37.6%-37.9%)
+   for the start of the text and set the mask too far left, which made it
+   cover part of that panel; left is now well clear of it. Right edge
+   stays short of the "RIGHT THUMBMARK" box border at ~78.9%. nowrap
+   keeps the re-rendered line from breaking onto two lines in the box. */
+.cert-ov-nr-voter-mask {
+  position: absolute; top: 68.3%; left: 42.5%; width: 34%; height: 3.8%;
+  background: rgb(235, 239, 235);
+}
+.cert-ov-nr-voter {
+  top: 69.1%; left: 42.5%; right: auto; width: 34%;
+  font-size: 0.72rem; font-weight: 700; color: #1e5c1e; text-align: center;
+  white-space: nowrap;
+}
+
+/* "SIGNATURE OVER PRINTED NAME" — like the voter checkboxes above, this
+   was left blank/static on the letterhead. The applicant's own printed
+   name goes here (they sign by hand above it once the certificate is
+   printed) — measured directly from the letterhead's underline position
+   (~75.5%, spanning ~37.6%-78.9%), sitting just above that line rather
+   than on the italic label below it. */
+.cert-ov-nr-applicant-name {
+  top: 73.9%; left: 37.6%; width: 41.3%;
+  font-size: 0.72rem; font-weight: 600; text-align: center; color: #1a1a1a;
+}
+
+/* Signature sits in the standard bottom-right position shared by
+   Clearance/Residency/Indigency, NOT the reference certificate's much
+   higher position — the reference was cramped because its body text is
+   small and dense; enlarging the body text here needs the room this
+   lower position gives it. */
+.cert-ov-nr-sigimg {
+  top: 82.3%; left: 53%; width: 38%; height: 4.2%;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.cert-ov-nr-sigimg img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cert-ov-nr-sigblock {
+  top: 86.8%; left: 50%; right: 5%; width: 45%; text-align: center;
+}
+/* ---------------- Custom checkboxes ---------------- */
+/* Replaces the native OS checkbox with a themed box + checkmark so it
+   matches the rest of the form controls; see custom-controls.js for the
+   matching treatment on <select> and date/time fields. */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  border: 1.5px solid var(--forest-200);
+  border-radius: 6px;
+  background: #fff;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+}
+input[type="checkbox"]:hover { border-color: var(--forest-400); }
+input[type="checkbox"]:active { transform: scale(0.88); }
+input[type="checkbox"]:checked {
+  background: var(--forest-600);
+  border-color: var(--forest-600);
+  animation: bc-check-pop 0.16s ease;
+}
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type="checkbox"]:disabled { opacity: 0.55; cursor: not-allowed; }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--forest-400); outline-offset: 2px; }
+@keyframes bc-check-pop {
+  0% { transform: scale(0.75); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ---------------- Custom select dropdown ---------------- */
+/* The native <select> stays in the DOM (hidden) as the source of truth —
+   value, name, required, onchange, and any script that reads/sets
+   .value all keep working exactly as before. A themed trigger button +
+   floating option list sit on top of it. See custom-controls.js. */
+.bc-select-wrap { position: relative; }
+.bc-select-native { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.bc-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  font: inherit;
+  color: #111827;
+}
+.bc-select-trigger .bc-select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-select-value.bc-select-placeholder { color: #9ca3af; }
+.bc-select-chevron { flex-shrink: 0; color: var(--forest-500); transition: transform 0.15s ease; }
+.bc-select-trigger-open .bc-select-chevron { transform: rotate(180deg); }
+.bc-select-trigger-open { border-color: var(--forest-500) !important; background: #fff !important; }
+.bc-select-trigger.bc-select-disabled { opacity: 0.6; cursor: not-allowed; }
+
+.bc-select-panel, .bc-datepicker-panel, .bc-timepicker-panel {
+  position: absolute;
+  z-index: 1000;
+  background: #fff;
+  border: 1.5px solid var(--forest-100);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.98);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  font-family: 'DM Sans', sans-serif;
+}
+.bc-select-panel.open, .bc-datepicker-panel.open, .bc-timepicker-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.bc-select-panel { max-height: 260px; overflow-y: auto; }
+.bc-select-option {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.bc-select-option:hover { background: var(--forest-50); }
+.bc-select-option-active { background: var(--forest-100); color: var(--forest-700); font-weight: 600; }
+.bc-select-option-disabled { color: #9ca3af; cursor: default; }
+.bc-select-option-disabled:hover { background: transparent; }
+
+/* ---------------- Custom date & time pickers ---------------- */
+.bc-field-wrap { position: relative; }
+.bc-field-wrap input.bc-date-enhanced,
+.bc-field-wrap input.bc-time-enhanced { padding-right: 34px; cursor: pointer; }
+input.bc-date-enhanced::-webkit-calendar-picker-indicator,
+input.bc-time-enhanced::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
+.bc-field-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--forest-500);
+  pointer-events: none;
+  display: flex;
+}
+
+.bc-datepicker-panel { width: 262px; }
+.bc-dp-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 8px; }
+.bc-dp-label { font-family: 'DM Serif Display', serif; font-size: 0.92rem; color: #111827; }
+.bc-dp-label-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 7px;
+  transition: background 0.1s ease;
+}
+.bc-dp-label-btn:hover { background: var(--forest-50); }
+.bc-dp-nav {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  border: none;
+  background: var(--forest-50);
+  color: var(--forest-700);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+.bc-dp-nav:hover { background: var(--forest-100); }
+.bc-dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.bc-dp-weekday {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--forest-400);
+  text-align: center;
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bc-dp-day {
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.bc-dp-day:hover:not(:disabled) { background: var(--forest-50); }
+.bc-dp-day-today { font-weight: 700; color: var(--forest-600); box-shadow: inset 0 0 0 1.5px var(--forest-300); }
+.bc-dp-day-selected { background: var(--forest-600) !important; color: #fff !important; font-weight: 600; box-shadow: none; }
+.bc-dp-day-disabled { color: #d1d5db; cursor: not-allowed; }
+.bc-dp-year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 2px 0 4px; }
+.bc-dp-year-item {
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.bc-dp-year-item:hover:not(:disabled) { background: var(--forest-50); }
+.bc-dp-year-item-current { font-weight: 700; color: var(--forest-600); box-shadow: inset 0 0 0 1.5px var(--forest-300); }
+.bc-dp-year-item-selected { background: var(--forest-600) !important; color: #fff !important; font-weight: 600; box-shadow: none; }
+.bc-dp-year-item-disabled { color: #d1d5db; cursor: not-allowed; }
+.bc-dp-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 4px 2px;
+  border-top: 1px solid var(--forest-50);
+  margin-top: 6px;
+}
+.bc-dp-today-btn, .bc-dp-clear-btn {
+  border: none;
+  background: var(--forest-50);
+  color: var(--forest-700);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.bc-dp-today-btn:hover, .bc-dp-clear-btn:hover { background: var(--forest-100); }
+
+.bc-timepicker-panel { width: 168px; }
+.bc-tp-cols { display: flex; gap: 4px; max-height: 200px; }
+.bc-tp-col { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
+.bc-tp-item {
+  border: none;
+  background: transparent;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.bc-tp-item:hover { background: var(--forest-50); }
+.bc-tp-item-active { background: var(--forest-600); color: #fff; font-weight: 600; }
+
+/* ---------------- Scrollbar ---------------- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--forest-50); }
+::-webkit-scrollbar-thumb { background: var(--forest-200); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--forest-400); }
+
+/* ---------------- Reduced motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
