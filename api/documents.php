@@ -97,7 +97,12 @@ function nextOrNo($mysqli): string {
     }
 }
 
-
+function logAudit($mysqli, string $action, string $module, string $details): void {
+    $user = $_SESSION['username'] ?? 'system';
+    $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+    $stmt->bind_param('ssss', $user, $action, $module, $details);
+    $stmt->execute();
+}
 
 // ---------------- O.R. NUMBER PEEK (used by Clearance/Residency/Non-Residency forms) ----------------
 // Preview-only look-ahead at the next O.R. No., same pattern as the

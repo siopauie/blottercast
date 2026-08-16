@@ -63,7 +63,12 @@ function splitCaseTitle(string $title): array {
     return [trim($title), ''];
 }
 
-
+function logAudit($mysqli, string $action, string $module, string $details): void {
+    $user = $_SESSION['username'] ?? 'system';
+    $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+    $stmt->bind_param('ssss', $user, $action, $module, $details);
+    $stmt->execute();
+}
 
 try {
     if ($ext === 'xlsx') {
