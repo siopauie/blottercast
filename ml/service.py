@@ -33,10 +33,26 @@ from flask_cors import CORS
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
-DB_HOST = os.environ.get('BC_DB_HOST', '127.0.0.1')
-DB_USER = os.environ.get('BC_DB_USER', 'blottercast')
-DB_PASS = os.environ.get('BC_DB_PASS', 'blottercast')
-DB_NAME = os.environ.get('BC_DB_NAME', 'blottercast')
+from urllib.parse import urlparse
+
+def get_db_config():
+    db_url = os.environ.get('DATABASE_URL') or os.environ.get('MYSQL_URL') or os.environ.get('POSTGRES_URL') or ''
+    if db_url:
+        p = urlparse(db_url)
+        return {
+            'host': p.hostname or '127.0.0.1',
+            'user': p.username or 'blottercast',
+            'password': p.password or 'blottercast',
+            'database': (p.path or '/blottercast').lstrip('/'),
+            'port': p.port or 3306
+        }
+    return {
+        'host': os.environ.get('MYSQL_HOST') or os.environ.get('DB_HOST') or os.environ.get('BC_DB_HOST', '127.0.0.1'),
+        'user': os.environ.get('MYSQL_USER') or os.environ.get('DB_USER') or os.environ.get('BC_DB_USER', 'blottercast'),
+        'password': os.environ.get('MYSQL_PASSWORD') or os.environ.get('DB_PASS') or os.environ.get('BC_DB_PASS', 'blottercast'),
+        'database': os.environ.get('MYSQL_DATABASE') or os.environ.get('DB_NAME') or os.environ.get('BC_DB_NAME', 'blottercast'),
+        'port': int(os.environ.get('MYSQL_PORT') or os.environ.get('DB_PORT') or os.environ.get('BC_DB_PORT', 3306))
+    }
 
 ZONES = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7', 'Zone 8']
 CATEGORIES = ['Physical Assault', 'Theft', 'Domestic Dispute', 'Vandalism',
@@ -47,8 +63,20 @@ CORS(app, supports_credentials=True)
 
 
 def get_conn():
-    return pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME,
-                            cursorclass=pymysql.cursors.DictCursor, autocommit=True)
+    cfg = get_db_config()
+    is_pg = (cfg['port'] in (5432, 6543)) or ('supabase' in cfg['host']) or ('postgres' in cfg['host'])
+    if is_pg:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        conn = psycopg2.connect(
+            host=cfg['host'], port=cfg['port'], user=cfg['user'],
+            password=cfg['password'], dbname=cfg['database'],
+            cursor_factory=RealDictCursor, sslmode='require'
+        )
+        conn.autocommit = True
+        return conn
+    return pymysql.connect(host=cfg['host'], user=cfg['user'], password=cfg['password'], database=cfg['database'],
+                            port=cfg['port'], cursorclass=pymysql.cursors.DictCursor, autocommit=True)
 
 
 def load_incidents() -> pd.DataFrame:

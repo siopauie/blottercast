@@ -12,8 +12,8 @@
       theme: {
         extend: {
           colors: {
-            forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
-            sage:   { 50:'#fdf6e3',100:'#f5e6b8',200:'#ecd37a',300:'#ddb94a',400:'#c9a84c',500:'#b8933a',600:'#9c7a2e',700:'#7d6124',800:'#5c481a',900:'#3d3010' },
+            forest: { 50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909' },
+            sage:   { 50:'#f4f9f4',100:'#e2f0e2',200:'#c4e0c4',300:'#94c894',400:'#5aa85a',500:'#3d8b3d',600:'#2e6b2e',700:'#214f21',800:'#173517',900:'#0d200d' },
           },
           fontFamily: {
             display: ['DM Serif Display','serif'],
@@ -27,11 +27,15 @@
 <body class="font-body bg-forest-50 min-h-screen">
 
   <!-- Sidebar -->
-  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -115,7 +119,7 @@
       </div>
       <div class="flex items-center gap-4">
         <div class="relative">
-          <input type="text" placeholder="Search records…" class="pl-9 pr-4 py-2 rounded-full border border-forest-200 bg-forest-50 text-sm text-forest-700 placeholder-forest-400 focus:outline-none focus:ring-2 focus:ring-forest-400 w-56"/>
+          <input type="text" placeholder="Search records…" class="pl-9 pr-4 py-2 rounded-xl border border-forest-200 bg-forest-50 text-sm text-forest-700 placeholder-forest-400 focus:outline-none focus:ring-2 focus:ring-forest-400 w-56"/>
           <span class="absolute left-3 top-2.5 text-forest-400" data-icon="search" data-icon-size="16"></span>
         </div>
         <div class="relative">
@@ -140,41 +144,41 @@
 
       <!-- Stat Cards -->
       <div class="grid grid-cols-4 gap-5">
-        <div class="stat-card-grad plum">
+        <div class="stat-card bg-white border border-forest-100">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-white/80 text-sm font-medium">Total Blotters</span>
-            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="blotter" data-icon-size="18"></div>
+            <span class="text-forest-500 text-sm font-medium">Total Blotters</span>
+            <div class="w-9 h-9 rounded-xl bg-forest-100 flex items-center justify-center text-forest-600" data-icon="blotter" data-icon-size="18"></div>
           </div>
-          <div class="font-display text-3xl" id="statBlotters">—</div>
-          <div class="text-xs text-white/70 mt-1" id="statBlottersSub"></div>
+          <div class="font-display text-3xl text-forest-800" id="statBlotters">—</div>
+          <div class="text-xs text-forest-400 mt-1" id="statBlottersSub"></div>
         </div>
-        <div class="stat-card-grad moss">
+        <div class="stat-card bg-white border border-forest-100">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-white/80 text-sm font-medium">Incident Reports</span>
-            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="incident" data-icon-size="18"></div>
+            <span class="text-forest-500 text-sm font-medium">Incident Reports</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600" data-icon="incident" data-icon-size="18"></div>
           </div>
-          <div class="font-display text-3xl" id="statIncidents">—</div>
-          <div class="text-xs text-white/70 mt-1" id="statIncidentsSub"></div>
+          <div class="font-display text-3xl text-forest-800" id="statIncidents">—</div>
+          <div class="text-xs text-forest-400 mt-1" id="statIncidentsSub"></div>
         </div>
-        <div class="stat-card-grad sunset">
+        <div class="stat-card bg-white border border-forest-100">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-white/80 text-sm font-medium">Pending Settlement</span>
-            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
+            <span class="text-forest-500 text-sm font-medium">Pending Settlement</span>
+            <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500" data-icon="clock" data-icon-size="18"></div>
           </div>
-          <div class="font-display text-3xl" id="statPending">—</div>
-          <div class="text-xs text-white/70 mt-1">awaiting settlement</div>
+          <div class="font-display text-3xl text-forest-800" id="statPending">—</div>
+          <div class="text-xs text-orange-400 mt-1">awaiting settlement</div>
         </div>
-        <div class="stat-card-grad dark">
+        <div class="stat-card bg-forest-700 border border-forest-600 text-white">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-white/70 text-sm font-medium">Resolved Cases</span>
-            <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
+            <span class="text-forest-200 text-sm font-medium">Resolved Cases</span>
+            <div class="w-9 h-9 rounded-xl bg-forest-600 flex items-center justify-center text-white" data-icon="check" data-icon-size="18"></div>
           </div>
           <div class="font-display text-3xl text-white" id="statResolved">—</div>
-          <div class="text-xs text-white/60 mt-1" id="statResolvedSub"></div>
+          <div class="text-xs text-forest-300 mt-1" id="statResolvedSub"></div>
         </div>
       </div>
 
-      <!-- Recent + Side widgets -->
+      <!-- Recent + Quick Actions -->
       <div class="grid grid-cols-3 gap-6">
 
         <!-- Recent Blotter -->
@@ -183,101 +187,45 @@
             <h2 class="font-display text-lg text-forest-800">Recent Blotter Entries</h2>
             <a href="blotter.html" class="text-forest-600 text-sm hover:text-forest-800 font-medium transition-colors">View All →</a>
           </div>
-          <table class="data-table">
-            <thead>
+          <table class="w-full text-sm">
+            <thead class="bg-forest-50">
               <tr>
-                <th>Docket No.</th>
-                <th>Complainant</th>
-                <th>Nature</th>
-                <th>Status</th>
+                <th class="text-left px-5 py-3 text-forest-600 font-semibold text-xs uppercase tracking-wide">Docket No.</th>
+                <th class="text-left px-5 py-3 text-forest-600 font-semibold text-xs uppercase tracking-wide">Complainant</th>
+                <th class="text-left px-5 py-3 text-forest-600 font-semibold text-xs uppercase tracking-wide">Nature</th>
+                <th class="text-left px-5 py-3 text-forest-600 font-semibold text-xs uppercase tracking-wide">Status</th>
               </tr>
             </thead>
-            <tbody id="dashboardBlotterTable"></tbody>
+            <tbody id="dashboardBlotterTable" class="divide-y divide-forest-50"></tbody>
           </table>
         </div>
 
-        <!-- Resolution Rate donut + This Week -->
-        <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
-          <h2 class="font-display text-lg text-forest-800 mb-4">Resolution Rate</h2>
-          <div class="donut-wrap">
-            <svg viewBox="0 0 128 128" width="128" height="128">
-              <defs>
-                <linearGradient id="donutGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#1a5730"/>
-                  <stop offset="100%" stop-color="#4fa868"/>
-                </linearGradient>
-              </defs>
-              <circle class="donut-track" cx="64" cy="64" r="52"/>
-              <circle id="resolutionDonut" class="donut-fill" cx="64" cy="64" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
-            </svg>
-            <div class="donut-center">
-              <div class="donut-value" id="statResolutionPct">—</div>
-              <div class="donut-label">resolved</div>
-            </div>
-          </div>
-          <div class="mt-5 pt-1">
-            <div class="mini-metric-row">
-              <div class="flex items-center gap-3">
-                <div class="mini-metric-icon bg-sage-100 text-sage-600" data-icon="incident" data-icon-size="16"></div>
-                <span class="text-sm text-forest-600">New this week</span>
-              </div>
-              <span class="font-display text-lg text-forest-800" id="statWeekCount">—</span>
-            </div>
-            <div class="mini-metric-row">
-              <div class="flex items-center gap-3">
-                <div class="mini-metric-icon bg-forest-100 text-forest-600" data-icon="clock" data-icon-size="16"></div>
-                <span class="text-sm text-forest-600">Awaiting settlement</span>
-              </div>
-              <span class="font-display text-lg text-forest-800" id="statPendingMini">—</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Actions tile grid + Risk Forecast -->
-      <div class="grid grid-cols-3 gap-6">
-        <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6 space-y-3">
           <h2 class="font-display text-lg text-forest-800 mb-4">Quick Actions</h2>
-          <div class="grid grid-cols-3 gap-4">
-            <a href="blotter.html" class="tile-action tile-plum">
-              <div class="tile-icon" data-icon="blotter" data-icon-size="18"></div>
-              <div class="tile-label">New Blotter<br/>Entry</div>
-            </a>
-            <a href="incident.html" class="tile-action tile-dark">
-              <div class="tile-icon" data-icon="incident" data-icon-size="18"></div>
-              <div class="tile-label">New Incident<br/>Report</div>
-            </a>
-            <a href="settlement.html" class="tile-action tile-sunset">
-              <div class="tile-icon" data-icon="settlement" data-icon-size="18"></div>
-              <div class="tile-label">Monitor<br/>Settlement</div>
-            </a>
-            <a href="reports.html" class="tile-action tile-outline">
-              <div class="tile-icon" data-icon="reports" data-icon-size="18"></div>
-              <div class="tile-label">Generate<br/>Report</div>
-            </a>
-            <a href="census.html" class="tile-action tile-outline">
-              <div class="tile-icon" data-icon="folder" data-icon-size="18"></div>
-              <div class="tile-label">Import<br/>Census CSV</div>
-            </a>
-            <a href="users.html" class="tile-action tile-outline">
-              <div class="tile-icon" data-icon="users" data-icon-size="18"></div>
-              <div class="tile-label">Users &amp;<br/>Roles</div>
+          <a href="blotter.html" class="quick-action-btn bg-forest-600 hover:bg-forest-700 text-white">
+            <span data-icon="blotter" data-icon-size="18"></span> New Blotter Entry
+          </a>
+          <a href="incident.html" class="quick-action-btn bg-white hover:bg-forest-50 text-forest-700 border border-forest-200">
+            <span data-icon="incident" data-icon-size="18"></span> New Incident Report
+          </a>
+          <a href="settlement.html" class="quick-action-btn bg-white hover:bg-forest-50 text-forest-700 border border-forest-200">
+            <span data-icon="settlement" data-icon-size="18"></span> Monitor Settlement
+          </a>
+          <a href="reports.html" class="quick-action-btn bg-white hover:bg-forest-50 text-forest-700 border border-forest-200">
+            <span data-icon="reports" data-icon-size="18"></span> Generate Report
+          </a>
+          <a href="census.html" class="quick-action-btn bg-white hover:bg-forest-50 text-forest-700 border border-forest-200">
+            <span data-icon="folder" data-icon-size="18"></span> Import Census CSV
+          </a>
+          <div class="pt-3 border-t border-forest-100">
+            <div class="text-xs text-forest-400 font-medium uppercase tracking-wide mb-2">Risk Forecast</div>
+            <a href="predictions.html" class="block bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 hover:bg-amber-100 transition-colors">
+              <div class="text-amber-700 text-xs font-semibold flex items-center gap-1"><span data-icon="predictions" data-icon-size="14"></span> View Zone Risk Rankings</div>
+              <div class="text-amber-600 text-xs mt-1">See this week's model-predicted hotspots by zone →</div>
             </a>
           </div>
         </div>
-
-        <!-- Risk Forecast -->
-        <a href="predictions.html" class="stat-card-grad sunset flex flex-col justify-between p-6 hover:no-underline">
-          <div class="flex items-center justify-between">
-            <div class="stat-icon-badge w-11 h-11 rounded-xl" data-icon="predictions" data-icon-size="20"></div>
-            <span data-icon="play" data-icon-size="16" class="text-white/70"></span>
-          </div>
-          <div class="mt-4">
-            <div class="text-white/80 text-xs uppercase tracking-wide font-semibold mb-1">Risk Forecast</div>
-            <div class="font-display text-xl text-white leading-snug">View This Week's<br/>Zone Risk Rankings</div>
-            <div class="text-white/70 text-xs mt-2">Model-predicted hotspots by zone →</div>
-          </div>
-        </a>
       </div>
 
     </main>
@@ -312,31 +260,17 @@
         document.getElementById('statResolved').textContent = Math.round(stats.incidentCount * stats.resolutionRate / 100);
         document.getElementById('statResolvedSub').textContent = stats.resolutionRate + '% resolution rate';
 
-        // Resolution rate donut (circumference = 2 * PI * r, r=52 -> 326.7)
-        const circumference = 326.7;
-        const pct = Math.max(0, Math.min(100, stats.resolutionRate));
-        const donut = document.getElementById('resolutionDonut');
-        donut.style.strokeDasharray = circumference;
-        donut.style.strokeDashoffset = circumference - (pct / 100) * circumference;
-        document.getElementById('statResolutionPct').textContent = pct + '%';
-
-        document.getElementById('statWeekCount').textContent = stats.weekCount;
-        document.getElementById('statPendingMini').textContent = stats.pendingSettlements;
-
         // Recent blotter entries
         const tbody = document.getElementById('dashboardBlotterTable');
         tbody.innerHTML = '';
-        if (!stats.recentBlotter.length) {
-          tbody.innerHTML = '<tr><td colspan="4">No blotter entries yet.</td></tr>';
-        }
         stats.recentBlotter.forEach(r => {
           const statusClass = r.status === 'Resolved' ? 'badge-resolved' : r.status === 'Ongoing' ? 'badge-ongoing' : 'badge-pending';
           tbody.innerHTML += `
-            <tr>
-              <td class="font-semibold text-forest-700">${r.docket_no}</td>
-              <td>${r.complainant}</td>
-              <td>${r.nature}</td>
-              <td><span class="badge ${statusClass}">${r.status}</span></td>
+            <tr class="hover:bg-forest-50 transition-colors">
+              <td class="px-5 py-3 font-semibold text-forest-700">${r.docket_no}</td>
+              <td class="px-5 py-3 text-forest-600">${r.complainant}</td>
+              <td class="px-5 py-3 text-forest-600">${r.nature}</td>
+              <td class="px-5 py-3"><span class="badge ${statusClass}">${r.status}</span></td>
             </tr>`;
         });
       } catch (err) {

@@ -6,15 +6,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
-  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
 </head>
 <body class="font-body bg-forest-50 min-h-screen">
 
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -100,38 +104,26 @@
 
     <!-- Summary -->
     <div class="grid grid-cols-3 gap-4">
-      <div class="stat-card-grad plum">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/80 text-sm font-medium">Issued This Month</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="building" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl" id="rsMonthCount">0</div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Issued This Month</div>
+        <div class="font-display text-3xl text-forest-800" id="rsMonthCount">0</div>
       </div>
-      <div class="stat-card-grad sunset">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/80 text-sm font-medium">Total This Year</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="trends" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl" id="rsYearCount">0</div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Total This Year</div>
+        <div class="font-display text-3xl text-forest-800" id="rsYearCount">0</div>
       </div>
-      <div class="stat-card-grad dark">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/70 text-sm font-medium">Revenue (Fees)</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="database" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl text-white" id="rsRevenue">₱0</div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Revenue (Fees)</div>
+        <div class="font-display text-3xl text-forest-700" id="rsRevenue">₱0</div>
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-6">
       <!-- Issuance Log -->
       <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-          <div class="stat-icon-badge" data-icon="clearance" data-icon-size="17"></div>
+        <div class="px-5 py-4 border-b border-forest-50 flex items-center justify-between">
           <h2 class="font-display text-lg text-forest-800">Issuance Log</h2>
-        </div>
-        <div class="filter-bar">
-          <span class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="14"></span><input type="text" id="rsSearch" placeholder="Search…" class="filter-input text-sm pl-8 w-full" oninput="rsPage=1;renderResLog()"/></span>
+          <span class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="14"></span><input type="text" id="rsSearch" placeholder="Search…" class="filter-input text-sm pl-8" oninput="rsPage=1;renderResLog()"/></span>
         </div>
         <table class="data-table">
           <thead><tr>
@@ -355,7 +347,7 @@ function renderResLog(){
     ? '<tr><td colspan="6" class="text-center py-8 text-forest-400">No certificates issued yet.</td></tr>'
     : pageRows.map(r=>`
     <tr>
-      <td class="font-semibold text-forest-700">${r.ctrl}</td>
+      <td class="font-mono text-xs text-forest-600">${r.ctrl}</td>
       <td class="font-semibold text-sm">${r.name}</td>
       <td class="text-xs">${r.purpose}</td>
       <td class="text-xs text-forest-400">${r.date}</td>

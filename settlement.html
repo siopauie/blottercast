@@ -10,7 +10,7 @@
   <script>
     tailwind.config = {
       theme: { extend: { colors: {
-        forest: { 50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414' },
+        forest: { 50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909' },
       }, fontFamily: { display:['DM Serif Display','serif'], body:['DM Sans','sans-serif'] } } }
     }
   </script>
@@ -18,11 +18,15 @@
 <body class="font-body bg-forest-50 min-h-screen">
 
 <!-- Sidebar -->
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -115,44 +119,26 @@
 
   <!-- Summary Cards -->
   <div class="px-6 pt-6 grid grid-cols-4 gap-4">
-    <div class="stat-card-grad plum">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Total Cases</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="settlement" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="stlTotal">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Total Cases</div>
+      <div class="font-display text-3xl text-forest-800" id="stlTotal">0</div>
     </div>
-    <div class="stat-card-grad dark">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/70 text-sm font-medium">Complied</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl text-white" id="stlComplied">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Complied</div>
+      <div class="font-display text-3xl text-forest-700" id="stlComplied">0</div>
     </div>
-    <div class="stat-card-grad moss">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Not Complied</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="x" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="stlNotComplied">0</div>
+    <div class="bg-white rounded-xl border border-red-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-red-400 uppercase tracking-wide mb-1">Not Complied</div>
+      <div class="font-display text-3xl text-red-600" id="stlNotComplied">0</div>
     </div>
-    <div class="stat-card-grad sunset">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Pending</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="stlPending">0</div>
+    <div class="bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">Pending</div>
+      <div class="font-display text-3xl text-amber-600" id="stlPending">0</div>
     </div>
   </div>
 
   <main class="flex-1 p-6">
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-
-      <!-- Table Title -->
-      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-        <div class="stat-icon-badge" data-icon="settlement" data-icon-size="17"></div>
-        <h2 class="font-display text-lg text-forest-800">Settlement Records</h2>
-      </div>
 
       <!-- Filter Bar -->
       <div class="filter-bar">
@@ -180,8 +166,13 @@
               <th>Complaint Title</th>
               <th>Nature</th>
               <th>Date Filed</th>
+              <th>Date of Initial Confrontation</th>
               <th>Action Taken</th>
+              <th>Date of Settlement / Award</th>
+              <th>Date of Execution</th>
+              <th>Main Point of Agreement</th>
               <th>Status of Compliance</th>
+              <th>Remarks</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -412,7 +403,7 @@
 
     const tbody = document.getElementById('settlementTableBody');
     tbody.innerHTML = page.length === 0
-      ? `<tr><td colspan="8" class="text-center py-10 text-forest-400">No settlement records found.</td></tr>`
+      ? `<tr><td colspan="13" class="text-center py-10 text-forest-400">No settlement records found.</td></tr>`
       : page.map(r => `
         <tr>
           <td class="font-semibold text-forest-700">${r.caseNo}</td>
@@ -420,8 +411,13 @@
           <td class="text-sm">${r.complaintTitle||''}</td>
           <td><span class="badge ${r.nature==='Criminal'?'badge-ongoing':'badge-pending'}">${r.nature}</span></td>
           <td class="text-xs">${r.dateFiled||''}</td>
+          <td class="text-xs">${r.dateConfrontation||''}</td>
           <td class="text-xs font-medium text-forest-700">${r.actionTaken||''}</td>
+          <td class="text-xs">${r.dateSettlement || '—'}</td>
+          <td class="text-xs">${r.dateExecution || '—'}</td>
+          <td class="text-xs max-w-xs truncate" title="${r.mainPoint||''}">${r.mainPoint||''}</td>
           <td><span class="badge ${r.status==='Complied'?'badge-complied':r.status==='Not Complied'?'badge-not-complied':'badge-ongoing'}" style="white-space:nowrap">${r.status}</span></td>
+          <td class="text-xs text-forest-500 max-w-xs truncate" title="${r.remarks||''}">${r.remarks||'—'}</td>
           <td>
             <div class="row-actions">
               <button onclick="viewSettlement(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>

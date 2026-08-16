@@ -6,15 +6,15 @@
   <title>BlotterCast — Barangay Intelligence System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="icons.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --green-deep:  #0a2414;
-      --green-dark:  #123d22;
-      --green-mid:   #1a5730;
-      --green-main:  #2f8a4c;
-      --green-light: #4fa868;
-      --green-pale:  #b8e0c0;
+      --green-deep:  #0a2e0a;
+      --green-dark:  #122e12;
+      --green-mid:   #1a5c1a;
+      --green-main:  #2d8a2d;
+      --green-light: #4db84d;
+      --green-pale:  #b8e8b8;
       --cream:       #f5f0e8;
       --gold:        #c9a84c;
       --white:       #ffffff;
@@ -50,12 +50,12 @@
       transition: background 0.3s, backdrop-filter 0.3s;
     }
     nav.scrolled {
-      background: rgba(10,36,20,0.92);
+      background: rgba(10,46,10,0.92);
       backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(79,168,104,0.12);
+      border-bottom: 1px solid rgba(77,184,77,0.12);
     }
     .nav-logo {
-      display: flex; align-items: center; gap: 1px;
+      display: flex; align-items: center; gap: 12px;
       text-decoration: none;
     }
     .nav-logo-mark {
@@ -63,9 +63,9 @@
       background: linear-gradient(135deg, var(--green-main), var(--green-light));
       display: flex; align-items: center; justify-content: center;
       font-size: 1rem; font-weight: bold; color: white;
-      box-shadow: 0 0 20px rgba(47,138,76,0.4);
+      box-shadow: 0 0 20px rgba(45,138,45,0.4);
     }
-    .nav-brand { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: white; letter-spacing: -0.01em; }
+    .nav-brand { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: white; letter-spacing: -0.02em; }
     .nav-links { display: flex; gap: 2.5rem; list-style: none; }
     .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; letter-spacing: 0.02em; }
     .nav-links a:hover { color: var(--green-pale); }
@@ -74,12 +74,12 @@
       padding: 10px 22px; border-radius: 8px;
       text-decoration: none; font-size: 0.875rem; font-weight: 600;
       transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-      box-shadow: 0 0 0 0 rgba(47,138,76,0.4);
+      box-shadow: 0 0 0 0 rgba(45,138,45,0.4);
     }
     .nav-cta:hover {
       background: var(--green-light);
       transform: translateY(-1px);
-      box-shadow: 0 0 24px rgba(47,138,76,0.35);
+      box-shadow: 0 0 24px rgba(45,138,45,0.35);
     }
 
     /* ── HERO ── */
@@ -89,13 +89,8 @@
       padding: 0 4rem;
       position: relative; overflow: hidden;
       background:
-        linear-gradient(
-          160deg,
-          rgba(8, 30, 16, 0.86) 0%,
-          rgba(5, 18, 10, 0.92) 60%,
-          rgba(7, 25, 14, 0.86) 100%
-        ),
-        url('assets/barangay-hall.png');
+        linear-gradient(rgba(10,46,10,0.82), rgba(10,46,10,0.88)),
+        url('assets/barangay-hall.jpg');
       background-size: cover;
       background-position: center;
     }
@@ -107,11 +102,11 @@
     }
     .ring {
       position: absolute; border-radius: 50%;
-      border: 1px solid rgba(79,168,104,0.12);
+      border: 1px solid rgba(77,184,77,0.12);
       top: 50%; left: 50%; transform: translate(-50%,-50%);
       animation: pulse-ring 4s ease-in-out infinite;
     }
-    .ring:nth-child(1) { width: 200px; height: 200px; background: rgba(47,138,76,0.08); animation-delay:0s; }
+    .ring:nth-child(1) { width: 200px; height: 200px; background: rgba(45,138,45,0.08); animation-delay:0s; }
     .ring:nth-child(2) { width: 340px; height: 340px; animation-delay:0.5s; }
     .ring:nth-child(3) { width: 480px; height: 480px; animation-delay:1s; }
     .ring:nth-child(4) { width: 620px; height: 620px; animation-delay:1.5s; }
@@ -124,14 +119,14 @@
     .hero-orb {
       position: absolute; right: 80px; top: 50%; transform: translateY(-50%);
       width: 340px; height: 340px; border-radius: 50%;
-      background: radial-gradient(circle at 40% 40%, rgba(79,168,104,0.25), rgba(10,36,20,0) 70%);
+      background: radial-gradient(circle at 40% 40%, rgba(77,184,77,0.25), rgba(10,46,10,0) 70%);
       display: flex; align-items: center; justify-content: center;
       pointer-events: none;
     }
     .hero-orb-inner {
       width: 180px; height: 180px; border-radius: 50%;
       background: radial-gradient(circle at 40% 35%, var(--green-mid), var(--green-deep));
-      box-shadow: 0 0 60px rgba(47,138,76,0.3), inset 0 0 40px rgba(79,168,104,0.1);
+      box-shadow: 0 0 60px rgba(45,138,45,0.3), inset 0 0 40px rgba(77,184,77,0.1);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
       animation: float 6s ease-in-out infinite;
       overflow: hidden;
@@ -140,17 +135,18 @@
       0%,100% { transform: translateY(0); }
       50%      { transform: translateY(-12px); }
     }
-    .hero-orb-mark { width: 84px; height: 84px; display: flex; align-items: center; justify-content: center; }
-    .hero-orb-mark img { width: 100%; height: 100%; object-fit: contain; }
+    .hero-orb-mark { width: 84px; height: 84px; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .hero-orb-mark img { width: 100%; height: 100%; object-fit: cover; }
+    .hero-orb-label { font-size: 0.65rem; font-weight: 600; color: var(--green-pale); letter-spacing: 0.1em; text-transform: uppercase; }
 
     /* Hero content */
     .hero-content { max-width: 640px; position: relative; z-index: 1; }
     .hero-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(47,138,76,0.15); border: 1px solid rgba(79,168,104,0.25);
+      background: rgba(45,138,45,0.15); border: 1px solid rgba(77,184,77,0.25);
       border-radius: 999px; padding: 6px 16px;
       font-size: 0.75rem; font-weight: 600; color: var(--green-pale);
-      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.75rem; margin-top: 15px;
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.75rem;
       animation: fade-up 0.6s ease both;
     }
     .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-light); animation: blink 1.5s infinite; }
@@ -181,11 +177,11 @@
       padding: 14px 32px; border-radius: 10px;
       font-size: 0.95rem; font-weight: 600; text-decoration: none;
       display: flex; align-items: center; gap: 8px;
-      transition: all 0.2s; box-shadow: 0 8px 30px rgba(47,138,76,0.3);
+      transition: all 0.2s; box-shadow: 0 8px 30px rgba(45,138,45,0.3);
     }
     .btn-hero-primary:hover {
       background: var(--green-light); transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(79,168,104,0.35);
+      box-shadow: 0 12px 40px rgba(77,184,77,0.35);
     }
     .btn-hero-secondary {
       color: rgba(255,255,255,0.75);
@@ -213,8 +209,8 @@
     /* ── MARQUEE STRIP ── */
     .marquee-strip {
       background: var(--green-mid);
-      border-top: 1px solid rgba(79,168,104,0.15);
-      border-bottom: 1px solid rgba(79,168,104,0.15);
+      border-top: 1px solid rgba(77,184,77,0.15);
+      border-bottom: 1px solid rgba(77,184,77,0.15);
       padding: 14px 0; overflow: hidden; position: relative; z-index: 1;
     }
     .marquee-track {
@@ -251,31 +247,31 @@
     .features-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px;
       margin-top: 4rem;
-      border: 1.5px solid rgba(79,168,104,0.12);
+      border: 1.5px solid rgba(77,184,77,0.12);
       border-radius: 20px; overflow: hidden;
     }
     .feature-card {
-      background: rgba(18,61,34,0.6);
+      background: rgba(18,46,18,0.6);
       padding: 2.25rem 2rem;
       transition: background 0.2s;
       position: relative; overflow: hidden;
     }
     .feature-card::before {
       content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(47,138,76,0.08), transparent);
+      background: linear-gradient(135deg, rgba(45,138,45,0.08), transparent);
       opacity: 0; transition: opacity 0.3s;
     }
-    .feature-card:hover { background: rgba(26,87,48,0.5); }
+    .feature-card:hover { background: rgba(26,92,26,0.5); }
     .feature-card:hover::before { opacity: 1; }
     .feature-icon {
       width: 48px; height: 48px; border-radius: 12px;
-      background: rgba(47,138,76,0.15);
-      border: 1px solid rgba(79,168,104,0.2);
+      background: rgba(45,138,45,0.15);
+      border: 1px solid rgba(77,184,77,0.2);
       display: flex; align-items: center; justify-content: center;
-      color: #4fa868; margin-bottom: 1.25rem;
+      color: #4db84d; margin-bottom: 1.25rem;
       transition: box-shadow 0.2s;
     }
-    .feature-card:hover .feature-icon { box-shadow: 0 0 20px rgba(79,168,104,0.25); }
+    .feature-card:hover .feature-icon { box-shadow: 0 0 20px rgba(77,184,77,0.25); }
     .feature-name { font-weight: 600; font-size: 1rem; color: white; margin-bottom: 0.5rem; }
     .feature-desc { font-size: 0.875rem; color: rgba(255,255,255,0.5); line-height: 1.65; font-weight: 300; }
 
@@ -291,7 +287,7 @@
     .step-num {
       font-family: 'Playfair Display', serif;
       font-size: 3.5rem; font-weight: 700;
-      color: rgba(79,168,104,0.2);
+      color: rgba(77,184,77,0.2);
       line-height: 1;
     }
     .step-content { padding-top: 4px; }
@@ -300,8 +296,8 @@
     .step-badge {
       display: inline-block; font-size: 0.65rem; font-weight: 700;
       padding: 3px 10px; border-radius: 999px;
-      background: rgba(47,138,76,0.2); color: var(--green-pale);
-      border: 1px solid rgba(79,168,104,0.25);
+      background: rgba(45,138,45,0.2); color: var(--green-pale);
+      border: 1px solid rgba(77,184,77,0.25);
       text-transform: uppercase; letter-spacing: 0.08em;
       margin-bottom: 0.6rem;
     }
@@ -309,8 +305,8 @@
     /* ── CTA BANNER ── */
     .cta-banner {
       margin: 0 4rem 6rem;
-      background: linear-gradient(135deg, var(--green-mid) 0%, #0f2e1a 50%, var(--green-deep) 100%);
-      border: 1px solid rgba(79,168,104,0.2);
+      background: linear-gradient(135deg, var(--green-mid) 0%, #0d3d0d 50%, var(--green-deep) 100%);
+      border: 1px solid rgba(77,184,77,0.2);
       border-radius: 24px; padding: 4rem 4rem;
       display: flex; align-items: center; justify-content: space-between;
       position: relative; overflow: hidden; z-index: 1;
@@ -319,7 +315,7 @@
       content: '';
       position: absolute; right: -60px; top: -60px;
       width: 300px; height: 300px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(79,168,104,0.12) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(77,184,77,0.12) 0%, transparent 70%);
     }
     .cta-banner::after {
       content: '';
@@ -372,8 +368,8 @@
 <!-- NAV -->
 <nav id="mainNav">
   <a href="index.html" class="nav-logo">
-    <img src="logo.png" alt="BlotterCast Logo" style="width:30px;height:30px;object-fit:contain;"/>
-    <span class="nav-brand">lotterCast</span>
+    <img src="logo.png" alt="BlotterCast Logo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;"/>
+    <span class="nav-brand">BlotterCast</span>
   </a>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
@@ -397,11 +393,16 @@
   <div class="hero-orb">
     <div class="hero-orb-inner">
       <span class="hero-orb-mark"><img src="logo.png" alt="BlotterCast seal"/></span>
+      <span class="hero-orb-label">BlotterCast</span>
     </div>
   </div>
 
   <!-- Content -->
   <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Barangay Intelligence Platform
+    </div>
     <h1 class="hero-title">
       Smarter Blotter.<br/>
       <span class="accent italic">Safer</span>
@@ -503,12 +504,12 @@
 <!-- DIAGONAL DIVIDER -->
 <div class="divider-diagonal">
   <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
-    <polygon points="0,0 1440,0 1440,80" fill="rgba(18,61,34,0.4)"/>
+    <polygon points="0,0 1440,0 1440,80" fill="rgba(18,46,18,0.4)"/>
   </svg>
 </div>
 
 <!-- HOW IT WORKS -->
-<section class="section" id="how-it-works" style="background: rgba(18,61,34,0.3);">
+<section class="section" id="how-it-works" style="background: rgba(18,46,18,0.3);">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;">
     <div class="reveal">
       <span class="section-label">The Process</span>
@@ -555,29 +556,29 @@
     <div class="reveal reveal-delay-2" style="padding-top:3rem;">
       <div style="font-size:0.72rem;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:1.25rem;">Who Uses BlotterCast</div>
       <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
-          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="shield" data-icon-size="28"></div>
+        <div style="background:rgba(26,92,26,0.25);border:1px solid rgba(77,184,77,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(77,184,77,0.35)'" onmouseout="this.style.borderColor='rgba(77,184,77,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4db84d;" data-icon="shield" data-icon-size="28"></div>
           <div>
             <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Barangay Captain</div>
             <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Full dashboard access, report generation, patrol deployment oversight.</div>
           </div>
         </div>
-        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
-          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="edit" data-icon-size="28"></div>
+        <div style="background:rgba(26,92,26,0.25);border:1px solid rgba(77,184,77,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(77,184,77,0.35)'" onmouseout="this.style.borderColor='rgba(77,184,77,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4db84d;" data-icon="edit" data-icon-size="28"></div>
           <div>
             <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Desk Officer</div>
             <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Enter blotter and incident records, update case status, view analytics.</div>
           </div>
         </div>
-        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
-          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="folder" data-icon-size="28"></div>
+        <div style="background:rgba(26,92,26,0.25);border:1px solid rgba(77,184,77,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(77,184,77,0.35)'" onmouseout="this.style.borderColor='rgba(77,184,77,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4db84d;" data-icon="folder" data-icon-size="28"></div>
           <div>
             <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">Data Encoder</div>
             <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Batch-import legacy records, perform data entry, manage file uploads.</div>
           </div>
         </div>
-        <div style="background:rgba(26,87,48,0.25);border:1px solid rgba(79,168,104,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(79,168,104,0.35)'" onmouseout="this.style.borderColor='rgba(79,168,104,0.15)'">
-          <div style="width:28px;height:28px;flex-shrink:0;color:#4fa868;" data-icon="settings" data-icon-size="28"></div>
+        <div style="background:rgba(26,92,26,0.25);border:1px solid rgba(77,184,77,0.15);border-radius:14px;padding:1.25rem 1.5rem;display:flex;gap:1.25rem;align-items:center;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(77,184,77,0.35)'" onmouseout="this.style.borderColor='rgba(77,184,77,0.15)'">
+          <div style="width:28px;height:28px;flex-shrink:0;color:#4db84d;" data-icon="settings" data-icon-size="28"></div>
           <div>
             <div style="font-weight:600;color:white;font-size:0.95rem;margin-bottom:3px;">System Administrator</div>
             <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);">Full system access — users, ML model, backups, security settings.</div>
@@ -598,24 +599,24 @@
         BlotterCast runs entirely on your barangay's local area network — no internet dependency, no cloud fees, no data leaving your premises. Fully compliant with the Philippine Data Privacy Act of 2012.
       </p>
     </div>
-    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1px;border:1px solid rgba(79,168,104,0.12);border-radius:16px;overflow:hidden;">
-      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
-        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="lock"></div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1px;border:1px solid rgba(77,184,77,0.12);border-radius:16px;overflow:hidden;">
+      <div style="padding:2rem;background:rgba(18,46,18,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4db84d;" data-icon="lock"></div>
         <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Data Privacy Compliant</div>
         <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">RA 10173 — Philippine Data Privacy Act of 2012</div>
       </div>
-      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
-        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="database"></div>
+      <div style="padding:2rem;background:rgba(18,46,18,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4db84d;" data-icon="database"></div>
         <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">LAN-Only Hosting</div>
         <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Fully functional without internet access</div>
       </div>
-      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
-        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="archive"></div>
+      <div style="padding:2rem;background:rgba(18,46,18,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4db84d;" data-icon="archive"></div>
         <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Daily Auto-Backup</div>
         <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Local storage with disaster recovery objectives</div>
       </div>
-      <div style="padding:2rem;background:rgba(18,61,34,0.6);">
-        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4fa868;" data-icon="building"></div>
+      <div style="padding:2rem;background:rgba(18,46,18,0.6);">
+        <div style="width:28px;height:28px;margin-bottom:0.75rem;color:#4db84d;" data-icon="building"></div>
         <div style="font-weight:600;font-size:0.95rem;color:white;margin-bottom:0.4rem;">Desktop & Tablet Ready</div>
         <div style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Responsive on Chrome and Microsoft Edge</div>
       </div>

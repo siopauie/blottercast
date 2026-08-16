@@ -7,15 +7,19 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
 </head>
 <body class="font-body bg-forest-50 min-h-screen">
 
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -103,54 +107,36 @@
 
     <!-- Summary KPIs -->
     <div class="grid grid-cols-4 gap-4">
-      <div class="stat-card-grad plum">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/80 text-sm font-medium">Total This Year</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="incident" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl" id="kpiTotal">—</div>
-        <div class="text-xs text-white/70 mt-1" id="kpiTotalSub"></div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Total This Year</div>
+        <div class="font-display text-3xl text-forest-800" id="kpiTotal">—</div>
+        <div class="text-xs text-forest-400 mt-1" id="kpiTotalSub"></div>
       </div>
-      <div class="stat-card-grad moss">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/80 text-sm font-medium">Monthly Average</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="trends" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl" id="kpiAvg">—</div>
-        <div class="text-xs text-white/70 mt-1">incidents / month</div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Monthly Average</div>
+        <div class="font-display text-3xl text-forest-800" id="kpiAvg">—</div>
+        <div class="text-xs text-forest-400 mt-1">incidents / month</div>
       </div>
-      <div class="stat-card-grad sunset">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/80 text-sm font-medium">Peak Month</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl" id="kpiPeak">—</div>
-        <div class="text-xs text-white/70 mt-1" id="kpiPeakSub"></div>
+      <div class="bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">Peak Month</div>
+        <div class="font-display text-3xl text-amber-600" id="kpiPeak">—</div>
+        <div class="text-xs text-amber-400 mt-1" id="kpiPeakSub"></div>
       </div>
-      <div class="stat-card-grad dark">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-white/70 text-sm font-medium">Resolution Rate</span>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
-        </div>
-        <div class="font-display text-3xl text-white" id="kpiRes">—</div>
-        <div class="text-xs text-white/60 mt-1">resolved or closed cases</div>
+      <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+        <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Resolution Rate</div>
+        <div class="font-display text-3xl text-forest-700" id="kpiRes">—</div>
+        <div class="text-xs text-forest-400 mt-1">resolved or closed cases</div>
       </div>
     </div>
 
     <!-- Line Chart + Doughnut -->
     <div class="grid grid-cols-3 gap-6">
       <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="stat-icon-badge" data-icon="trends" data-icon-size="17"></div>
-          <h2 class="font-display text-lg text-forest-800" id="lineTitle">Monthly Incident Count</h2>
-        </div>
+        <h2 class="font-display text-lg text-forest-800 mb-5" id="lineTitle">Monthly Incident Count</h2>
         <canvas id="lineChart" height="100"></canvas>
       </div>
       <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="stat-icon-badge" data-icon="incident" data-icon-size="17"></div>
-          <h2 class="font-display text-lg text-forest-800">By Category</h2>
-        </div>
+        <h2 class="font-display text-lg text-forest-800 mb-5">By Category</h2>
         <canvas id="doughnutChart" height="170"></canvas>
         <div id="doughnutLegend" class="mt-4 space-y-1 text-xs"></div>
       </div>
@@ -159,17 +145,11 @@
     <!-- Bar Chart + Day-of-week -->
     <div class="grid grid-cols-2 gap-6">
       <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="stat-icon-badge" data-icon="clock" data-icon-size="17"></div>
-          <h2 class="font-display text-lg text-forest-800">Incidents by Day of Week</h2>
-        </div>
+        <h2 class="font-display text-lg text-forest-800 mb-5">Incidents by Day of Week</h2>
         <canvas id="barDayChart" height="130"></canvas>
       </div>
       <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="stat-icon-badge" data-icon="predictions" data-icon-size="17"></div>
-          <h2 class="font-display text-lg text-forest-800">Top 5 Incident Categories (Ranked)</h2>
-        </div>
+        <h2 class="font-display text-lg text-forest-800 mb-5">Top 5 Incident Categories (Ranked)</h2>
         <canvas id="hBarChart" height="130"></canvas>
       </div>
     </div>
@@ -185,10 +165,7 @@
 // Trends page — all aggregates computed server-side from MySQL via analytics.php.
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const COLORS = ['#1a5730','#2f8a4c','#4fa868','#c9a84c','#0e7c86','#86c895','#8a6a2e','#94a3b8'];
-
-Chart.defaults.font.family = "'DM Sans', sans-serif";
-Chart.defaults.color = '#5a7a64';
+const COLORS = ['#1e7e1e','#4db84d','#fbbf24','#f97316','#ef4444','#8b5cf6','#06b6d4','#94a3b8'];
 
 let lineChart, doughnutChart, barDayChart, hBarChart;
 let cachedYears = [];
@@ -238,29 +215,23 @@ function renderFromData(data) {
   const catData = cats.map(c => catCounts[c]);
 
   if (lineChart) lineChart.destroy();
-  const lineCtx = document.getElementById('lineChart').getContext('2d');
-  const lineGradient = lineCtx.createLinearGradient(0, 0, 0, 260);
-  lineGradient.addColorStop(0, 'rgba(47,138,76,0.28)');
-  lineGradient.addColorStop(1, 'rgba(47,138,76,0.02)');
-  lineChart = new Chart(lineCtx, {
+  lineChart = new Chart(document.getElementById('lineChart'), {
     type: 'line',
     data: { labels: MONTHS, datasets: [{ label: 'Incidents', data: monthly,
-      borderColor: '#23703c', backgroundColor: lineGradient, borderWidth: 2.5,
-      tension: 0.4, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#23703c',
-      pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }] },
-    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8, titleFont: { weight: '600' } } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+      borderColor: '#1e7e1e', backgroundColor: 'rgba(45,158,45,0.08)',
+      tension: 0.4, fill: true, pointBackgroundColor: '#1e7e1e', pointRadius: 4 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0faf0' } }, x: { grid: { display: false } } } }
   });
 
   if (doughnutChart) doughnutChart.destroy();
   doughnutChart = new Chart(document.getElementById('doughnutChart'), {
     type: 'doughnut',
-    data: { labels: cats, datasets: [{ data: catData, backgroundColor: COLORS, borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
-    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } }, cutout: '68%' }
+    data: { labels: cats, datasets: [{ data: catData, backgroundColor: COLORS, borderWidth: 2, borderColor: '#fff' }] },
+    options: { plugins: { legend: { display: false } }, cutout: '65%' }
   });
   document.getElementById('doughnutLegend').innerHTML = cats.map((c, i) => `
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2"><span style="width:10px;height:10px;border-radius:3px;background:${COLORS[i % COLORS.length]};display:inline-block"></span><span class="text-forest-600">${c}</span></div>
+      <div class="flex items-center gap-2"><span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i % COLORS.length]};display:inline-block"></span><span class="text-forest-600">${c}</span></div>
       <span class="font-bold text-forest-700">${catData[i]}</span>
     </div>`).join('');
 
@@ -268,9 +239,8 @@ function renderFromData(data) {
   barDayChart = new Chart(document.getElementById('barDayChart'), {
     type: 'bar',
     data: { labels: DAYS, datasets: [{ label: 'Incidents', data: dayData,
-      backgroundColor: '#2f8a4c', hoverBackgroundColor: '#1a5730', borderRadius: 8, borderSkipped: false, maxBarThickness: 40 }] },
-    options: { plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+      backgroundColor: COLORS.slice(0, 7), borderRadius: 6, borderSkipped: false }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0faf0' } }, x: { grid: { display: false } } } }
   });
 
   if (hBarChart) hBarChart.destroy();
@@ -278,9 +248,8 @@ function renderFromData(data) {
   hBarChart = new Chart(document.getElementById('hBarChart'), {
     type: 'bar',
     data: { labels: top5, datasets: [{ label: 'Count', data: top5.map(c => catCounts[c]),
-      backgroundColor: top5.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 8, borderSkipped: false, maxBarThickness: 26 }] },
-    options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
-      scales: { x: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false } }, y: { grid: { display: false }, border: { display: false } } } }
+      backgroundColor: '#2d9e2d', borderRadius: 6, borderSkipped: false }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#f0faf0' } }, y: { grid: { display: false } } } }
   });
 }
 

@@ -6,15 +6,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
-  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
 </head>
 <body class="font-body bg-forest-50 min-h-screen">
 
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -101,50 +105,30 @@
 
   <!-- Summary Cards -->
   <div class="px-6 pt-5 grid grid-cols-5 gap-4">
-    <div class="stat-card-grad plum">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Total Residents</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="users" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="cTotal">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Total Residents</div>
+      <div class="font-display text-3xl text-forest-800" id="cTotal">0</div>
     </div>
-    <div class="stat-card-grad dark">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/70 text-sm font-medium">Households</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="building" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl text-white" id="cHousehold">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Households</div>
+      <div class="font-display text-3xl text-forest-800" id="cHousehold">0</div>
     </div>
-    <div class="stat-card-grad moss">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Male</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="user" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="cMale">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Male</div>
+      <div class="font-display text-3xl text-blue-600" id="cMale">0</div>
     </div>
-    <div class="stat-card-grad moss">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Female</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="user" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="cFemale">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Female</div>
+      <div class="font-display text-3xl text-pink-600" id="cFemale">0</div>
     </div>
-    <div class="stat-card-grad moss">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-white/80 text-sm font-medium">Senior Citizens</span>
-        <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="shield" data-icon-size="18"></div>
-      </div>
-      <div class="font-display text-3xl" id="cSenior">0</div>
+    <div class="bg-white rounded-xl border border-forest-100 p-4 shadow-sm">
+      <div class="text-xs font-semibold text-forest-500 uppercase tracking-wide mb-1">Senior Citizens</div>
+      <div class="font-display text-3xl text-amber-600" id="cSenior">0</div>
     </div>
   </div>
 
   <main class="flex-1 p-6">
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-      <!-- Table Title -->
-      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-        <div class="stat-icon-badge" data-icon="census" data-icon-size="17"></div>
-        <h2 class="font-display text-lg text-forest-800">Resident Records</h2>
-      </div>
       <div class="filter-bar">
         <span class="relative flex-1 min-w-52"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="resSearch" placeholder="Search name, address…" class="filter-input w-full pl-8" oninput="renderResidents()"/></span>
         <select id="resZone" class="filter-input" onchange="renderResidents()">
@@ -336,7 +320,7 @@ function renderResidents(){
   tb.innerHTML=page.length===0
     ?`<tr><td colspan="11" class="text-center py-10 text-forest-400">No residents found.</td></tr>`
     :page.map(r=>`<tr>
-      <td class="font-semibold text-forest-700">${r.resNo}</td>
+      <td class="font-mono text-xs text-forest-500">${r.resNo}</td>
       <td class="font-semibold text-forest-800">${r.lastName}, ${r.firstName}</td>
       <td class="text-xs">${r.dob}</td>
       <td class="font-semibold text-center">${r.age}${typeof r.age==='number' && r.age>=60?' <span class="badge badge-ongoing text-xs ml-1">Senior</span>':''}</td>

@@ -32,18 +32,7 @@
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeActivePopover(); });
   window.addEventListener('resize', closeActivePopover);
-  // Capture-phase so this also sees scrolling on any scrollable ancestor of
-  // the trigger (not just window scroll) and closes the popover so it isn't
-  // left floating in the wrong spot. But a popover's OWN internal scrolling —
-  // e.g. the time picker auto-scrolling its hour list to the selected hour,
-  // or the select dropdown scrolling a pre-selected option into view — must
-  // NOT count as "the page scrolled". Without this check that self-scroll
-  // was misread as an outside scroll and closed the popover the instant it
-  // opened, before the person ever saw it.
-  window.addEventListener('scroll', (e) => {
-    if (activePopover && activePopover.el.contains(e.target)) return;
-    closeActivePopover();
-  }, true);
+  window.addEventListener('scroll', () => closeActivePopover(), true);
 
   function positionPopover(panel, anchor) {
     const r = anchor.getBoundingClientRect();
@@ -221,13 +210,6 @@
     );
 
     let viewYear, viewMonth;
-    // 'days' shows the usual month grid; 'years' shows a 12-year picker so
-    // a date far from today (a date of birth, say) can be reached in a
-    // couple of clicks instead of clicking "previous month" hundreds of
-    // times. Clicking the header label toggles into 'years'; picking a
-    // year returns to 'days' on that year, same month.
-    let viewMode = 'days';
-    let yearRangeStart;
     let panelRef;
 
     function build() {
@@ -237,8 +219,6 @@
 
       const min = input.min ? parseDateVal(input.min) : null;
       const max = input.max ? parseDateVal(input.max) : null;
-      const minYear = min ? min.getFullYear() : null;
-      const maxYear = max ? max.getFullYear() : null;
 
       const panel = document.createElement('div');
       panel.className = 'bc-datepicker-panel';
@@ -246,58 +226,16 @@
       const header = document.createElement('div');
       header.className = 'bc-dp-header';
       const prevBtn = document.createElement('button');
-      prevBtn.type = 'button'; prevBtn.className = 'bc-dp-nav';
+      prevBtn.type = 'button'; prevBtn.className = 'bc-dp-nav'; prevBtn.innerHTML = '&#8249;'; prevBtn.setAttribute('aria-label', 'Previous month');
       const nextBtn = document.createElement('button');
-      nextBtn.type = 'button'; nextBtn.className = 'bc-dp-nav';
-      const label = document.createElement('button');
-      label.type = 'button';
-      label.className = 'bc-dp-label bc-dp-label-btn';
-
-      if (viewMode === 'years') {
-        if (yearRangeStart === undefined) yearRangeStart = viewYear - (viewYear % 12);
-        prevBtn.innerHTML = '&#8249;'; prevBtn.setAttribute('aria-label', 'Previous years');
-        nextBtn.innerHTML = '&#8250;'; nextBtn.setAttribute('aria-label', 'Next years');
-        prevBtn.onclick = () => { yearRangeStart -= 12; rebuild(); };
-        nextBtn.onclick = () => { yearRangeStart += 12; rebuild(); };
-        label.textContent = `${yearRangeStart}\u2013${yearRangeStart + 11}`;
-        label.setAttribute('aria-label', 'Back to month view');
-        label.onclick = () => { viewMode = 'days'; rebuild(); };
-      } else {
-        prevBtn.innerHTML = '&#8249;'; prevBtn.setAttribute('aria-label', 'Previous month');
-        nextBtn.innerHTML = '&#8250;'; nextBtn.setAttribute('aria-label', 'Next month');
-        prevBtn.onclick = () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } rebuild(); };
-        nextBtn.onclick = () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } rebuild(); };
-        label.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
-        label.setAttribute('aria-label', 'Choose year');
-        label.onclick = () => { viewMode = 'years'; yearRangeStart = viewYear - (viewYear % 12); rebuild(); };
-      }
+      nextBtn.type = 'button'; nextBtn.className = 'bc-dp-nav'; nextBtn.innerHTML = '&#8250;'; nextBtn.setAttribute('aria-label', 'Next month');
+      const label = document.createElement('div');
+      label.className = 'bc-dp-label';
+      label.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+      prevBtn.onclick = () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } rebuild(); };
+      nextBtn.onclick = () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } rebuild(); };
       header.append(prevBtn, label, nextBtn);
       panel.appendChild(header);
-
-      if (viewMode === 'years') {
-        const yearGrid = document.createElement('div');
-        yearGrid.className = 'bc-dp-year-grid';
-        const thisYear = new Date().getFullYear();
-        for (let i = 0; i < 12; i++) {
-          const y = yearRangeStart + i;
-          const cell = document.createElement('button');
-          cell.type = 'button';
-          cell.className = 'bc-dp-year-item';
-          cell.textContent = String(y);
-          if (y === thisYear) cell.classList.add('bc-dp-year-item-current');
-          if (y === viewYear) cell.classList.add('bc-dp-year-item-selected');
-          const isDisabled = (minYear !== null && y < minYear) || (maxYear !== null && y > maxYear);
-          if (isDisabled) {
-            cell.disabled = true;
-            cell.classList.add('bc-dp-year-item-disabled');
-          } else {
-            cell.addEventListener('click', () => { viewYear = y; viewMode = 'days'; rebuild(); });
-          }
-          yearGrid.appendChild(cell);
-        }
-        panel.appendChild(yearGrid);
-        return panel;
-      }
 
       const grid = document.createElement('div');
       grid.className = 'bc-dp-grid';
@@ -368,19 +306,11 @@
       panelRef = fresh;
       positionPopover(panelRef, input);
       panelRef.classList.add('open');
-      // Rebuilding swaps in a brand-new panel element (old one is detached).
-      // If this picker is still the open popover, point activePopover at
-      // the new element too -- otherwise the very next click inside the
-      // panel is mistaken for an outside click and closes it immediately,
-      // which is what made navigating more than one step (e.g. hopping
-      // through years) impossible.
-      if (activePopover && activePopover.trigger === input) activePopover.el = panelRef;
     }
 
     function open() {
       closeActivePopover();
       viewYear = undefined; viewMonth = undefined;
-      viewMode = 'days'; yearRangeStart = undefined;
       panelRef = build();
       document.body.appendChild(panelRef);
       positionPopover(panelRef, input);
@@ -494,7 +424,6 @@
       panelRef = fresh;
       positionPopover(panelRef, input);
       panelRef.classList.add('open');
-      if (activePopover && activePopover.trigger === input) activePopover.el = panelRef;
       const active = panelRef.querySelector('.bc-tp-item-active');
       if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
     }

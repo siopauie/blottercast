@@ -438,6 +438,19 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
     }
 }
 
+function logAudit($mysqli, string $action, string $module, string $details): void {
+    try {
+        $user = $_SESSION['username'] ?? 'system';
+        $stmt = $mysqli->prepare('INSERT INTO audit_logs (username, action, module, details) VALUES (?,?,?,?)');
+        if ($stmt) {
+            $stmt->bind_param('ssss', $user, $action, $module, $details);
+            $stmt->execute();
+        }
+    } catch (Throwable $t) {
+        error_log('logAudit error: ' . $t->getMessage());
+    }
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     if (function_exists('session_set_save_handler')) {
         @session_set_save_handler(new BlotterDbSessionHandler(), true);

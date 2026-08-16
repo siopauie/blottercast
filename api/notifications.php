@@ -25,7 +25,7 @@ $userId = (int)($_SESSION['user_id'] ?? 0);
  * alert on every page load. Runs on every list/unread_count call — cheap
  * queries, and it means alerts appear without needing a cron job.
  */
-function generateNotifications(mysqli $mysqli): void {
+function generateNotifications($mysqli): void {
     // 1) New High-priority incidents (last 3 days, not already alerted)
     $stmt = $mysqli->query(
         "SELECT id, report_no, location, zone_id FROM incidents

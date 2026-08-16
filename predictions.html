@@ -7,21 +7,27 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
   <style>
-    .risk-bar { height:8px; border-radius:99px; background:#dcf0e0; overflow:hidden; }
+    .risk-bar { height:8px; border-radius:99px; background:#d8f3d8; overflow:hidden; }
     .risk-bar-fill { height:100%; border-radius:99px; transition: width 0.8s ease; }
-    .pulse-dot { width:8px;height:8px;border-radius:50%;background:#4fa868;display:inline-block;animation:pulse 1.5s infinite; }
+    .model-card { border-radius:14px; padding:1rem 1.25rem; border:1.5px solid #d8f3d8; background:#fff; }
+    .model-card.active { border-color:#2d9e2d; background:#f0faf0; }
+    .pulse-dot { width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
   </style>
 </head>
 <body class="font-body bg-forest-50 min-h-screen">
 
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -122,10 +128,7 @@
       <!-- Zone Risk Forecast -->
       <div class="col-span-2 bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
         <div class="flex items-center justify-between mb-5">
-          <div class="flex items-center gap-3">
-            <div class="stat-icon-badge" data-icon="trends" data-icon-size="17"></div>
-            <h2 class="font-display text-lg text-forest-800">7-Day Forecast — Expected Incidents (Top Risk Zones)</h2>
-          </div>
+          <h2 class="font-display text-lg text-forest-800">7-Day Forecast — Expected Incidents (Top Risk Zones)</h2>
           <select id="horizonSel" class="filter-input text-xs" onchange="renderOutputs()">
             <option value="7">Next 7 Days</option><option value="14">Next 14 Days</option>
           </select>
@@ -143,12 +146,9 @@
     <!-- Per-Zone Category Forecast -->
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm p-6">
       <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-3">
-          <div class="stat-icon-badge" data-icon="incident" data-icon-size="17"></div>
-          <div>
-            <h2 class="font-display text-lg text-forest-800">Category Forecast by Zone</h2>
-            <p class="text-xs text-forest-400">Expected incidents per day, broken down by category, for the selected zone</p>
-          </div>
+        <div>
+          <h2 class="font-display text-lg text-forest-800">Category Forecast by Zone</h2>
+          <p class="text-xs text-forest-400">Expected incidents per day, broken down by category, for the selected zone</p>
         </div>
         <select id="categoryZoneSel" class="filter-input text-xs" onchange="renderCategoryChart()"></select>
       </div>
@@ -158,10 +158,7 @@
     <!-- Zone Risk Table -->
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
       <div class="px-6 py-4 border-b border-forest-50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="stat-icon-badge" data-icon="heatmap" data-icon-size="17"></div>
-          <h2 class="font-display text-lg text-forest-800">Predicted Incident Risk by Zone</h2>
-        </div>
+        <h2 class="font-display text-lg text-forest-800">Predicted Incident Risk by Zone</h2>
       </div>
       <div class="overflow-x-auto">
         <table class="data-table">
@@ -225,33 +222,28 @@ let CAN_RETRAIN = false; // set from the signed-in user's role before first rend
 let forecastChart = null;
 let categoryChart = null;
 const CATEGORY_COLORS = {
-  'Physical Assault': '#1a5730', 'Theft': '#c9a84c', 'Domestic Dispute': '#0e7c86',
-  'Vandalism': '#4fa868', 'Trespassing': '#8a6a2e', 'Drug-Related Activity': '#23703c',
-  'Public Disturbance': '#86c895', 'Other': '#94a3b8',
+  'Physical Assault': '#ef4444', 'Theft': '#f97316', 'Domestic Dispute': '#8b5cf6',
+  'Vandalism': '#06b6d4', 'Trespassing': '#eab308', 'Drug-Related Activity': '#dc2626',
+  'Public Disturbance': '#1e7e1e', 'Other': '#6b7280',
 };
-
-Chart.defaults.font.family = "'DM Sans', sans-serif";
-Chart.defaults.color = '#5a7a64';
 
 const pct = v => (v * 100).toFixed(1) + '%';
 
 function renderModelCards() {
   const el = document.getElementById('modelCardGroups');
-  const grads = ['plum', 'sunset', 'dark'];
-  const icons = ['incident', 'predictions', 'heatmap'];
-  el.innerHTML = Object.entries(TASKS).map(([task, cfg], i) => {
+  el.innerHTML = Object.entries(TASKS).map(([task, cfg]) => {
     const key = cfg.models[0];
     const m = RESULT && RESULT[task] && RESULT[task].metrics[key];
     const scoreLabel = task === 'type' ? 'Macro F1' : 'Accuracy';
     const score = m ? pct(task === 'type' ? m.macroF1 : m.accuracy) : '…';
     return `
-      <div class="stat-card-grad ${grads[i % grads.length]}">
-        <div class="flex items-center justify-between mb-3">
-          <div class="text-xs font-bold text-white/75 uppercase tracking-wide">${cfg.label}</div>
-          <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="${icons[i % icons.length]}" data-icon-size="16"></div>
+      <div class="model-card active">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold text-forest-500 uppercase tracking-wide">${cfg.label}</div>
+          <span class="badge badge-resolved text-xs">Active</span>
         </div>
-        <div class="font-display text-3xl text-white">${score}</div>
-        <div class="text-xs text-white/70 mt-1">${scoreLabel} · ${MODEL_LABELS[key]}</div>
+        <div class="font-display text-xl text-forest-800">${score}</div>
+        <div class="text-xs text-forest-500">${scoreLabel}</div>
       </div>`;
   }).join('');
 }
@@ -267,7 +259,7 @@ function renderOutputs() {
   const top4 = ranked.slice(0, 4);
   const scale = horizon / 7;
   const labels = dayLabels(top4[0], horizon);
-  const zoneColors = ['#1a5730', '#c9a84c', '#0e7c86', '#8a6a2e'];
+  const zoneColors = ['#1e7e1e', '#f97316', '#8b5cf6', '#06b6d4'];
   if (forecastChart) forecastChart.destroy();
   forecastChart = new Chart(document.getElementById('forecastChart'), {
     type: 'line',
@@ -277,12 +269,12 @@ function renderOutputs() {
         label: z.zone,
         data: (z.dailyProbs || []).slice(0, horizon).map(p => +p.toFixed(3)),
         borderColor: zoneColors[i], backgroundColor: 'transparent',
-        tension: 0.4, pointRadius: 3, borderWidth: 2.5,
+        tension: 0.4, pointRadius: 3,
       })),
     },
     options: {
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true } }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false }, title: { display: true, text: 'Daily occurrence probability' } }, x: { grid: { display: false }, border: { display: false } } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0faf0' }, title: { display: true, text: 'Daily occurrence probability' } }, x: { grid: { display: false } } },
     },
   });
 
@@ -294,7 +286,7 @@ function renderOutputs() {
       <td class="font-semibold text-forest-700">${h.zone}</td>
       <td>
         <div class="flex items-center gap-2">
-          <div class="risk-bar w-20"><div class="risk-bar-fill" style="width:${Math.min(100, h.meanDailyProb * 300)}%;background:${risk === 'High' ? '#ef4444' : risk === 'Moderate' ? '#fbbf24' : '#23703c'}"></div></div>
+          <div class="risk-bar w-20"><div class="risk-bar-fill" style="width:${Math.min(100, h.meanDailyProb * 300)}%;background:${risk === 'High' ? '#ef4444' : risk === 'Moderate' ? '#fbbf24' : '#1e7e1e'}"></div></div>
           <span class="text-xs font-bold text-forest-700">${pct(h.meanDailyProb)}<span class="text-forest-400 font-normal"> /day</span></span>
         </div>
       </td>
@@ -369,10 +361,10 @@ function renderCategoryChart() {
       })),
     },
     options: {
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true } }, tooltip: { backgroundColor: '#123d22', padding: 10, cornerRadius: 8 } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
       scales: {
-        y: { beginAtZero: true, grid: { color: '#f0f9f2' }, border: { display: false }, title: { display: true, text: 'Expected incidents/day' } },
-        x: { grid: { display: false }, border: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#f0faf0' }, title: { display: true, text: 'Expected incidents/day' } },
+        x: { grid: { display: false } },
       },
     },
   });

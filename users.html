@@ -6,15 +6,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
-  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',800:'#123d22',900:'#0a2414'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{forest:{50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',800:'#0f420f',900:'#092909'}},fontFamily:{display:['DM Serif Display','serif'],body:['DM Sans','sans-serif']}}}}</script>
 </head>
 <body class="font-body bg-forest-50 min-h-screen">
 
-<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -100,8 +104,7 @@
 
     <!-- Role Permission Matrix -->
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-        <div class="stat-icon-badge" data-icon="key" data-icon-size="17"></div>
+      <div class="px-6 py-4 border-b border-forest-50">
         <h2 class="font-display text-lg text-forest-800">Role Permission Matrix</h2>
       </div>
       <div class="overflow-x-auto">
@@ -122,10 +125,6 @@
 
     <!-- Users Table -->
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-        <div class="stat-icon-badge" data-icon="users" data-icon-size="17"></div>
-        <h2 class="font-display text-lg text-forest-800">System Users</h2>
-      </div>
       <div class="filter-bar">
         <span class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-forest-400" data-icon="search" data-icon-size="15"></span><input type="text" id="userSearch" placeholder="Search users…" class="filter-input w-full pl-8" oninput="usersPage=1;renderUsers()"/></span>
         <select id="roleFilter" class="filter-input" onchange="usersPage=1;renderUsers()">
@@ -157,8 +156,7 @@
 
     <!-- Audit Log -->
     <div class="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-forest-50 flex items-center gap-3">
-        <div class="stat-icon-badge" data-icon="database" data-icon-size="17"></div>
+      <div class="px-6 py-4 border-b border-forest-50">
         <h2 class="font-display text-lg text-forest-800">Recent Audit Log</h2>
       </div>
       <table class="data-table">
@@ -245,17 +243,15 @@ const permissions = [
   { label:'System Settings',     admin:true, captain:false, officer:false, encoder:false },
 ];
 
-const check = v => v
-  ? '<span class="perm-yes" data-icon="check" data-icon-size="14"></span>'
-  : '<span class="perm-no">&#8212;</span>';
+const check = v => v ? '<span class="text-forest-600" data-icon="check" data-icon-size="16"></span>' : '<span class="text-gray-300 text-base">—</span>';
 
 document.getElementById('permMatrix').innerHTML = permissions.map(p=>`
   <tr>
     <td class="font-medium text-forest-700">${p.label}</td>
-    <td class="perm-cell">${check(p.admin)}</td>
-    <td class="perm-cell">${check(p.captain)}</td>
-    <td class="perm-cell">${check(p.officer)}</td>
-    <td class="perm-cell">${check(p.encoder)}</td>
+    <td class="text-center">${check(p.admin)}</td>
+    <td class="text-center">${check(p.captain)}</td>
+    <td class="text-center">${check(p.officer)}</td>
+    <td class="text-center">${check(p.encoder)}</td>
   </tr>`).join('');
 
 let usersData = []; let usersPage = 1; const USERS_ROWS = 8;

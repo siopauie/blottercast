@@ -500,7 +500,7 @@ function _confirmExportFilter() {
 // Only does anything on pages that actually have #notifPanel in the DOM
 // (currently the Dashboard); harmless no-op calls elsewhere.
 const NOTIF_SEVERITY_ICON = { critical: 'warning', warning: 'clock', info: 'bell' };
-const NOTIF_SEVERITY_COLOR = { critical: '#dc2626', warning: '#d97706', info: '#23703c' };
+const NOTIF_SEVERITY_COLOR = { critical: '#dc2626', warning: '#d97706', info: '#1e7e1e' };
 
 function timeAgo(dateStr) {
   const seconds = Math.floor((Date.now() - new Date(dateStr.replace(' ', 'T'))) / 1000);
@@ -539,7 +539,7 @@ async function toggleNotifPanel() {
       list.innerHTML = items.map(n => `
         <a href="${n.link || '#'}" onclick="markNotifRead(${n.id})"
            class="flex gap-3 px-4 py-3 border-b border-forest-50 hover:bg-forest-50 transition-colors ${n.is_read == 0 ? 'bg-forest-50/60' : ''}">
-          <span style="color:${NOTIF_SEVERITY_COLOR[n.severity] || '#23703c'}" data-icon="${NOTIF_SEVERITY_ICON[n.severity] || 'bell'}" data-icon-size="16" class="flex-shrink-0 mt-0.5"></span>
+          <span style="color:${NOTIF_SEVERITY_COLOR[n.severity] || '#1e7e1e'}" data-icon="${NOTIF_SEVERITY_ICON[n.severity] || 'bell'}" data-icon-size="16" class="flex-shrink-0 mt-0.5"></span>
           <span class="flex-1 min-w-0">
             <span class="block text-sm font-semibold text-forest-800 truncate">${n.title}</span>
             <span class="block text-xs text-forest-500 mt-0.5">${n.body}</span>

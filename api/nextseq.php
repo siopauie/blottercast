@@ -15,7 +15,7 @@ if (!function_exists('nextSeqNo')) {
      * seed data that doesn't start each year at 001), since a missing number
      * makes the count one lower than the true highest number in use.
      */
-    function nextSeqNo(mysqli $mysqli, string $table, string $column, string $prefix, int $digits = 3): string {
+    function nextSeqNo($mysqli, string $table, string $column, string $prefix, int $digits = 3): string {
         $year = date('Y');
         $stmt = $mysqli->prepare("SELECT $column FROM $table WHERE $column LIKE ? ORDER BY $column DESC LIMIT 1");
         $like = "$prefix-$year-%";
@@ -51,7 +51,7 @@ if (!function_exists('isNameACensusResident')) {
      * the same tolerant match used by the blotter-record warning shown
      * before issuing a Clearance/Indigency/Residency certificate.
      */
-    function isNameACensusResident(mysqli $mysqli, string $name): bool {
+    function isNameACensusResident($mysqli, string $name): bool {
         $name = trim($name);
         if ($name === '') return false;
         $stmt = $mysqli->prepare('SELECT last_name, first_name FROM census_records');
@@ -74,7 +74,7 @@ if (!function_exists('findCensusResidentIdByName')) {
      * case we deliberately don't guess which one, and the row is saved
      * with the id left blank rather than silently picking one of them).
      */
-    function findCensusResidentIdByName(mysqli $mysqli, string $name): ?int {
+    function findCensusResidentIdByName($mysqli, string $name): ?int {
         $name = trim($name);
         if ($name === '') return null;
         $stmt = $mysqli->prepare('SELECT id, last_name, first_name FROM census_records');

@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign In — BlotterCast</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --green-deep:  #0a2414;
-      --green-dark:  #123d22;
-      --green-mid:   #1a5730;
-      --green-main:  #2f8a4c;
-      --green-light: #4fa868;
-      --green-pale:  #b8e0c0;
+      --green-deep:  #0a2e0a;
+      --green-dark:  #122e12;
+      --green-mid:   #1a5c1a;
+      --green-main:  #2d8a2d;
+      --green-light: #4db84d;
+      --green-pale:  #b8e8b8;
       --cream:       #f5f0e8;
       --gold:        #c9a84c;
     }
@@ -38,18 +38,13 @@
     .left-panel {
       flex: 1; position: relative;
       background:
-        linear-gradient(
-          160deg,
-          rgba(8, 30, 16, 0.86) 0%,
-          rgba(5, 18, 10, 0.92) 60%,
-          rgba(7, 25, 14, 0.86) 100%
-        ),
-        url('assets/barangay-hall.png');
+        linear-gradient(160deg, rgba(13,53,13,0.88) 0%, rgba(7,26,7,0.9) 60%, rgba(10,46,10,0.88) 100%),
+        url('assets/barangay-hall.jpg');
       background-size: cover;
       background-position: center;
       display: flex; flex-direction: column;
       padding: 3rem; overflow: hidden;
-      border-right: 1px solid rgba(79,168,104,0.08);
+      border-right: 1px solid rgba(77,184,77,0.08);
     }
 
     /* Decorative grid lines */
@@ -57,8 +52,8 @@
       content: '';
       position: absolute; inset: 0;
       background-image:
-        linear-gradient(rgba(79,168,104,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,168,104,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(77,184,77,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77,184,77,0.04) 1px, transparent 1px);
       background-size: 48px 48px;
     }
 
@@ -67,7 +62,7 @@
       content: 'B';
       font-family: 'Playfair Display', serif;
       font-size: 52vw; font-weight: 900;
-      color: rgba(47,138,76,0.04);
+      color: rgba(45,138,45,0.04);
       position: absolute;
       bottom: -15vw; left: -10vw;
       line-height: 1; pointer-events: none;
@@ -77,16 +72,18 @@
     .left-content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
 
     /* Brand */
-    .brand-block { margin-bottom: auto; }
     .brand-mark {
-      display: flex; align-items: flex-start; gap: 1px;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 14px;
+      text-decoration: none; margin-bottom: auto;
     }
-    .brand-icon-img { width: 62px; height: 78px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.35)); margin-top: 2px; }
-    .brand-textcol { display: flex; flex-direction: column; margin-top: 12px;}
-    .brand-name { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 2.1rem; color: white; letter-spacing: -0.01em; line-height: 1; }
-    .brand-republic { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--green-pale); letter-spacing: 0.09em; margin-top: 8px; }
-    .brand-tagline { font-family: 'Quicksand', sans-serif; font-weight: 500; font-size: 0.95rem; color: rgba(255,255,255,0.55); margin-left: 3px;}
+    .brand-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--green-main), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; color: white;
+      box-shadow: 0 0 24px rgba(45,138,45,0.4);
+    }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: white; letter-spacing: -0.02em; }
 
     /* Tagline block */
     .left-tagline {
@@ -113,6 +110,7 @@
       display: flex; gap: 2rem; margin-top: 2.5rem;
       padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.07);
     }
+    .left-stat { }
     .left-stat-num { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--green-pale); }
     .left-stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
 
@@ -122,8 +120,8 @@
       display: flex; flex-direction: column; gap: 0.75rem; z-index: 2;
     }
     .status-card {
-      background: rgba(26,87,48,0.7);
-      border: 1px solid rgba(79,168,104,0.18);
+      background: rgba(18,60,18,0.7);
+      border: 1px solid rgba(77,184,77,0.18);
       border-radius: 12px; padding: 0.875rem 1rem;
       backdrop-filter: blur(10px);
       min-width: 160px;
@@ -182,7 +180,7 @@
     }
     .form-input:focus {
       outline: none; border-color: var(--green-main);
-      box-shadow: 0 0 0 3px rgba(47,138,76,0.12);
+      box-shadow: 0 0 0 3px rgba(45,138,45,0.12);
       background: white;
     }
     .form-input.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
@@ -229,12 +227,12 @@
       cursor: pointer; position: relative; overflow: hidden;
       transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 4px 20px rgba(10,36,20,0.2);
+      box-shadow: 0 4px 20px rgba(10,46,10,0.2);
     }
     .btn-login:hover {
       background: var(--green-mid);
       transform: translateY(-1px);
-      box-shadow: 0 8px 28px rgba(10,36,20,0.28);
+      box-shadow: 0 8px 28px rgba(10,46,10,0.28);
     }
     .btn-login:active { transform: translateY(0); }
     .btn-login .spinner {
@@ -279,6 +277,7 @@
     .divider-text { font-size: 0.75rem; color: #d1d5db; font-weight: 500; }
 
     /* Demo accounts */
+    .demo-accounts { }
     .demo-label { font-size: 0.72rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
     .demo-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .demo-pill {
@@ -287,7 +286,7 @@
       font-size: 0.75rem; font-weight: 500; color: #6b7280;
       cursor: pointer; transition: all 0.15s;
     }
-    .demo-pill:hover { border-color: var(--green-main); color: var(--green-main); background: #f0f9f2; }
+    .demo-pill:hover { border-color: var(--green-main); color: var(--green-main); background: #f0faf0; }
 
     /* Footer note */
     .form-footer {
@@ -313,16 +312,10 @@
 <div class="left-panel">
   <div class="left-content">
     <!-- Brand -->
-    <div class="brand-block">
-      <a href="index.html" class="brand-mark" role="img" aria-label="BlotterCast, Republic of the Philippines">
-        <img src="logo.png" alt="" class="brand-icon-img" aria-hidden="true"/>
-        <span class="brand-textcol" aria-hidden="true">
-          <span class="brand-name">lotterCast</span>
-          <span class="brand-republic">REPUBLIC OF THE PHILIPPINES</span>
-        </span>
-      </a>
-      <div class="brand-tagline">Pamahalaang&nbsp; Barangay&nbsp; ng Mapulang Lupa – Official Records Portal</div>
-    </div>
+    <a href="index.html" class="brand-mark">
+      <img src="logo.png" alt="BlotterCast Logo" style="width:44px;height:44px;border-radius:12px;object-fit:cover;"/>
+      <span class="brand-name">BlotterCast</span>
+    </a>
 
     <!-- Tagline -->
     <div class="left-tagline">
@@ -420,6 +413,24 @@
     </button>
   </form>
 
+  <!-- Divider -->
+  <div class="divider animate-in delay-3">
+    <div class="divider-line"></div>
+    <div class="divider-text">Quick Demo Access</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- Demo Accounts -->
+  <div class="demo-accounts animate-in delay-3">
+    <div class="demo-label">Fill demo credentials (seeded by api/seed.php)</div>
+    <div class="demo-pills">
+      <span class="demo-pill" onclick="fillDemo('admin','admin123')">System Admin</span>
+      <span class="demo-pill" onclick="fillDemo('kapitan','kapitan123')">Barangay Captain</span>
+      <span class="demo-pill" onclick="fillDemo('jdelacuz','officer123')">Desk Officer</span>
+      <span class="demo-pill" onclick="fillDemo('pencoder','encoder123')">Data Encoder</span>
+    </div>
+  </div>
+
   <!-- Footer note -->
   <div class="form-footer animate-in delay-3">
     Authorized personnel only. All access is logged and monitored.<br/>
@@ -430,12 +441,29 @@
 <script src="api.js"></script>
   <script src="icons.js"></script>
 <script>
+  // Demo credentials pill still points at the seeded admin account.
+  // Run api/seed.php once to create it (see README).
+  const accounts = {
+    'admin':    { pw: 'admin123',   role: 'System Admin',     name: 'Juan Dela Cruz' },
+    'kapitan':  { pw: 'kapitan123', role: 'Barangay Captain', name: 'Kapitan Jose Reyes' },
+    'jdelacuz': { pw: 'officer123', role: 'Desk Officer',     name: 'Juan Dela Cruz II' },
+    'msantos':  { pw: 'officer123', role: 'Desk Officer',     name: 'Maria Santos' },
+    'pencoder': { pw: 'encoder123', role: 'Data Encoder',     name: 'Pedro Encoder' },
+  };
+
   function togglePassword() {
     const pw = document.getElementById('password');
     const btn = document.getElementById('togglePw');
     if (pw.type === 'password') { pw.type = 'text'; btn.innerHTML = iconSvg('viewOff', 18); }
     else { pw.type = 'password'; btn.innerHTML = iconSvg('view', 18); }
   }
+
+  function fillDemo(user, pw) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pw;
+    document.getElementById('username').focus();
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     const uEl = document.getElementById('username');

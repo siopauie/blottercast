@@ -29,9 +29,9 @@
         extend: {
           colors: {
             forest: {
-              50:'#f0f9f2',100:'#dcf0e0',200:'#b8e0c0',300:'#86c895',
-              400:'#4fa868',500:'#2f8a4c',600:'#23703c',700:'#1a5730',
-              800:'#123d22',900:'#0a2414'
+              50:'#f0faf0',100:'#d8f3d8',200:'#b0e4b0',300:'#7dce7d',
+              400:'#4db84d',500:'#2d9e2d',600:'#1e7e1e',700:'#165f16',
+              800:'#0f420f',900:'#092909'
             }
           },
           fontFamily: {
@@ -46,9 +46,9 @@
   <style>
     .card {
       background:#fff;
-      border:1px solid var(--forest-100, #dcf0e0);
+      border:1px solid #eef2f7;
       border-radius:1rem;
-      box-shadow:0 1px 4px rgba(10, 36, 20, 0.08);
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
     }
 
     #map {
@@ -56,28 +56,7 @@
       height:560px;
       border-radius:1rem;
       overflow:hidden;
-      border:1px solid var(--forest-100, #dcf0e0);
-      position:relative;
-      isolation:isolate;
-      contain:paint; /* extra guarantee that nothing inside can paint outside this box */
     }
-
-    /* Leaflet ships its own z-index scale (controls go up to 1000), which is
-       higher than our sticky header (20) and fixed sidebar (30). Normally
-       isolation+overflow above should contain it, but on some browsers a
-       GPU-transformed tile layer can still bleed through on scroll, so we
-       also cap Leaflet's internal z-indexes directly — keeping their
-       relative order, just scaled well below the header/sidebar. */
-    #map .leaflet-tile-pane      { z-index: 1; }
-    #map .leaflet-overlay-pane   { z-index: 2; }
-    #map .leaflet-shadow-pane    { z-index: 3; }
-    #map .leaflet-marker-pane    { z-index: 4; }
-    #map .leaflet-tooltip-pane   { z-index: 5; }
-    #map .leaflet-popup-pane     { z-index: 6; }
-    #map .leaflet-map-pane canvas{ z-index: 1; }
-    #map .leaflet-map-pane svg   { z-index: 2; }
-    #map .leaflet-control-container .leaflet-top,
-    #map .leaflet-control-container .leaflet-bottom { z-index: 7; }
 
     .leaflet-popup-content-wrapper {
       border-radius:14px;
@@ -88,12 +67,12 @@
       display:inline-flex;
       align-items:center;
       gap:.45rem;
-      border:1px solid #dcf0e0;
-      background:#f0f9f2;
+      border:1px solid #dcf0dc;
+      background:#f7fcf7;
       border-radius:999px;
       padding:.45rem .8rem;
       font-size:.8rem;
-      color:#1a5730;
+      color:#165f16;
       font-weight:600;
     }
 
@@ -102,10 +81,32 @@
       height:16px;
       border-radius:4px;
       flex-shrink:0;
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.6) inset;
     }
 
     .table-wrap { overflow-x:auto; }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:.92rem;
+    }
+
+    thead th {
+      background:#f8fafc;
+      text-align:left;
+      padding:.85rem 1rem;
+      border-bottom:1px solid #e5e7eb;
+      color:#374151;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    tbody td {
+      padding:.85rem 1rem;
+      border-bottom:1px solid #f1f5f9;
+      color:#374151;
+      vertical-align:top;
+    }
 
     .badge {
       display:inline-block;
@@ -122,14 +123,13 @@
     .badge-high { background:#fee2e2; color:#b91c1c; }
 
     .status-note {
-      border:1px solid var(--forest-100, #dcf0e0);
-      background:var(--forest-50, #f0f9f2);
-      color:#1a5730;
+      border:1px solid #dcf0dc;
+      background:#f6fff6;
+      color:#166534;
       border-radius:.75rem;
       padding:.8rem 1rem;
       font-size:.9rem;
     }
-
 
     @media (max-width: 1024px) {
       aside { display:none; }
@@ -140,12 +140,16 @@
   </style>
 </head>
 
-<body class="bg-forest-50 min-h-screen text-forest-800">
-  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 sidebar-grad text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
+<body class="bg-forest-50 min-h-screen text-gray-800">
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-forest-800 text-white z-30 flex flex-col shadow-2xl transition-transform duration-300">
     <!-- Logo -->
-    <div class="px-6 py-8 border-b border-forest-700">
+    <div class="px-6 py-5 border-b border-forest-700">
       <div class="flex items-center gap-3">
-        <img src="logo-lockup.png" alt="BlotterCast — Barangay System" class="sidebar-brand-lockup"/>
+        <div class="sidebar-brand-mark"><img src="logo.png" alt="BlotterCast seal"/></div>
+        <div>
+          <div class="font-display text-sm leading-tight text-white">BlotterCast</div>
+          <div class="text-forest-300 text-xs font-body font-medium tracking-wide">Barangay System</div>
+        </div>
       </div>
     </div>
 
@@ -242,7 +246,7 @@
           <option value="Public Disturbance">Public Disturbance</option>
         </select>
 
-        <label class="flex items-center gap-2 bg-white border border-forest-200 rounded-xl px-3 py-2 text-sm text-forest-700">
+        <label class="flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm">
           <input type="checkbox" id="showMarkers" checked />
           Show Incident Markers
         </label>
@@ -257,15 +261,12 @@
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="xl:col-span-2 card p-5">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <div class="flex items-center gap-3">
-              <div class="stat-icon-badge" data-icon="heatmap" data-icon-size="17"></div>
-              <div>
-                <h2 class="font-display text-lg text-forest-800">Mapulang Lupa Heat Map</h2>
-                <p class="text-sm text-forest-500">Incident concentration based on recorded blotter locations</p>
-              </div>
+            <div>
+              <h2 class="font-display text-lg text-forest-800">Mapulang Lupa Heat Map</h2>
+              <p class="text-sm text-gray-500">Incident concentration based on recorded blotter locations</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 text-xs text-forest-600">
+            <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
               <div class="flex items-center gap-2">
                 <div class="legend-box" style="background:#4ade80;"></div><span>Low</span>
               </div>
@@ -295,19 +296,13 @@
           <div class="card p-5">
             <h2 class="font-display text-base text-forest-800 mb-4">Summary</h2>
             <div class="grid grid-cols-2 gap-4">
-              <div class="stat-card-grad plum">
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-white/80 text-xs font-medium uppercase tracking-wide">Visible Incidents</span>
-                  <div class="stat-icon-badge w-8 h-8 rounded-lg" data-icon="incident" data-icon-size="15"></div>
-                </div>
-                <div id="totalVisible" class="font-display text-2xl">0</div>
+              <div class="rounded-xl border border-gray-200 p-4 bg-gray-50">
+                <div class="text-xs text-gray-500">Visible Incidents</div>
+                <div id="totalVisible" class="text-2xl font-bold text-forest-800 mt-1">0</div>
               </div>
-              <div class="stat-card-grad dark">
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-white/70 text-xs font-medium uppercase tracking-wide">Top Category</span>
-                  <div class="stat-icon-badge w-8 h-8 rounded-lg" data-icon="trends" data-icon-size="15"></div>
-                </div>
-                <div id="topCategory" class="font-display text-sm font-semibold text-white leading-snug">—</div>
+              <div class="rounded-xl border border-gray-200 p-4 bg-gray-50">
+                <div class="text-xs text-gray-500">Top Category</div>
+                <div id="topCategory" class="text-sm font-semibold text-gray-800 mt-2">—</div>
               </div>
             </div>
           </div>
@@ -319,7 +314,7 @@
 
           <div class="card p-5">
             <h2 class="font-display text-base text-forest-800 mb-4">Map Notes</h2>
-            <ul class="text-sm text-forest-500 space-y-2 leading-6">
+            <ul class="text-sm text-gray-600 space-y-2 leading-6">
               <li>The green outline is the barangay boundary from your GeoJSON file.</li>
               <li>Only incident points inside the boundary are included in the heat layer.</li>
               <li>Use the filters to change the visible points and hotspots.</li>
@@ -329,16 +324,16 @@
         </div>
       </div>
 
-      <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-forest-50 flex items-center justify-between gap-3">
+      <div class="card">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
           <div>
             <h2 class="font-display text-lg text-forest-800">Incident Location Summary</h2>
-            <p class="text-sm text-forest-500">Only incidents inside the loaded barangay boundary are displayed</p>
+            <p class="text-sm text-gray-500">Only incidents inside the loaded barangay boundary are displayed</p>
           </div>
         </div>
 
         <div class="table-wrap">
-          <table class="data-table">
+          <table>
             <thead>
               <tr>
                 <th>ID</th>
@@ -396,20 +391,6 @@
       preferCanvas: true
     }).setView(MAP_CENTER, 16);
 
-    // The map is initialized while cdn.tailwindcss.com may still be
-    // injecting the grid/column classes that determine this card's final
-    // width, so Leaflet can compute its internal size from a stale
-    // (usually too-wide) container box. That desync is what causes the
-    // heat layer / tiles / controls to render outside the map card and
-    // overlap the header or the side rail. Force Leaflet to remeasure
-    // once the real layout has settled, and again on any resize.
-    setTimeout(() => map.invalidateSize(), 250);
-    window.addEventListener('load', () => map.invalidateSize());
-    window.addEventListener('resize', () => map.invalidateSize());
-    if (window.ResizeObserver) {
-      new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
-    }
-
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
@@ -438,14 +419,13 @@
 
         boundaryLayer = L.geoJSON(boundaryGeojson, {
           style: {
-            color: '#23703c',
+            color: '#1e7e1e',
             weight: 3,
-            fillColor: '#4fa868',
+            fillColor: '#4db84d',
             fillOpacity: 0.10
           }
         }).addTo(map);
 
-        map.invalidateSize();
         map.fitBounds(boundaryLayer.getBounds(), { padding: [20, 20] });
 
         boundaryStatus.innerHTML = 'Barangay boundary loaded successfully.';
@@ -512,11 +492,11 @@
           radius: 6,
           color: '#ffffff',
           weight: 2,
-          fillColor: '#123d22',
+          fillColor: '#0f420f',
           fillOpacity: 0.95
         }).bindPopup(`
           <div style="min-width:190px;">
-            <div style="font-weight:700; color:#123d22; margin-bottom:4px;">${item.category}</div>
+            <div style="font-weight:700; color:#0f420f; margin-bottom:4px;">${item.category}</div>
             <div><strong>ID:</strong> ${item.id}</div>
             <div><strong>Date:</strong> ${item.date}</div>
             <div><strong>Location:</strong> ${item.location}</div>
@@ -537,7 +517,7 @@
       categoryList.innerHTML = '';
 
       if (!entries.length) {
-        categoryList.innerHTML = '<p class="text-sm text-forest-400">No incidents match the selected filters.</p>';
+        categoryList.innerHTML = '<p class="text-sm text-gray-500">No incidents match the selected filters.</p>';
         return;
       }
 
@@ -548,8 +528,8 @@
         const row = document.createElement('div');
         row.innerHTML = `
           <div class="flex items-center justify-between text-sm mb-1">
-            <span class="font-medium text-forest-700">${category}</span>
-            <span class="text-forest-400">${count}</span>
+            <span class="font-medium text-gray-700">${category}</span>
+            <span class="text-gray-500">${count}</span>
           </div>
           <div class="mini-bar-wrap">
             <div class="mini-bar" style="width:${percent}%"></div>
@@ -565,7 +545,7 @@
       if (!data.length) {
         incidentTableBody.innerHTML = `
           <tr>
-            <td colspan="7">No incident data for the selected filter or inside the current boundary.</td>
+            <td colspan="7" class="text-center text-gray-500">No incident data for the selected filter or inside the current boundary.</td>
           </tr>
         `;
         return;
