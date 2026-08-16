@@ -61,10 +61,34 @@ document.addEventListener('input', (e) => {
 // Also enforces role-based page access (permissions.js) and hides
 // sidebar links the current role isn't permitted to use.
 async function requireAuth() {
+  const cachedUserStr = sessionStorage.getItem('bc_user');
+  if (cachedUserStr) {
+    try {
+      const cachedUser = JSON.parse(cachedUserStr);
+      if (typeof enforcePageAccess === 'function' && !enforcePageAccess(cachedUser.role)) {
+        return null;
+      }
+      if (typeof applyNavPermissions === 'function') applyNavPermissions(cachedUser.role);
+      if (typeof applyElementPermissionsLive === 'function') applyElementPermissionsLive(cachedUser.role);
+
+      const nameEl = document.querySelector('[data-user-name]');
+      const roleEl = document.querySelector('[data-user-role]');
+      const avatarEl = document.querySelector('[data-user-avatar]');
+      if (nameEl) nameEl.textContent = cachedUser.full_name;
+      if (roleEl) roleEl.textContent = cachedUser.role;
+      if (avatarEl) avatarEl.textContent = bcInitials(cachedUser.full_name);
+    } catch (e) {}
+  }
+
   try {
     const status = await BCApi.me();
-    if (!status.authenticated) { window.location.href = 'login.html'; return null; }
+    if (!status.authenticated) {
+      sessionStorage.removeItem('bc_user');
+      window.location.href = 'login.html';
+      return null;
+    }
 
+    sessionStorage.setItem('bc_user', JSON.stringify(status.user));
     const role = status.user.role;
     if (typeof enforcePageAccess === 'function' && !enforcePageAccess(role)) {
       return null; // enforcePageAccess already redirected away
@@ -81,6 +105,7 @@ async function requireAuth() {
     if (status.user.mustChangePassword) bcShowForcedPasswordChange();
     return status.user;
   } catch (e) {
+    sessionStorage.removeItem('bc_user');
     window.location.href = 'login.html';
     return null;
   }
@@ -98,6 +123,7 @@ function bcInitials(fullName) {
 
 async function doLogout() {
   if (!(await bcConfirm('Are you sure you want to log out?', { title: 'Log Out', okLabel: 'Log Out' }))) return;
+  sessionStorage.removeItem('bc_user');
   try { await BCApi.logout(); } catch (e) {}
   window.location.href = 'login.html';
 }

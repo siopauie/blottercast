@@ -352,7 +352,8 @@ function db() {
                 $pdo = new PDO($dsn, $cred['user'], $cred['pass'], [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => true
+                    PDO::ATTR_EMULATE_PREPARES => true,
+                    PDO::ATTR_PERSISTENT => true
                 ]);
                 $conn = new BlotterPdoAdapter($pdo);
             } catch (PDOException $e) {
@@ -392,6 +393,8 @@ function body(): array {
 }
 
 class BlotterDbSessionHandler implements SessionHandlerInterface {
+    private string $lastData = '';
+
     public function open($path, $name): bool { return true; }
     public function close(): bool { return true; }
 
@@ -403,19 +406,25 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
             $stmt->bind_param("s", $key);
             $stmt->execute();
             $row = $stmt->get_result()->fetch_assoc();
-            return $row ? (string)$row['setting_value'] : '';
+            $this->lastData = $row ? (string)$row['setting_value'] : '';
+            return $this->lastData;
         } catch (Throwable $t) {
             return '';
         }
     }
 
     public function write($id, $data): bool {
+        if ($data === $this->lastData && $data !== '') {
+            return true; // Skip redundant DB write when session is unchanged
+        }
         try {
             $mysqli = db();
             $key = "sess_" . $id;
             $stmt = $mysqli->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
             $stmt->bind_param("ss", $key, $data);
-            return (bool)$stmt->execute();
+            $res = (bool)$stmt->execute();
+            if ($res) $this->lastData = $data;
+            return $res;
         } catch (Throwable $t) {
             return false;
         }
@@ -427,6 +436,7 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
             $key = "sess_" . $id;
             $stmt = $mysqli->prepare("DELETE FROM system_settings WHERE setting_key = ?");
             $stmt->bind_param("s", $key);
+            $this->lastData = '';
             return (bool)$stmt->execute();
         } catch (Throwable $t) {
             return false;

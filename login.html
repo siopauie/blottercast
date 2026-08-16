@@ -462,10 +462,13 @@
 
     try {
       const result = await BCApi.login(username, password);
+      if (result && result.user) {
+        sessionStorage.setItem('bc_user', JSON.stringify(result.user));
+      }
       btn.classList.remove('loading');
       document.getElementById('successMsg').textContent = `Signed in as ${result.user.full_name} — Redirecting…`;
       document.getElementById('successOverlay').classList.add('show');
-      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
     } catch (err) {
       btn.classList.remove('loading');
       alert.classList.add('show');

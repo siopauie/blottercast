@@ -5,6 +5,17 @@
       "runtime": "vercel-php@0.7.2"
     }
   },
+  "headers": [
+    {
+      "source": "/(.*\\.(css|js|png|jpg|jpeg|svg|gif|ico|woff2|geojson))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",

@@ -26,6 +26,11 @@ $userId = (int)($_SESSION['user_id'] ?? 0);
  * queries, and it means alerts appear without needing a cron job.
  */
 function generateNotifications($mysqli): void {
+    if (!empty($_SESSION['last_notif_gen']) && (time() - (int)$_SESSION['last_notif_gen']) < 60) {
+        return;
+    }
+    $_SESSION['last_notif_gen'] = time();
+
     // 1) New High-priority incidents (last 3 days, not already alerted)
     $stmt = $mysqli->query(
         "SELECT id, report_no, location, zone_id FROM incidents

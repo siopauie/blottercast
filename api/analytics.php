@@ -20,19 +20,29 @@ if ($action === 'zones') {
 }
 
 if ($action === 'dashboard') {
-    $blotterCount = $mysqli->query('SELECT COUNT(*) c FROM blotter_records')->fetch_assoc()['c'];
-    $incidentCount = $mysqli->query('SELECT COUNT(*) c FROM incidents')->fetch_assoc()['c'];
-    $weekCount = $mysqli->query("SELECT COUNT(*) c FROM incidents WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetch_assoc()['c'];
-    $pendingStl = $mysqli->query("SELECT COUNT(*) c FROM settlements WHERE status='Pending'")->fetch_assoc()['c'];
-    $resolved = $mysqli->query("SELECT COUNT(*) c FROM incidents WHERE status IN ('Resolved','Closed')")->fetch_assoc()['c'];
+    $countsRes = $mysqli->query(
+        "SELECT 
+            (SELECT COUNT(*) FROM blotter_records) AS blotter_count,
+            (SELECT COUNT(*) FROM incidents) AS incident_count,
+            (SELECT COUNT(*) FROM incidents WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)) AS week_count,
+            (SELECT COUNT(*) FROM settlements WHERE status='Pending') AS pending_stl,
+            (SELECT COUNT(*) FROM incidents WHERE status IN ('Resolved','Closed')) AS resolved_count"
+    );
+    $counts = $countsRes ? $countsRes->fetch_assoc() : [];
+    $blotterCount = (int)($counts['blotter_count'] ?? 0);
+    $incidentCount = (int)($counts['incident_count'] ?? 0);
+    $weekCount = (int)($counts['week_count'] ?? 0);
+    $pendingStl = (int)($counts['pending_stl'] ?? 0);
+    $resolved = (int)($counts['resolved_count'] ?? 0);
     $resRate = $incidentCount > 0 ? round($resolved / $incidentCount * 100) : 0;
+    
     $recent = $mysqli->query('SELECT * FROM blotter_records ORDER BY date_filed DESC, id DESC LIMIT 8')->fetch_all(MYSQLI_ASSOC);
 
     json_response([
-        'blotterCount' => (int)$blotterCount,
-        'incidentCount' => (int)$incidentCount,
-        'weekCount' => (int)$weekCount,
-        'pendingSettlements' => (int)$pendingStl,
+        'blotterCount' => $blotterCount,
+        'incidentCount' => $incidentCount,
+        'weekCount' => $weekCount,
+        'pendingSettlements' => $pendingStl,
         'resolutionRate' => (int)$resRate,
         'recentBlotter' => $recent,
     ]);
@@ -56,7 +66,8 @@ if ($action === 'heatmap') {
 if ($action === 'trends') {
     require_permission('view_analytics');
     $years = $mysqli->query('SELECT DISTINCT YEAR(incident_date) y FROM incidents ORDER BY y DESC')->fetch_all(MYSQLI_ASSOC);
-    $year = $_GET['year'] ?? ($years[0]['y'] ?? date('Y'));
+    $year = (int)($_GET['year'] ?? ($years[0]['y'] ?? date('Y')));
+    $prevYear = $year - 1;
 
     $monthly = $mysqli->prepare('SELECT MONTH(incident_date) m, COUNT(*) c FROM incidents WHERE YEAR(incident_date)=? GROUP BY m ORDER BY m');
     $monthly->bind_param('s', $year);
@@ -73,21 +84,19 @@ if ($action === 'trends') {
     $cat->execute();
     $catRows = $cat->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    $total = $mysqli->prepare('SELECT COUNT(*) c FROM incidents WHERE YEAR(incident_date)=?');
-    $total->bind_param('s', $year);
-    $total->execute();
-    $totalCount = (int)$total->get_result()->fetch_assoc()['c'];
+    $summaryStmt = $mysqli->prepare(
+        "SELECT 
+            (SELECT COUNT(*) FROM incidents WHERE YEAR(incident_date)=?) AS total,
+            (SELECT COUNT(*) FROM incidents WHERE YEAR(incident_date)=?) AS prev_total,
+            (SELECT COUNT(*) FROM incidents WHERE YEAR(incident_date)=? AND status IN ('Resolved','Closed')) AS resolved_count"
+    );
+    $summaryStmt->bind_param('iii', $year, $prevYear, $year);
+    $summaryStmt->execute();
+    $summary = $summaryStmt->get_result()->fetch_assoc() ?: [];
 
-    $prevYear = (string)((int)$year - 1);
-    $prevTotal = $mysqli->prepare('SELECT COUNT(*) c FROM incidents WHERE YEAR(incident_date)=?');
-    $prevTotal->bind_param('s', $prevYear);
-    $prevTotal->execute();
-    $prevCount = (int)$prevTotal->get_result()->fetch_assoc()['c'];
-
-    $resolved = $mysqli->prepare("SELECT COUNT(*) c FROM incidents WHERE YEAR(incident_date)=? AND status IN ('Resolved','Closed')");
-    $resolved->bind_param('s', $year);
-    $resolved->execute();
-    $resolvedCount = (int)$resolved->get_result()->fetch_assoc()['c'];
+    $totalCount = (int)($summary['total'] ?? 0);
+    $prevCount = (int)($summary['prev_total'] ?? 0);
+    $resolvedCount = (int)($summary['resolved_count'] ?? 0);
 
     json_response([
         'years' => array_map(fn($r) => (int)$r['y'], $years),

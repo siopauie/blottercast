@@ -292,14 +292,12 @@
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
     (async function () {
-      await requireAuth();
+      const authPromise = requireAuth();
       refreshNotifBadge();
-      // Auto-backup check: only System Admin has system_settings, so this
-      // silently no-ops (403) for every other role — exactly the roles who
-      // shouldn't be the one triggering a database dump anyway.
       BCApi.autoBackupCheck().catch(() => {});
       try {
-        const stats = await BCApi.dashboard();
+        const [user, stats] = await Promise.all([authPromise, BCApi.dashboard()]);
+        if (!user || !stats) return;
 
         document.getElementById('statBlotters').textContent = stats.blotterCount;
         document.getElementById('statBlottersSub').textContent = 'blotter entries on file';
