@@ -301,10 +301,12 @@ INSERT INTO system_settings (setting_key, setting_value) VALUES
  ('ml_hotspot_model', 'random_forest')
 ON CONFLICT (setting_key) DO NOTHING;
 
--- ---------- Default System Users ----------
+-- ---------- Default User Accounts ----------
 INSERT INTO users (username, password, full_name, email, contact_no, role, status) VALUES
- ('admin',    '$2y$10$gPdQVfP/sd8qLe9ASooKY.pSrUS0Hp1H32Z9ramldZEHp6wixbHKS', 'Administrator',       'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'),
- ('kapitan',  '$2y$10$mqEn7A9uSs.PvL0H7Q/0Q.RRP.rmuPqDCedGYbn0NZRV8Woxj6RUW', 'Kapitan Jose Reyes', 'kapitan@mapulanglupa.gov.ph',  '0917-000-0002', 'Barangay Captain', 'Active'),
- ('jdelacuz', '$2y$10$GPffyEFuaDBsuZMLKogo7OQz..dhdqTFYXzVnRGqjPZVWP0pgg/Cy', 'Juan Dela Cruz II',  'jdelacruz@mapulanglupa.gov.ph', '0917-000-0003', 'Desk Officer',     'Active'),
- ('pencoder', '$2y$10$1JgTlm8TofG.0qZ/KaPiAe62DE7KWk7sGbV/lUjv5m98KWoJMLmDa', 'Pedro Encoder',      'pencoder@mapulanglupa.gov.ph',  '0917-000-0005', 'Data Encoder',     'Active')
-ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password;
+ ('admin',    '$2y$10$D3RkB7n7F5x82yMmXOpJuuV5CpBDHXPx0P92a5P8Du1fZS23LQaM6', 'Juan Dela Cruz',     'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'),
+ ('kapitan',  '$2y$10$shsPLjwNG/9onANG/MR63Oq6bNTc97vDY5V7tTC68XMOPrAry7Uva', 'Kapitan Jose Reyes', 'kapitan@mapulanglupa.gov.ph',  '0917-000-0002', 'Barangay Captain', 'Active'),
+ ('jdelacuz', '$2y$10$pjPgVgpiloDni4bIbnpg/uPLmTTv/BS5WDzluTAbtcGmo2rPjd77S', 'Juan Dela Cruz II',  'jdelacruz@mapulanglupa.gov.ph','0917-000-0003', 'Desk Officer',     'Active'),
+ ('msantos',  '$2y$10$pjPgVgpiloDni4bIbnpg/uPLmTTv/BS5WDzluTAbtcGmo2rPjd77S', 'Maria Santos',       'msantos@mapulanglupa.gov.ph',  '0917-000-0004', 'Desk Officer',     'Active'),
+ ('pencoder', '$2y$10$HXX7cA58nab0PucT.zzvXeGvOKHc2zbwqbgtI/KzVVIFvVZTQRd26', 'Pedro Encoder',      'pencoder@mapulanglupa.gov.ph', '0917-000-0005', 'Data Encoder',     'Active')
+ON CONFLICT (username) DO NOTHING;
+
