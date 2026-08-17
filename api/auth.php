@@ -5,10 +5,15 @@ $action = $_GET['action'] ?? '';
 $mysqli = db();
 
 if ($action === 'public_config') {
-    $url = getEnvVal('NEXT_PUBLIC_SUPABASE_URL') ?: (getEnvVal('SUPABASE_URL') ?: 'https://fzvepwddggfendczjecg.supabase.co');
-    $anonKey = getEnvVal('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?: (getEnvVal('SUPABASE_ANON_KEY') ?: (getEnvVal('SUPABASE_PUBLISHABLE_KEY') ?: ''));
+    $url = trim(getenv('NEXT_PUBLIC_SUPABASE_URL') ?: (getenv('SUPABASE_URL') ?: 'https://fzvepwddggfendczjecg.supabase.co'));
+    $anonKey = trim(
+        getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?:
+        (getenv('SUPABASE_ANON_KEY') ?:
+        (getenv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?:
+        (getenv('SUPABASE_PUBLISHABLE_KEY') ?: '')))
+    );
     json_response([
-        'supabase_url' => $url,
+        'supabase_url'      => $url,
         'supabase_anon_key' => $anonKey
     ]);
 }
