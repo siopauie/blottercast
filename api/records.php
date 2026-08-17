@@ -165,6 +165,46 @@ if ($type === 'blotter') {
             json_error('Complainant and respondent cannot be the same person.');
         }
 
+        if (!function_exists('computeAge')) {
+            function computeAge(?string $dob): ?int {
+                if (!$dob) return null;
+                try {
+                    $d = new DateTime($dob);
+                    $now = new DateTime();
+                    if ($d > $now) return null;
+                    return (int)$d->diff($now)->y;
+                } catch (Exception $e) {
+                    return null;
+                }
+            }
+        }
+
+        // Age validation: Only individuals aged 15 years old and above can file or be recorded in blotter
+        if ($complainantId) {
+            $stmtC = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtC->bind_param('i', $complainantId);
+            $stmtC->execute();
+            $cRow = $stmtC->get_result()->fetch_assoc();
+            if ($cRow && !empty($cRow['date_of_birth'])) {
+                $cAge = computeAge($cRow['date_of_birth']);
+                if ($cAge !== null && $cAge < 15) {
+                    json_error('Complainant/filer must be at least 15 years old.');
+                }
+            }
+        }
+        if ($respondentId) {
+            $stmtR = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtR->bind_param('i', $respondentId);
+            $stmtR->execute();
+            $rRow = $stmtR->get_result()->fetch_assoc();
+            if ($rRow && !empty($rRow['date_of_birth'])) {
+                $rAge = computeAge($rRow['date_of_birth']);
+                if ($rAge !== null && $rAge < 15) {
+                    json_error('Complainant/filer must be at least 15 years old.');
+                }
+            }
+        }
+
         $docketNo = ($d['docketNo'] ?? '') ?: nextSeqNo($mysqli, 'blotter_records', 'docket_no', 'BLT');
         $stmt = $mysqli->prepare(
             'INSERT INTO blotter_records (docket_no, date_filed, complainant, complainant_id, complainant_addr, respondent, respondent_id, respondent_addr, nature, case_type, status, zone_id)
@@ -193,6 +233,33 @@ if ($type === 'blotter') {
         if ($sameCensusPerson || $sameNameTyped) {
             json_error('Complainant and respondent cannot be the same person.');
         }
+
+        // Age validation: Only individuals aged 15 years old and above can file or be recorded in blotter
+        if ($complainantId) {
+            $stmtC = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtC->bind_param('i', $complainantId);
+            $stmtC->execute();
+            $cRow = $stmtC->get_result()->fetch_assoc();
+            if ($cRow && !empty($cRow['date_of_birth'])) {
+                $cAge = computeAge($cRow['date_of_birth']);
+                if ($cAge !== null && $cAge < 15) {
+                    json_error('Complainant/filer must be at least 15 years old.');
+                }
+            }
+        }
+        if ($respondentId) {
+            $stmtR = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtR->bind_param('i', $respondentId);
+            $stmtR->execute();
+            $rRow = $stmtR->get_result()->fetch_assoc();
+            if ($rRow && !empty($rRow['date_of_birth'])) {
+                $rAge = computeAge($rRow['date_of_birth']);
+                if ($rAge !== null && $rAge < 15) {
+                    json_error('Complainant/filer must be at least 15 years old.');
+                }
+            }
+        }
+
         $stmt->bind_param('ssississsssi', $dateFiled, $complainant, $complainantId, $complainantAddr, $respondent, $respondentId, $respondentAddr, $nature, $caseType, $status, $zoneId, $id);
         $stmt->execute();
         json_response(['ok' => true]);

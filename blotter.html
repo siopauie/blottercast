@@ -399,10 +399,21 @@
   async function loadCensusResidentsForBlotterPickers() {
     const raw = await BCApi.docList('census');
     censusResidentsForBlotter = raw.map(r => {
-      const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+      let age = null;
+      if (r.date_of_birth) {
+        const bdate = new Date(r.date_of_birth);
+        const today = new Date();
+        age = today.getFullYear() - bdate.getFullYear();
+        const m = today.getMonth() - bdate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) {
+          age--;
+        }
+      } else if (r.age !== undefined && r.age !== null && r.age !== '') {
+        age = Number(r.age);
+      }
       return {
         id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
-        age, address: r.address || '', householdNo: r.household_no || '',
+        age, dateOfBirth: r.date_of_birth || null, address: r.address || '', householdNo: r.household_no || '',
       };
     });
     bcInitResidentPicker('f_complainantSearch', 'f_complainantId', 'f_complainantSuggestions', censusResidentsForBlotter, onComplainantPicked);
@@ -410,15 +421,35 @@
   }
 
   function onComplainantPicked(r) {
-    document.getElementById('f_complainant').value = r ? `${r.lastName}, ${r.firstName} ${r.middleName}`.trim() : '';
-    if (r && r.address && !document.getElementById('f_complainantAddr').value) {
+    if (!r) {
+      document.getElementById('f_complainant').value = '';
+      return;
+    }
+    if (r.age !== null && r.age !== undefined && r.age < 15) {
+      bcAlert('Complainant/filer must be at least 15 years old.');
+      bcResidentPickerClear('f_complainantSearch');
+      document.getElementById('f_complainant').value = '';
+      return;
+    }
+    document.getElementById('f_complainant').value = `${r.lastName}, ${r.firstName} ${r.middleName}`.trim();
+    if (r.address && !document.getElementById('f_complainantAddr').value) {
       document.getElementById('f_complainantAddr').value = r.address;
     }
   }
 
   function onRespondentPicked(r) {
-    document.getElementById('f_respondent').value = r ? `${r.lastName}, ${r.firstName} ${r.middleName}`.trim() : '';
-    if (r && r.address && !document.getElementById('f_respondentAddr').value) {
+    if (!r) {
+      document.getElementById('f_respondent').value = '';
+      return;
+    }
+    if (r.age !== null && r.age !== undefined && r.age < 15) {
+      bcAlert('Complainant/filer must be at least 15 years old.');
+      bcResidentPickerClear('f_respondentSearch');
+      document.getElementById('f_respondent').value = '';
+      return;
+    }
+    document.getElementById('f_respondent').value = `${r.lastName}, ${r.firstName} ${r.middleName}`.trim();
+    if (r.address && !document.getElementById('f_respondentAddr').value) {
       document.getElementById('f_respondentAddr').value = r.address;
     }
   }
@@ -641,6 +672,23 @@
     }
     if (!vals.type) { await bcAlert('Please select the case Type.'); return; }
     if (!vals.status) { await bcAlert('Please select the Status.'); return; }
+
+    // Age validation: Filer/complainant and recorded party must be at least 15 years old
+    if (complainantId) {
+      const compResident = censusResidentsForBlotter.find(x => x.id === Number(complainantId));
+      if (compResident && compResident.age !== null && compResident.age !== undefined && compResident.age < 15) {
+        await bcAlert('Complainant/filer must be at least 15 years old.');
+        return;
+      }
+    }
+    if (respondentId) {
+      const respResident = censusResidentsForBlotter.find(x => x.id === Number(respondentId));
+      if (respResident && respResident.age !== null && respResident.age !== undefined && respResident.age < 15) {
+        await bcAlert('Complainant/filer must be at least 15 years old.');
+        return;
+      }
+    }
+
     const sameCensusPerson = complainantId && respondentId && complainantId === respondentId;
     const sameNameTyped = vals.complainant && vals.respondent && vals.complainant.trim().toLowerCase() === vals.respondent.trim().toLowerCase();
     if (sameCensusPerson || sameNameTyped) {
