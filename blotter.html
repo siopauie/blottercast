@@ -213,7 +213,7 @@
 
 <!-- Add/Edit Modal -->
 <div class="modal-overlay" id="blotterModal">
-  <div class="modal-box">
+  <div class="modal-box" style="width:720px">
     <div class="flex items-center justify-between mb-6">
       <h2 class="font-display text-xl text-forest-800" id="modalTitle">New Blotter Entry</h2>
       <button onclick="closeModal('blotterModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
@@ -221,14 +221,20 @@
     <form id="blotterForm" class="space-y-4">
       <input type="hidden" id="editId"/>
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">Docket No.</label><input type="text" id="f_docketNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/></div>
-        <div><label class="form-label">Date Filed</label><input type="date" id="f_dateFiled" class="form-input" data-no-future/></div>
+        <div>
+          <label class="form-label">Docket No.</label>
+          <input type="text" id="f_docketNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/>
+        </div>
+        <div>
+          <label class="form-label">Date Filed</label>
+          <input type="date" id="f_dateFiled" class="form-input" data-no-future/>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div class="relative">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between min-h-[24px] mb-1">
             <label class="form-label mb-0">Name of Complainant <span class="text-red-500">*</span></label>
-            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer" id="f_complainantOutsideLabel">
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer whitespace-nowrap" id="f_complainantOutsideLabel">
               <input type="checkbox" id="f_complainantOutside" class="rounded" onchange="toggleComplainantOutside()"/> Not a resident / outside party
             </label>
           </div>
@@ -238,13 +244,18 @@
           <input type="hidden" id="f_complainantId"/>
           <div id="f_complainantSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
         </div>
-        <div><label class="form-label">Complainant Address</label><input type="text" id="f_complainantAddr" class="form-input" placeholder="Address"/></div>
+        <div>
+          <div class="flex items-center min-h-[24px] mb-1">
+            <label class="form-label mb-0">Complainant Address</label>
+          </div>
+          <input type="text" id="f_complainantAddr" class="form-input" placeholder="Address"/>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div class="relative">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between min-h-[24px] mb-1">
             <label class="form-label mb-0">Name of Respondent <span class="text-red-500">*</span></label>
-            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer" id="f_respondentOutsideLabel">
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer whitespace-nowrap" id="f_respondentOutsideLabel">
               <input type="checkbox" id="f_respondentOutside" class="rounded" onchange="toggleRespondentOutside()"/> Not a resident / outside party
             </label>
           </div>
@@ -254,11 +265,22 @@
           <input type="hidden" id="f_respondentId"/>
           <div id="f_respondentSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
         </div>
-        <div><label class="form-label">Respondent Address</label><input type="text" id="f_respondentAddr" class="form-input" placeholder="Address"/></div>
+        <div>
+          <div class="flex items-center min-h-[24px] mb-1">
+            <label class="form-label mb-0">Respondent Address</label>
+          </div>
+          <input type="text" id="f_respondentAddr" class="form-input" placeholder="Address"/>
+        </div>
       </div>
-      <p class="text-xs text-forest-400 -mt-2">Either the complainant or the respondent can be marked "Not a resident" if they're from outside the barangay — but not both, since at least one party must be a registered Census resident.</p>
+      <div class="p-2.5 bg-forest-50 border border-forest-100 rounded-xl text-xs text-forest-600 flex items-start gap-2">
+        <span data-icon="info" data-icon-size="14" class="text-forest-500 mt-0.5 shrink-0"></span>
+        <span>Either the complainant or the respondent can be marked <strong>"Not a resident"</strong> if they're from outside the barangay — but not both, since at least one party must be a registered Census resident.</span>
+      </div>
       <div class="grid grid-cols-3 gap-4">
-        <div><label class="form-label">Nature of Case</label><input type="text" id="f_nature" class="form-input" placeholder="e.g. Pag-aaway" data-no-numbers/></div>
+        <div>
+          <label class="form-label">Nature of Case</label>
+          <input type="text" id="f_nature" class="form-input" placeholder="e.g. Pag-aaway" data-no-numbers/>
+        </div>
         <div>
           <label class="form-label">Type</label>
           <select id="f_type" class="form-input" required>

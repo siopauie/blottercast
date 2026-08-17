@@ -365,7 +365,8 @@ body { font-family: 'DM Sans', sans-serif; }
 .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
 .form-input {
   width: 100%;
-  padding: 9px 12px;
+  height: 42px;
+  padding: 8px 12px;
   border: 1.5px solid var(--forest-100);
   border-radius: 10px;
   font-size: 0.875rem;
@@ -373,10 +374,12 @@ body { font-family: 'DM Sans', sans-serif; }
   background: var(--forest-50);
   transition: border-color 0.15s, background 0.15s;
   font-family: 'DM Sans', sans-serif;
+  box-sizing: border-box;
 }
 .form-input:focus { outline: none; border-color: var(--forest-500); background: #fff; }
 .form-input:focus-visible { outline: 2px solid var(--forest-400); outline-offset: 1px; }
 select.form-input { cursor: pointer; }
+textarea.form-input { height: auto; min-height: 80px; }
 
 /* ---------------- Buttons ---------------- */
 .btn-primary {
