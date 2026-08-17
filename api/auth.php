@@ -83,6 +83,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     ]]);
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'google_login') {
+    $in = body();
+    $email = trim($in['email'] ?? '');
+    $fullName = trim($in['full_name'] ?? '');
+    if ($email === '') json_error('Email is required from Google account');
+
+    $stmt = $mysqli->prepare('SELECT id, username, full_name, email, role, status FROM users WHERE LOWER(email) = LOWER(?)');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        // Check if username matches email prefix (e.g. admin@... -> admin)
+        $prefix = explode('@', $email)[0];
+        $stmt2 = $mysqli->prepare('SELECT id, username, full_name, email, role, status FROM users WHERE LOWER(username) = LOWER(?)');
+        $stmt2->bind_param('s', $prefix);
+        $stmt2->execute();
+        $user = $stmt2->get_result()->fetch_assoc();
+    }
+
+    if ($user) {
+        if ($user['status'] !== 'Active') {
+            json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
+        }
+    } else {
+        // Auto-provision new Google account with Desk Officer role
+        $prefix = preg_replace('/[^a-zA-Z0-9_]/', '', explode('@', $email)[0]);
+        if (empty($prefix)) $prefix = 'user';
+        $username = $prefix;
+        $checkU = $mysqli->prepare('SELECT id FROM users WHERE username = ?');
+        $checkU->bind_param('s', $username);
+        $checkU->execute();
+        if ($checkU->get_result()->fetch_assoc()) {
+            $username = $prefix . '_' . substr(md5(uniqid()), 0, 4);
+        }
+
+        $name = !empty($fullName) ? $fullName : ucwords(str_replace(['.', '_', '-'], ' ', $prefix));
+        $role = 'Desk Officer';
+        $status = 'Active';
+        $randPw = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+
+        $ins = $mysqli->prepare('INSERT INTO users (username, password, full_name, email, role, status, password_changed_at) VALUES (?,?,?,?,?,?,NOW())');
+        $ins->bind_param('ssssss', $username, $randPw, $name, $email, $role, $status);
+        $ins->execute();
+
+        $user = [
+            'id' => $mysqli->insert_id,
+            'username' => $username,
+            'full_name' => $name,
+            'role' => $role,
+            'email' => $email
+        ];
+
+        logAudit($mysqli, 'Created', 'Users', "New account registered via Google: $username ($email)");
+    }
+
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['must_change_password'] = false;
+    $_SESSION['last_activity'] = time();
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Login', 'System', 'Google OAuth login successful')");
+    $log->bind_param('s', $user['username']);
+    $log->execute();
+
+    json_response(['ok' => true, 'user' => [
+        'username' => $user['username'],
+        'full_name' => $user['full_name'],
+        'role' => $user['role'],
+        'mustChangePassword' => false
+    ]]);
+}
+
 if ($action === 'logout') {
     if (!empty($_SESSION['username'])) {
         $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Logout', 'System', 'User logged out')");

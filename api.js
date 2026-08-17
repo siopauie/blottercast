@@ -34,6 +34,12 @@ const BCApi = {
       body: JSON.stringify({ username, password }),
     });
   },
+  googleLogin(email, full_name, token = '') {
+    return this._fetch(`${BC_API}/api/auth.php?action=google_login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, full_name, token }),
+    });
+  },
   logout() { return this._fetch(`${BC_API}/api/auth.php?action=logout`); },
   me() { return this._fetch(`${BC_API}/api/auth.php?action=me`); },
   changePassword(currentPassword, newPassword) {
