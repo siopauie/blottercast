@@ -111,11 +111,11 @@ $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
 
 // ---- demo accounts across all roles (password shown after each) ----
 $demoAccounts = [
-    ['admin',    'BlotterCast2026!Admin',    'Juan Dela Cruz',     'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'],
-    ['kapitan',  'BlotterCast2026!Kapitan',  'Kapitan Jose Reyes',  'kapitan@mapulanglupa.gov.ph', '0917-000-0002', 'Barangay Captain', 'Active'],
-    ['jdelacuz', 'BlotterCast2026!Officer',  'Juan Dela Cruz II',   'jdelacruz@mapulanglupa.gov.ph','0917-000-0003', 'Desk Officer',     'Active'],
-    ['msantos',  'BlotterCast2026!Officer',  'Maria Santos',        'msantos@mapulanglupa.gov.ph', '0917-000-0004', 'Desk Officer',     'Active'],
-    ['pencoder', 'BlotterCast2026!Encoder',  'Pedro Encoder',       'pencoder@mapulanglupa.gov.ph','0917-000-0005', 'Data Encoder',     'Active'],
+    ['admin',    'admin123',    'Juan Dela Cruz',     'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'],
+    ['kapitan',  'kapitan123',  'Kapitan Jose Reyes',  'kapitan@mapulanglupa.gov.ph', '0917-000-0002', 'Barangay Captain', 'Active'],
+    ['jdelacuz', 'officer123',  'Juan Dela Cruz II',   'jdelacruz@mapulanglupa.gov.ph','0917-000-0003', 'Desk Officer',     'Active'],
+    ['msantos',  'officer123',  'Maria Santos',        'msantos@mapulanglupa.gov.ph', '0917-000-0004', 'Desk Officer',     'Active'],
+    ['pencoder', 'encoder123',  'Pedro Encoder',       'pencoder@mapulanglupa.gov.ph','0917-000-0005', 'Data Encoder',     'Active'],
 ];
 $insertUser = $mysqli->prepare(
     "INSERT INTO users (username, password, full_name, email, contact_no, role, status)

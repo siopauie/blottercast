@@ -303,10 +303,10 @@ ON CONFLICT (setting_key) DO NOTHING;
 
 -- ---------- Default User Accounts ----------
 INSERT INTO users (username, password, full_name, email, contact_no, role, status) VALUES
- ('admin',    '$2y$10$D3RkB7n7F5x82yMmXOpJuuV5CpBDHXPx0P92a5P8Du1fZS23LQaM6', 'Juan Dela Cruz',     'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'),
- ('kapitan',  '$2y$10$shsPLjwNG/9onANG/MR63Oq6bNTc97vDY5V7tTC68XMOPrAry7Uva', 'Kapitan Jose Reyes', 'kapitan@mapulanglupa.gov.ph',  '0917-000-0002', 'Barangay Captain', 'Active'),
- ('jdelacuz', '$2y$10$pjPgVgpiloDni4bIbnpg/uPLmTTv/BS5WDzluTAbtcGmo2rPjd77S', 'Juan Dela Cruz II',  'jdelacruz@mapulanglupa.gov.ph','0917-000-0003', 'Desk Officer',     'Active'),
- ('msantos',  '$2y$10$pjPgVgpiloDni4bIbnpg/uPLmTTv/BS5WDzluTAbtcGmo2rPjd77S', 'Maria Santos',       'msantos@mapulanglupa.gov.ph',  '0917-000-0004', 'Desk Officer',     'Active'),
- ('pencoder', '$2y$10$HXX7cA58nab0PucT.zzvXeGvOKHc2zbwqbgtI/KzVVIFvVZTQRd26', 'Pedro Encoder',      'pencoder@mapulanglupa.gov.ph', '0917-000-0005', 'Data Encoder',     'Active')
-ON CONFLICT (username) DO NOTHING;
+ ('admin',    '$2y$10$83eRfqKumjsPb6awZCWnWufUjJQYDNrAS7JefoX8.xNiTWDrnywO2', 'Juan Dela Cruz',     'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'),
+ ('kapitan',  '$2y$10$MU1wJRAapBuFi7uCpUpADuCpyoohsd.qnYZrhS2pKBHn/41cCSYb.', 'Kapitan Jose Reyes', 'kapitan@mapulanglupa.gov.ph',  '0917-000-0002', 'Barangay Captain', 'Active'),
+ ('jdelacuz', '$2y$10$h3SgudFs/ZH0zTPNYFpGxeC./nrW5Dej91fIq1pwPaZErdSIpraW.', 'Juan Dela Cruz II',  'jdelacruz@mapulanglupa.gov.ph','0917-000-0003', 'Desk Officer',     'Active'),
+ ('msantos',  '$2y$10$h3SgudFs/ZH0zTPNYFpGxeC./nrW5Dej91fIq1pwPaZErdSIpraW.', 'Maria Santos',       'msantos@mapulanglupa.gov.ph',  '0917-000-0004', 'Desk Officer',     'Active'),
+ ('pencoder', '$2y$10$NpApjKWbJzDnbxEU2t123O2XkZBADPu4HKbwXVyb82am3Vb.vIyaa', 'Pedro Encoder',      'pencoder@mapulanglupa.gov.ph', '0917-000-0005', 'Data Encoder',     'Active')
+ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password;
 
