@@ -124,6 +124,19 @@ function bcInitials(fullName) {
 async function doLogout() {
   if (!(await bcConfirm('Are you sure you want to log out?', { title: 'Log Out', okLabel: 'Log Out' }))) return;
   sessionStorage.removeItem('bc_user');
+  sessionStorage.clear();
+  try {
+    if (window.supabase) {
+      const res = await fetch('api/auth.php?action=public_config');
+      if (res.ok) {
+        const cfg = await res.json();
+        if (cfg.supabase_url && cfg.supabase_anon_key) {
+          const sb = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+          await sb.auth.signOut();
+        }
+      }
+    }
+  } catch (e) {}
   try { await BCApi.logout(); } catch (e) {}
   window.location.href = 'login.html';
 }

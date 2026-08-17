@@ -537,8 +537,11 @@
     }
   }
 
-  // Check for returning OAuth session on page load
+  // Check for returning OAuth session ONLY when returning from Google redirect
   window.addEventListener('DOMContentLoaded', async () => {
+    const isOAuthReturn = window.location.hash.includes('access_token') || window.location.search.includes('code=') || window.location.hash.includes('error=');
+    if (!isOAuthReturn) return;
+
     const client = await initSupabase();
     if (!client) return;
 
@@ -548,8 +551,15 @@
         document.getElementById('successMsg').textContent = `Signed in with Google as ${session.user.email} — Redirecting…`;
         document.getElementById('successOverlay').classList.add('show');
 
+        // Clean up hash from URL
+        if (window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
         const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
         const res = await BCApi.googleLogin(session.user.email, fullName, session.access_token);
+        // Clear the client-side Supabase token so logging out won't auto-re-login
+        await client.auth.signOut().catch(() => {});
         if (res && res.user) {
           sessionStorage.setItem('bc_user', JSON.stringify(res.user));
           setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
@@ -557,6 +567,10 @@
       }
     } catch (err) {
       console.warn('OAuth session exchange:', err);
+      // Clean up hash if error
+      if (window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     }
   });
 
