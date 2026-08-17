@@ -372,15 +372,14 @@ if ($action === 'send_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 }
 
-// ── Forgot Password: Step 2 - Verify OTP & Update Password ──
-if ($action === 'verify_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+// ── Forgot Password: Step 2 - Verify OTP Code Only ──
+if ($action === 'verify_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = body();
     $identity = trim($in['identity'] ?? '');
     $otp = trim($in['otp'] ?? '');
-    $newPassword = $in['newPassword'] ?? '';
 
-    if ($identity === '' || $otp === '' || $newPassword === '') {
-        json_error('Username/email, 6-digit code, and new password are required');
+    if ($identity === '' || $otp === '') {
+        json_error('Username/email and 6-digit verification code are required');
     }
 
     // Lookup user
@@ -403,7 +402,52 @@ if ($action === 'verify_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $resetRecord = $vStmt->get_result()->fetch_assoc();
 
     if (!$resetRecord) {
-        json_error('Invalid or expired verification code. Please check your email or request a new code.', 400);
+        json_error('Invalid or expired verification code. Please check your code or request a new one.', 400);
+    }
+
+    // Generate temporary reset token valid for 15 minutes
+    $resetToken = bin2hex(random_bytes(24));
+    $updToken = $mysqli->prepare('UPDATE password_resets SET otp = ?, expires_at = ? WHERE id = ?');
+    $newExpiry = date('Y-m-d H:i:s', time() + 15 * 60);
+    $updToken->bind_param('ssi', $resetToken, $newExpiry, $resetRecord['id']);
+    $updToken->execute();
+
+    json_response([
+        'ok' => true,
+        'reset_token' => $resetToken,
+        'message' => 'Verification code confirmed!'
+    ]);
+}
+
+// ── Forgot Password: Step 3 - Set New Password ──
+if ($action === 'set_new_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $in = body();
+    $identity = trim($in['identity'] ?? '');
+    $resetToken = trim($in['reset_token'] ?? '');
+    $newPassword = $in['newPassword'] ?? '';
+
+    if ($identity === '' || $resetToken === '' || $newPassword === '') {
+        json_error('Invalid request. Please complete the verification step first.');
+    }
+
+    // Lookup user
+    $stmt = $mysqli->prepare('SELECT id, username, email, full_name, status FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)');
+    $stmt->bind_param('ss', $identity, $identity);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        json_error('Account not found', 404);
+    }
+
+    // Validate reset token
+    $vStmt = $mysqli->prepare('SELECT id FROM password_resets WHERE LOWER(email) = LOWER(?) AND otp = ? AND expires_at > NOW()');
+    $vStmt->bind_param('ss', $user['email'], $resetToken);
+    $vStmt->execute();
+    $resetRecord = $vStmt->get_result()->fetch_assoc();
+
+    if (!$resetRecord) {
+        json_error('Your verification session has expired. Please request a new code.', 400);
     }
 
     $settings = getSecuritySettings();
@@ -417,7 +461,7 @@ if ($action === 'verify_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $upd->bind_param('si', $hash, $user['id']);
     $upd->execute();
 
-    // Delete used OTP
+    // Delete used reset record
     $del = $mysqli->prepare('DELETE FROM password_resets WHERE LOWER(email) = LOWER(?)');
     $del->bind_param('s', $user['email']);
     $del->execute();

@@ -530,7 +530,7 @@
         </button>
       </div>
 
-      <!-- Step 2: Enter 6-Digit OTP & Set New Password -->
+      <!-- Step 2: Enter 6-Digit OTP Code Only -->
       <div id="forgotStep2" style="display:none;">
         <div class="alert-error" id="forgotAlert2" style="margin-bottom:1rem;">
           <span data-icon="warning" data-icon-size="16"></span>
@@ -542,11 +542,33 @@
           <span>We sent a 6-digit verification code to <strong id="resetMaskedEmail"></strong></span>
         </div>
 
-        <div class="input-group" style="margin-bottom:1rem;">
+        <div class="input-group" style="margin-bottom:1.25rem;">
           <label class="input-label">6-Digit Verification Code</label>
           <div class="input-wrap">
             <input type="text" id="resetOtp" class="form-input otp-input" placeholder="123456" maxlength="6" autocomplete="one-time-code"/>
           </div>
+        </div>
+
+        <button type="button" class="btn-login" id="btnVerifyOtp" onclick="handleVerifyCode()">
+          <div class="spinner" id="forgotSpinner2"></div>
+          <span class="btn-text">Verify Code</span>
+        </button>
+
+        <div style="text-align:center; margin-top:1rem;">
+          <a href="javascript:void(0)" onclick="backToStep1()" style="font-size:0.8rem; color:#6b7280; text-decoration:underline;">← Change email / Resend code</a>
+        </div>
+      </div>
+
+      <!-- Step 3: Set New Password & Confirm (with eye toggles) -->
+      <div id="forgotStep3" style="display:none;">
+        <div class="alert-error" id="forgotAlert3" style="margin-bottom:1rem;">
+          <span data-icon="warning" data-icon-size="16"></span>
+          <span id="forgotAlertMsg3"></span>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 12px; margin-bottom:1.25rem; font-size:0.82rem; color:#166534; display:flex; align-items:center; gap:8px;">
+          <span>✓</span>
+          <span>Code verified! Please choose a new password.</span>
         </div>
 
         <div class="input-group" style="margin-bottom:1rem;">
@@ -563,24 +585,21 @@
           <div class="input-wrap">
             <span class="input-icon" data-icon="key" data-icon-size="16"></span>
             <input type="password" id="resetConfirmPw" class="form-input" placeholder="Re-enter new password"/>
+            <button type="button" class="toggle-pw" id="toggleResetConfirmPw" onclick="toggleResetConfirmPw()"><span data-icon="view" data-icon-size="18"></span></button>
           </div>
         </div>
 
-        <button type="button" class="btn-login" id="btnVerifyOtp" onclick="handleVerifyAndResetPw()">
-          <div class="spinner" id="forgotSpinner2"></div>
-          <span class="btn-text">Reset Password</span>
+        <button type="button" class="btn-login" id="btnSaveNewPw" onclick="handleSaveNewPassword()">
+          <div class="spinner" id="forgotSpinner3"></div>
+          <span class="btn-text">Change Password</span>
         </button>
-
-        <div style="text-align:center; margin-top:1rem;">
-          <a href="javascript:void(0)" onclick="backToStep1()" style="font-size:0.8rem; color:#6b7280; text-decoration:underline;">← Change email / Resend code</a>
-        </div>
       </div>
 
-      <!-- Step 3: Success Confirmation -->
-      <div id="forgotStep3" style="display:none; text-align:center; padding:1rem 0;">
+      <!-- Step 4: Success Confirmation -->
+      <div id="forgotStep4" style="display:none; text-align:center; padding:1rem 0;">
         <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; font-weight:700;">✓</div>
         <div style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.15rem; color:#111827; margin-bottom:0.5rem;">Password Updated!</div>
-        <div style="font-size:0.85rem; color:#6b7280; margin-bottom:1.5rem; line-height:1.5;">Your password has been reset successfully. You can now sign in with your new password.</div>
+        <div style="font-size:0.85rem; color:#6b7280; margin-bottom:1.5rem; line-height:1.5;">Your password has been changed successfully. You can now sign in with your new password.</div>
         <button type="button" class="btn-login" onclick="finishResetFlow()">Sign In Now</button>
       </div>
     </div>
@@ -742,8 +761,9 @@
     }
   });
 
-  // ── Forgot Password Handlers (Brevo OTP) ──
+  // ── Forgot Password Handlers (Step-by-Step) ──
   let activeResetIdentity = '';
+  let activeResetToken = '';
 
   function openForgotModal() {
     document.getElementById('forgotModal').classList.add('show');
@@ -758,8 +778,10 @@
     document.getElementById('forgotStep1').style.display = 'block';
     document.getElementById('forgotStep2').style.display = 'none';
     document.getElementById('forgotStep3').style.display = 'none';
+    document.getElementById('forgotStep4').style.display = 'none';
     document.getElementById('forgotAlert1').classList.remove('show');
     document.getElementById('forgotAlert2').classList.remove('show');
+    document.getElementById('forgotAlert3').classList.remove('show');
     document.getElementById('forgotModalSubtitle').textContent = 'Enter your username or email to receive a 6-digit verification code.';
   }
 
@@ -770,6 +792,14 @@
     else { pw.type = 'password'; btn.innerHTML = iconSvg('view', 18); }
   }
 
+  function toggleResetConfirmPw() {
+    const pw = document.getElementById('resetConfirmPw');
+    const btn = document.getElementById('toggleResetConfirmPw');
+    if (pw.type === 'password') { pw.type = 'text'; btn.innerHTML = iconSvg('viewOff', 18); }
+    else { pw.type = 'password'; btn.innerHTML = iconSvg('view', 18); }
+  }
+
+  // Step 1: Send OTP Code
   async function handleSendResetOtp() {
     const idEl = document.getElementById('resetIdentity');
     const errEl = document.getElementById('resetIdentityError');
@@ -795,11 +825,11 @@
       const res = await BCApi.sendResetOtp(identity);
       btn.classList.remove('loading');
 
-      // Switch to Step 2
+      // Switch to Step 2 (Verify Code)
       document.getElementById('resetMaskedEmail').textContent = res.masked_email || identity;
       document.getElementById('forgotStep1').style.display = 'none';
       document.getElementById('forgotStep2').style.display = 'block';
-      document.getElementById('forgotModalSubtitle').textContent = 'Enter the 6-digit code sent to your email and set your new password.';
+      document.getElementById('forgotModalSubtitle').textContent = 'Enter the 6-digit code sent to your email.';
       const otpInput = document.getElementById('resetOtp');
       if (otpInput) { otpInput.value = ''; otpInput.focus(); }
     } catch (err) {
@@ -809,27 +839,61 @@
     }
   }
 
-  async function handleVerifyAndResetPw() {
+  // Step 2: Verify OTP Code
+  async function handleVerifyCode() {
     const otpEl = document.getElementById('resetOtp');
-    const pwEl = document.getElementById('resetNewPw');
-    const cpwEl = document.getElementById('resetConfirmPw');
     const alertEl = document.getElementById('forgotAlert2');
     const alertMsg = document.getElementById('forgotAlertMsg2');
     const btn = document.getElementById('btnVerifyOtp');
 
-    [otpEl, pwEl, cpwEl].forEach(el => el.classList.remove('error'));
+    otpEl.classList.remove('error');
     alertEl.classList.remove('show');
 
     const otp = otpEl.value.trim();
-    const newPw = pwEl.value;
-    const confirmPw = cpwEl.value;
-
     if (!otp || otp.length < 6) {
       otpEl.classList.add('error');
       alertEl.classList.add('show');
-      alertMsg.textContent = 'Please enter the 6-digit verification code.';
+      alertMsg.textContent = 'Please enter the valid 6-digit verification code.';
       return;
     }
+
+    btn.classList.add('loading');
+
+    try {
+      const res = await BCApi.verifyOtp(activeResetIdentity, otp);
+      activeResetToken = res.reset_token || '';
+      btn.classList.remove('loading');
+
+      // Switch to Step 3 (Set New Password)
+      document.getElementById('forgotStep2').style.display = 'none';
+      document.getElementById('forgotStep3').style.display = 'block';
+      document.getElementById('forgotModalSubtitle').textContent = 'Set your new password.';
+      const newPwInput = document.getElementById('resetNewPw');
+      const confirmPwInput = document.getElementById('resetConfirmPw');
+      if (newPwInput) newPwInput.value = '';
+      if (confirmPwInput) confirmPwInput.value = '';
+      if (newPwInput) newPwInput.focus();
+    } catch (err) {
+      btn.classList.remove('loading');
+      alertEl.classList.add('show');
+      alertMsg.textContent = err.message || 'Verification failed. Please check the code and try again.';
+    }
+  }
+
+  // Step 3: Set & Save New Password
+  async function handleSaveNewPassword() {
+    const pwEl = document.getElementById('resetNewPw');
+    const cpwEl = document.getElementById('resetConfirmPw');
+    const alertEl = document.getElementById('forgotAlert3');
+    const alertMsg = document.getElementById('forgotAlertMsg3');
+    const btn = document.getElementById('btnSaveNewPw');
+
+    [pwEl, cpwEl].forEach(el => el.classList.remove('error'));
+    alertEl.classList.remove('show');
+
+    const newPw = pwEl.value;
+    const confirmPw = cpwEl.value;
+
     if (!newPw || newPw.length < 8) {
       pwEl.classList.add('error');
       alertEl.classList.add('show');
@@ -846,17 +910,17 @@
     btn.classList.add('loading');
 
     try {
-      await BCApi.verifyResetOtp(activeResetIdentity, otp, newPw);
+      await BCApi.setNewPassword(activeResetIdentity, activeResetToken, newPw);
       btn.classList.remove('loading');
 
-      // Switch to Step 3: Success
-      document.getElementById('forgotStep2').style.display = 'none';
-      document.getElementById('forgotStep3').style.display = 'block';
+      // Switch to Step 4 (Success)
+      document.getElementById('forgotStep3').style.display = 'none';
+      document.getElementById('forgotStep4').style.display = 'block';
       document.getElementById('forgotModalSubtitle').textContent = 'Success!';
     } catch (err) {
       btn.classList.remove('loading');
       alertEl.classList.add('show');
-      alertMsg.textContent = err.message || 'Verification failed. Please check the code and try again.';
+      alertMsg.textContent = err.message || 'Could not update password. Please try again.';
     }
   }
 
@@ -866,14 +930,6 @@
     const pEl = document.getElementById('password');
     if (uEl) { uEl.value = activeResetIdentity; }
     if (pEl) { pEl.value = ''; pEl.focus(); }
-  }
-
-  function finishResetFlow() {
-    closeForgotModal();
-    const uEl = document.getElementById('username');
-    const pEl = document.getElementById('password');
-    if (uEl) uEl.focus();
-    if (pEl) pEl.value = '';
   }
 
   function togglePassword() {

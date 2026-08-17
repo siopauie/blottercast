@@ -54,10 +54,16 @@ const BCApi = {
       body: JSON.stringify({ identity }),
     });
   },
-  verifyResetOtp(identity, otp, newPassword) {
-    return this._fetch(`${BC_API}/api/auth.php?action=verify_reset_otp`, {
+  verifyOtp(identity, otp) {
+    return this._fetch(`${BC_API}/api/auth.php?action=verify_otp`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, otp, newPassword }),
+      body: JSON.stringify({ identity, otp }),
+    });
+  },
+  setNewPassword(identity, reset_token, newPassword) {
+    return this._fetch(`${BC_API}/api/auth.php?action=set_new_password`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity, reset_token, newPassword }),
     });
   },
 
