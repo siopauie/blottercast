@@ -5,15 +5,10 @@ $action = $_GET['action'] ?? '';
 $mysqli = db();
 
 if ($action === 'public_config') {
-    $url = trim(getenv('NEXT_PUBLIC_SUPABASE_URL') ?: (getenv('SUPABASE_URL') ?: 'https://fzvepwddggfendczjecg.supabase.co'));
-    $anonKey = trim(
-        getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?:
-        (getenv('SUPABASE_ANON_KEY') ?:
-        (getenv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?:
-        (getenv('SUPABASE_PUBLISHABLE_KEY') ?: '')))
-    );
+    $url = getEnvVal('NEXT_PUBLIC_SUPABASE_URL') ?: (getEnvVal('SUPABASE_URL') ?: 'https://fzvepwddggfendczjecg.supabase.co');
+    $anonKey = getEnvVal('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?: (getEnvVal('SUPABASE_ANON_KEY') ?: (getEnvVal('SUPABASE_PUBLISHABLE_KEY') ?: ''));
     json_response([
-        'supabase_url'      => $url,
+        'supabase_url' => $url,
         'supabase_anon_key' => $anonKey
     ]);
 }
@@ -217,14 +212,74 @@ if ($action === 'change_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['must_change_password'] = false;
 
     $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Updated', 'System', 'Password changed')");
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Updated', 'System', 'Password changed')");
     $log->bind_param('s', $user['username']);
     $log->execute();
 
     json_response(['ok' => true]);
 }
 
-// ── Forgot Password: Step 1 - Lookup Email by Username/Email ──
-if ($action === 'lookup_reset_email' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+/**
+ * Send an email directly via Brevo (Sendinblue) REST API
+ */
+function sendBrevoEmail(string $toEmail, string $toName, string $subject, string $htmlContent): array {
+    $apiKey = getEnvVal('BREVO_API_KEY') ?: '';
+    if (empty($apiKey)) {
+        return [
+            'ok' => false,
+            'error' => 'BREVO_API_KEY is not configured in Vercel environment variables. Please add your Brevo API key.'
+        ];
+    }
+
+    $senderEmail = getEnvVal('BREVO_SENDER_EMAIL') ?: 'fhalynramos4@gmail.com';
+    $senderName = getEnvVal('BREVO_SENDER_NAME') ?: 'BlotterCast Security';
+
+    $payload = [
+        'sender' => [
+            'name' => $senderName,
+            'email' => $senderEmail,
+        ],
+        'to' => [
+            [
+                'email' => $toEmail,
+                'name' => !empty($toName) ? $toName : 'Barangay Staff',
+            ],
+        ],
+        'subject' => $subject,
+        'htmlContent' => $htmlContent,
+    ];
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'accept: application/json',
+        'api-key: ' . $apiKey,
+        'content-type: application/json',
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) {
+        return ['ok' => false, 'error' => 'Curl network error: ' . $curlErr];
+    }
+
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return ['ok' => true, 'response' => json_decode($response, true)];
+    }
+
+    $errJson = json_decode($response, true);
+    $msg = $errJson['message'] ?? "Brevo API responded with error code $httpCode";
+    return ['ok' => false, 'error' => $msg];
+}
+
+// ── Forgot Password: Step 1 - Generate 6-digit OTP & Send via Brevo API ──
+if ($action === 'send_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = body();
     $identity = trim($in['identity'] ?? '');
     if ($identity === '') json_error('Username or email is required');
@@ -235,12 +290,36 @@ if ($action === 'lookup_reset_email' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $stmt->get_result()->fetch_assoc();
 
     if (!$user || empty($user['email'])) {
-        json_error('No account with a registered email found. Please contact your administrator.', 404);
+        json_error('No account with a registered email found for "' . htmlspecialchars($identity) . '". Please contact an administrator.', 404);
     }
     if ($user['status'] !== 'Active') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
+    // Ensure password_resets table exists
+    $mysqli->query("CREATE TABLE IF NOT EXISTS password_resets (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(150) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // Generate 6-digit OTP
+    $otp = sprintf('%06d', random_int(100000, 999999));
+    $expiresAt = date('Y-m-d H:i:s', time() + 10 * 60); // 10 minutes expiry
+
+    // Remove any previous OTPs for this email
+    $del = $mysqli->prepare('DELETE FROM password_resets WHERE LOWER(email) = LOWER(?)');
+    $del->bind_param('s', $user['email']);
+    $del->execute();
+
+    // Insert new OTP
+    $ins = $mysqli->prepare('INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)');
+    $ins->bind_param('sss', $user['email'], $otp, $expiresAt);
+    $ins->execute();
+
+    // Mask email for display (e.g. a***s@gmail.com)
     $em = $user['email'];
     $parts = explode('@', $em);
     $namePart = $parts[0];
@@ -248,48 +327,106 @@ if ($action === 'lookup_reset_email' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $maskedName = strlen($namePart) > 2 ? substr($namePart, 0, 1) . str_repeat('*', max(3, strlen($namePart) - 2)) . substr($namePart, -1) : substr($namePart, 0, 1) . '***';
     $maskedEmail = $maskedName . '@' . $domainPart;
 
+    // Send email via Brevo API
+    $emailHtml = "
+    <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 14px; background: #ffffff; color: #1f2937;\">
+      <div style=\"text-align: center; margin-bottom: 20px;\">
+        <h2 style=\"color: #1a5c31; margin: 0; font-size: 24px; font-weight: 700;\">BlotterCast</h2>
+        <p style=\"color: #6b7280; font-size: 13px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em;\">Pamahalaang Barangay ng Mapulang Lupa</p>
+      </div>
+      <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 16px 0 20px;\">
+      <p style=\"font-size: 15px; margin-bottom: 12px;\">Hello <strong>" . htmlspecialchars($user['full_name']) . "</strong>,</p>
+      <p style=\"font-size: 14px; color: #4b5563; line-height: 1.6; margin-bottom: 20px;\">You requested to reset your BlotterCast password. Enter the 6-digit verification code below to set your new password:</p>
+      
+      <div style=\"text-align: center; margin: 24px 0;\">
+        <div style=\"display: inline-block; background: #f0fdf4; border: 2px dashed #4fa868; border-radius: 12px; padding: 14px 32px; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1a5c31; font-family: Consolas, monospace;\">
+          {$otp}
+        </div>
+      </div>
+      
+      <p style=\"font-size: 13px; color: #6b7280; text-align: center; line-height: 1.5;\">
+        This verification code expires in <strong>10 minutes</strong>.<br/>
+        If you did not request a password reset, you can safely ignore this email.
+      </p>
+      <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 24px 0 14px;\">
+      <p style=\"font-size: 11px; color: #9ca3af; text-align: center; margin: 0;\">
+        BlotterCast — Official Barangay Records & Intelligence System
+      </p>
+    </div>";
+
+    $mailResult = sendBrevoEmail(
+        $user['email'],
+        $user['full_name'],
+        'BlotterCast Password Reset Code: ' . $otp,
+        $emailHtml
+    );
+
+    if (!$mailResult['ok']) {
+        json_error($mailResult['error'], 500);
+    }
+
     json_response([
         'ok' => true,
-        'email' => $user['email'],
         'masked_email' => $maskedEmail,
-        'full_name' => $user['full_name']
+        'message' => 'Verification code sent successfully!'
     ]);
 }
 
-// ── Forgot Password: Step 2 - Verify & Reset Password ──
-if ($action === 'reset_password_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+// ── Forgot Password: Step 2 - Verify OTP & Update Password ──
+if ($action === 'verify_reset_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = body();
-    $email = trim($in['email'] ?? '');
+    $identity = trim($in['identity'] ?? '');
+    $otp = trim($in['otp'] ?? '');
     $newPassword = $in['newPassword'] ?? '';
-    if ($email === '' || $newPassword === '') json_error('Email and new password are required');
 
-    $stmt = $mysqli->prepare('SELECT id, username, full_name, status FROM users WHERE LOWER(email) = LOWER(?)');
-    $stmt->bind_param('s', $email);
+    if ($identity === '' || $otp === '' || $newPassword === '') {
+        json_error('Username/email, 6-digit code, and new password are required');
+    }
+
+    // Lookup user
+    $stmt = $mysqli->prepare('SELECT id, username, email, full_name, status FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)');
+    $stmt->bind_param('ss', $identity, $identity);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
     if (!$user) {
-        json_error('Account not found for email: ' . $email, 404);
+        json_error('Account not found', 404);
     }
     if ($user['status'] !== 'Active') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
-    $settings = getSecuritySettings();
-    if (strlen($newPassword) < $settings['min_password_length']) {
-        json_error("Password must be at least {$settings['min_password_length']} characters long");
+    // Verify OTP against password_resets table
+    $vStmt = $mysqli->prepare('SELECT id FROM password_resets WHERE LOWER(email) = LOWER(?) AND otp = ? AND expires_at > NOW()');
+    $vStmt->bind_param('ss', $user['email'], $otp);
+    $vStmt->execute();
+    $resetRecord = $vStmt->get_result()->fetch_assoc();
+
+    if (!$resetRecord) {
+        json_error('Invalid or expired verification code. Please check your email or request a new code.', 400);
     }
 
+    $settings = getSecuritySettings();
+    if (strlen($newPassword) < $settings['min_password_length']) {
+        json_error("New password must be at least {$settings['min_password_length']} characters long");
+    }
+
+    // Update password with bcrypt hash and unlock account
     $hash = password_hash($newPassword, PASSWORD_BCRYPT);
     $upd = $mysqli->prepare('UPDATE users SET password = ?, password_changed_at = NOW(), failed_attempts = 0, locked_until = NULL WHERE id = ?');
     $upd->bind_param('si', $hash, $user['id']);
     $upd->execute();
 
-    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Reset', 'System', 'Password reset successfully via OTP')");
+    // Delete used OTP
+    $del = $mysqli->prepare('DELETE FROM password_resets WHERE LOWER(email) = LOWER(?)');
+    $del->bind_param('s', $user['email']);
+    $del->execute();
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Reset', 'System', 'Password reset successfully via Brevo OTP')");
     $log->bind_param('s', $user['username']);
     $log->execute();
 
-    json_response(['ok' => true, 'message' => 'Password reset successfully']);
+    json_response(['ok' => true, 'message' => 'Password reset successfully!']);
 }
 
 json_error('Unknown action', 404);

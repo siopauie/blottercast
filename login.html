@@ -502,13 +502,13 @@
     <div class="modal-header">
       <div>
         <div class="modal-title">Reset Password</div>
-        <div class="modal-subtitle" id="forgotModalSubtitle">Enter your username or email to receive a reset link.</div>
+        <div class="modal-subtitle" id="forgotModalSubtitle">Enter your username or email to receive a 6-digit verification code.</div>
       </div>
       <button type="button" class="modal-close" id="forgotModalClose" onclick="closeForgotModal()">&times;</button>
     </div>
     
     <div class="modal-body">
-      <!-- Step 1: Lookup & Send Magic Link -->
+      <!-- Step 1: Lookup & Send 6-Digit OTP -->
       <div id="forgotStep1">
         <div class="alert-error" id="forgotAlert1" style="margin-bottom:1rem;">
           <span data-icon="warning" data-icon-size="16"></span>
@@ -524,24 +524,13 @@
           <div class="error-msg" id="resetIdentityError">Please enter your username or registered email.</div>
         </div>
 
-        <button type="button" class="btn-login" id="btnSendOtp" onclick="handleSendResetLink()" style="margin-top:0.5rem;">
+        <button type="button" class="btn-login" id="btnSendOtp" onclick="handleSendResetOtp()" style="margin-top:0.5rem;">
           <div class="spinner" id="forgotSpinner1"></div>
-          <span class="btn-text">Send Reset Link</span>
+          <span class="btn-text">Send 6-Digit Code</span>
         </button>
       </div>
 
-      <!-- Step 1b: Sent Confirmation -->
-      <div id="forgotStep1b" style="display:none; text-align:center; padding:0.5rem 0;">
-        <div style="font-size:2.5rem; margin-bottom:1rem;">📧</div>
-        <div style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.1rem; color:#111827; margin-bottom:0.75rem;">Check your email!</div>
-        <div style="font-size:0.85rem; color:#6b7280; line-height:1.6; margin-bottom:1.5rem;">
-          We sent a reset link to <strong id="resetMaskedEmail"></strong>.<br/>
-          Click the link in the email to set your new password.
-        </div>
-        <div style="font-size:0.78rem; color:#9ca3af;">Didn't receive it? Check your spam folder or <a href="javascript:void(0)" onclick="backToStep1()" style="color:#1a5c31;">try again</a>.</div>
-      </div>
-
-      <!-- Step 2: Set New Password (shown after clicking email link) -->
+      <!-- Step 2: Enter 6-Digit OTP & Set New Password -->
       <div id="forgotStep2" style="display:none;">
         <div class="alert-error" id="forgotAlert2" style="margin-bottom:1rem;">
           <span data-icon="warning" data-icon-size="16"></span>
@@ -550,7 +539,14 @@
 
         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 12px; margin-bottom:1.25rem; font-size:0.82rem; color:#166534; display:flex; align-items:center; gap:8px;">
           <span>✓</span>
-          <span>Identity verified! Set your new password below.</span>
+          <span>We sent a 6-digit verification code to <strong id="resetMaskedEmail"></strong></span>
+        </div>
+
+        <div class="input-group" style="margin-bottom:1rem;">
+          <label class="input-label">6-Digit Verification Code</label>
+          <div class="input-wrap">
+            <input type="text" id="resetOtp" class="form-input otp-input" placeholder="123456" maxlength="6" autocomplete="one-time-code"/>
+          </div>
         </div>
 
         <div class="input-group" style="margin-bottom:1rem;">
@@ -570,17 +566,21 @@
           </div>
         </div>
 
-        <button type="button" class="btn-login" id="btnVerifyOtp" onclick="handleSetNewPassword()">
+        <button type="button" class="btn-login" id="btnVerifyOtp" onclick="handleVerifyAndResetPw()">
           <div class="spinner" id="forgotSpinner2"></div>
-          <span class="btn-text">Set New Password</span>
+          <span class="btn-text">Reset Password</span>
         </button>
+
+        <div style="text-align:center; margin-top:1rem;">
+          <a href="javascript:void(0)" onclick="backToStep1()" style="font-size:0.8rem; color:#6b7280; text-decoration:underline;">← Change email / Resend code</a>
+        </div>
       </div>
 
       <!-- Step 3: Success Confirmation -->
       <div id="forgotStep3" style="display:none; text-align:center; padding:1rem 0;">
         <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; font-weight:700;">✓</div>
         <div style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.15rem; color:#111827; margin-bottom:0.5rem;">Password Updated!</div>
-        <div style="font-size:0.85rem; color:#6b7280; margin-bottom:1.5rem; line-height:1.5;">Your password has been reset. You can now sign in with your new password.</div>
+        <div style="font-size:0.85rem; color:#6b7280; margin-bottom:1.5rem; line-height:1.5;">Your password has been reset successfully. You can now sign in with your new password.</div>
         <button type="button" class="btn-login" onclick="finishResetFlow()">Sign In Now</button>
       </div>
     </div>
@@ -591,7 +591,7 @@
 <script src="api.js"></script>
 <script src="icons.js"></script>
 <script>
-  // ── Supabase OAuth & Auth Setup ──
+  // ── Supabase OAuth Setup ──
   const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
   let sbClient = null;
 
@@ -683,16 +683,21 @@
     }
   });
 
-  // Handle returning session from Supabase (Google OAuth or Password Reset magic link)
+  // Handle returning Google OAuth session
   window.addEventListener('DOMContentLoaded', async () => {
     const isOAuthReturn = window.location.hash.includes('access_token') || window.location.search.includes('code=') || window.location.hash.includes('error=');
     if (!isOAuthReturn) return;
 
-    const isPasswordReset = sessionStorage.getItem('bc_pw_reset') === '1';
     const alert = document.getElementById('loginAlert');
     const alertText = document.getElementById('loginAlertMsg');
     const btn = document.getElementById('googleBtn');
     const btnText = document.getElementById('googleBtnText');
+
+    if (btn && btnText) {
+      btn.style.opacity = '0.7';
+      btn.style.pointerEvents = 'none';
+      btnText.textContent = 'Verifying Google account…';
+    }
 
     const client = await initSupabase();
     if (!client) return;
@@ -708,26 +713,6 @@
       if (error) throw error;
 
       if (session && session.user && session.user.email) {
-        // ── Password Reset Flow ──
-        if (isPasswordReset) {
-          sessionStorage.removeItem('bc_pw_reset');
-          // Store session token temporarily for password reset
-          sessionStorage.setItem('bc_reset_token', session.access_token);
-          sessionStorage.setItem('bc_reset_email', session.user.email);
-          // Sign out from Supabase (we use our own session)
-          await client.auth.signOut().catch(() => {});
-          // Open the set-new-password form
-          openForgotModal();
-          showResetStep2();
-          return;
-        }
-
-        // ── Google OAuth Login Flow ──
-        if (btn && btnText) {
-          btn.style.opacity = '0.7';
-          btn.style.pointerEvents = 'none';
-          btnText.textContent = 'Verifying Google account…';
-        }
         const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
         await client.auth.signOut().catch(() => {});
         const res = await BCApi.googleLogin(session.user.email, fullName, session.access_token);
@@ -740,10 +725,10 @@
         }
       } else {
         await client.auth.signOut().catch(() => {});
-        if (!isPasswordReset) throw new Error('Google sign-in did not return user account details.');
+        throw new Error('Google sign-in did not return user account details.');
       }
     } catch (err) {
-      console.warn('Session exchange failed:', err);
+      console.warn('Google session exchange failed:', err);
       if (btn && btnText) {
         btn.style.opacity = '1';
         btn.style.pointerEvents = 'auto';
@@ -757,7 +742,9 @@
     }
   });
 
-  // ── Forgot Password Handlers ──
+  // ── Forgot Password Handlers (Brevo OTP) ──
+  let activeResetIdentity = '';
+
   function openForgotModal() {
     document.getElementById('forgotModal').classList.add('show');
     backToStep1();
@@ -765,32 +752,15 @@
 
   function closeForgotModal() {
     document.getElementById('forgotModal').classList.remove('show');
-    // Clear any stored reset state
-    sessionStorage.removeItem('bc_pw_reset');
-    sessionStorage.removeItem('bc_reset_token');
-    sessionStorage.removeItem('bc_reset_email');
   }
 
   function backToStep1() {
-    ['forgotStep1b','forgotStep2','forgotStep3'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
     document.getElementById('forgotStep1').style.display = 'block';
-    document.getElementById('forgotAlert1').classList.remove('show');
-    document.getElementById('forgotModalSubtitle').textContent = 'Enter your username or email to receive a reset link.';
-    document.getElementById('forgotModalClose').style.display = 'block';
-  }
-
-  function showResetStep2() {
-    document.getElementById('forgotStep1').style.display = 'none';
-    document.getElementById('forgotStep1b').style.display = 'none';
-    document.getElementById('forgotStep2').style.display = 'block';
+    document.getElementById('forgotStep2').style.display = 'none';
     document.getElementById('forgotStep3').style.display = 'none';
-    document.getElementById('forgotModalSubtitle').textContent = 'Set your new password.';
-    document.getElementById('forgotModalClose').style.display = 'none'; // can't close mid-reset
-    const pw = document.getElementById('resetNewPw');
-    if (pw) pw.focus();
+    document.getElementById('forgotAlert1').classList.remove('show');
+    document.getElementById('forgotAlert2').classList.remove('show');
+    document.getElementById('forgotModalSubtitle').textContent = 'Enter your username or email to receive a 6-digit verification code.';
   }
 
   function toggleResetPw() {
@@ -800,7 +770,7 @@
     else { pw.type = 'password'; btn.innerHTML = iconSvg('view', 18); }
   }
 
-  async function handleSendResetLink() {
+  async function handleSendResetOtp() {
     const idEl = document.getElementById('resetIdentity');
     const errEl = document.getElementById('resetIdentityError');
     const alertEl = document.getElementById('forgotAlert1');
@@ -818,59 +788,46 @@
       return;
     }
 
+    activeResetIdentity = identity;
     btn.classList.add('loading');
 
     try {
-      // 1. Look up and verify user exists in BlotterCast database
-      const lookup = await BCApi.lookupResetEmail(identity);
-      if (!lookup || !lookup.email) throw new Error('No account found. Contact your administrator.');
-
-      // 2. Mark this as a password reset flow (so the redirect is handled differently)
-      sessionStorage.setItem('bc_pw_reset', '1');
-
-      // 3. Send magic link via Supabase
-      const client = await initSupabase();
-      if (!client) throw new Error('Supabase client is not available.');
-
-      const { error } = await client.auth.signInWithOtp({
-        email: lookup.email,
-        options: { shouldCreateUser: true }
-      });
-      if (error) throw error;
-
+      const res = await BCApi.sendResetOtp(identity);
       btn.classList.remove('loading');
-      // Show sent confirmation
-      document.getElementById('resetMaskedEmail').textContent = lookup.masked_email || lookup.email;
+
+      // Switch to Step 2
+      document.getElementById('resetMaskedEmail').textContent = res.masked_email || identity;
       document.getElementById('forgotStep1').style.display = 'none';
-      document.getElementById('forgotStep1b').style.display = 'block';
-      document.getElementById('forgotModalSubtitle').textContent = 'Check your email for the reset link.';
+      document.getElementById('forgotStep2').style.display = 'block';
+      document.getElementById('forgotModalSubtitle').textContent = 'Enter the 6-digit code sent to your email and set your new password.';
+      const otpInput = document.getElementById('resetOtp');
+      if (otpInput) { otpInput.value = ''; otpInput.focus(); }
     } catch (err) {
       btn.classList.remove('loading');
-      // Clear the reset flag on error
-      sessionStorage.removeItem('bc_pw_reset');
       alertEl.classList.add('show');
-      alertMsg.textContent = err.message || 'Could not send reset link.';
+      alertMsg.textContent = err.message || 'Could not send verification code.';
     }
   }
 
-  async function handleSetNewPassword() {
+  async function handleVerifyAndResetPw() {
+    const otpEl = document.getElementById('resetOtp');
     const pwEl = document.getElementById('resetNewPw');
     const cpwEl = document.getElementById('resetConfirmPw');
     const alertEl = document.getElementById('forgotAlert2');
     const alertMsg = document.getElementById('forgotAlertMsg2');
     const btn = document.getElementById('btnVerifyOtp');
 
-    [pwEl, cpwEl].forEach(el => el.classList.remove('error'));
+    [otpEl, pwEl, cpwEl].forEach(el => el.classList.remove('error'));
     alertEl.classList.remove('show');
 
+    const otp = otpEl.value.trim();
     const newPw = pwEl.value;
     const confirmPw = cpwEl.value;
-    const resetEmail = sessionStorage.getItem('bc_reset_email') || '';
-    const resetToken = sessionStorage.getItem('bc_reset_token') || '';
 
-    if (!resetEmail) {
+    if (!otp || otp.length < 6) {
+      otpEl.classList.add('error');
       alertEl.classList.add('show');
-      alertMsg.textContent = 'Session expired. Please request a new reset link.';
+      alertMsg.textContent = 'Please enter the 6-digit verification code.';
       return;
     }
     if (!newPw || newPw.length < 8) {
@@ -889,10 +846,9 @@
     btn.classList.add('loading');
 
     try {
-      await BCApi.resetPasswordOtp(resetEmail, newPw, resetToken);
-      sessionStorage.removeItem('bc_reset_token');
-      sessionStorage.removeItem('bc_reset_email');
+      await BCApi.verifyResetOtp(activeResetIdentity, otp, newPw);
       btn.classList.remove('loading');
+
       // Switch to Step 3: Success
       document.getElementById('forgotStep2').style.display = 'none';
       document.getElementById('forgotStep3').style.display = 'block';
@@ -902,6 +858,14 @@
       alertEl.classList.add('show');
       alertMsg.textContent = err.message || 'Verification failed. Please check the code and try again.';
     }
+  }
+
+  function finishResetFlow() {
+    closeForgotModal();
+    const uEl = document.getElementById('username');
+    const pEl = document.getElementById('password');
+    if (uEl) { uEl.value = activeResetIdentity; }
+    if (pEl) { pEl.value = ''; pEl.focus(); }
   }
 
   function finishResetFlow() {
