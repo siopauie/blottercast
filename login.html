@@ -537,6 +537,28 @@
     }
   }
 
+  // Reset buttons if user returns via browser Back button (bfcache)
+  window.addEventListener('pageshow', (e) => {
+    const isOAuthReturn = window.location.hash.includes('access_token') || window.location.search.includes('code=') || window.location.hash.includes('error=');
+    if (!isOAuthReturn) {
+      const btn = document.getElementById('googleBtn');
+      const btnText = document.getElementById('googleBtnText');
+      if (btn && btnText) {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btnText.textContent = 'Continue with Google';
+      }
+      const loginBtn = document.getElementById('loginBtn');
+      if (loginBtn) {
+        loginBtn.classList.remove('loading');
+      }
+      const overlay = document.getElementById('successOverlay');
+      if (overlay) {
+        overlay.classList.remove('show');
+      }
+    }
+  });
+
   // Check for returning OAuth session ONLY when returning from Google redirect
   window.addEventListener('DOMContentLoaded', async () => {
     const isOAuthReturn = window.location.hash.includes('access_token') || window.location.search.includes('code=') || window.location.hash.includes('error=');
