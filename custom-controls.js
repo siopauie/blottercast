@@ -71,7 +71,7 @@
   // SELECT
   // ============================================================
   function enhanceSelect(select) {
-    if (select.dataset.bcSelect || select.multiple || select.hidden) return;
+    if (select.dataset.bcSelect || select.multiple || select.hidden || select.classList.contains('bc-dp-select') || select.closest('.bc-datepicker-panel')) return;
     select.dataset.bcSelect = '1';
 
     const wrap = document.createElement('div');
@@ -221,13 +221,6 @@
     );
 
     let viewYear, viewMonth;
-    // 'days' shows the usual month grid; 'years' shows a 12-year picker so
-    // a date far from today (a date of birth, say) can be reached in a
-    // couple of clicks instead of clicking "previous month" hundreds of
-    // times. Clicking the header label toggles into 'years'; picking a
-    // year returns to 'days' on that year, same month.
-    let viewMode = 'days';
-    let yearRangeStart;
     let panelRef;
 
     function build() {
@@ -245,59 +238,93 @@
 
       const header = document.createElement('div');
       header.className = 'bc-dp-header';
+
       const prevBtn = document.createElement('button');
-      prevBtn.type = 'button'; prevBtn.className = 'bc-dp-nav';
-      const nextBtn = document.createElement('button');
-      nextBtn.type = 'button'; nextBtn.className = 'bc-dp-nav';
-      const label = document.createElement('button');
-      label.type = 'button';
-      label.className = 'bc-dp-label bc-dp-label-btn';
-
-      if (viewMode === 'years') {
-        if (yearRangeStart === undefined) yearRangeStart = viewYear - (viewYear % 12);
-        prevBtn.innerHTML = '&#8249;'; prevBtn.setAttribute('aria-label', 'Previous years');
-        nextBtn.innerHTML = '&#8250;'; nextBtn.setAttribute('aria-label', 'Next years');
-        prevBtn.onclick = () => { yearRangeStart -= 12; rebuild(); };
-        nextBtn.onclick = () => { yearRangeStart += 12; rebuild(); };
-        label.textContent = `${yearRangeStart}\u2013${yearRangeStart + 11}`;
-        label.setAttribute('aria-label', 'Back to month view');
-        label.onclick = () => { viewMode = 'days'; rebuild(); };
+      prevBtn.type = 'button';
+      prevBtn.className = 'bc-dp-nav';
+      prevBtn.innerHTML = '&#8249;';
+      prevBtn.setAttribute('aria-label', 'Previous month');
+      const canPrev = !min || (viewYear > minYear || (viewYear === minYear && viewMonth > min.getMonth()));
+      if (!canPrev) {
+        prevBtn.disabled = true;
+        prevBtn.style.opacity = '0.35';
+        prevBtn.style.cursor = 'not-allowed';
       } else {
-        prevBtn.innerHTML = '&#8249;'; prevBtn.setAttribute('aria-label', 'Previous month');
-        nextBtn.innerHTML = '&#8250;'; nextBtn.setAttribute('aria-label', 'Next month');
-        prevBtn.onclick = () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } rebuild(); };
-        nextBtn.onclick = () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } rebuild(); };
-        label.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
-        label.setAttribute('aria-label', 'Choose year');
-        label.onclick = () => { viewMode = 'years'; yearRangeStart = viewYear - (viewYear % 12); rebuild(); };
+        prevBtn.onclick = (e) => {
+          e.stopPropagation();
+          viewMonth--;
+          if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+          rebuild();
+        };
       }
-      header.append(prevBtn, label, nextBtn);
-      panel.appendChild(header);
 
-      if (viewMode === 'years') {
-        const yearGrid = document.createElement('div');
-        yearGrid.className = 'bc-dp-year-grid';
-        const thisYear = new Date().getFullYear();
-        for (let i = 0; i < 12; i++) {
-          const y = yearRangeStart + i;
-          const cell = document.createElement('button');
-          cell.type = 'button';
-          cell.className = 'bc-dp-year-item';
-          cell.textContent = String(y);
-          if (y === thisYear) cell.classList.add('bc-dp-year-item-current');
-          if (y === viewYear) cell.classList.add('bc-dp-year-item-selected');
-          const isDisabled = (minYear !== null && y < minYear) || (maxYear !== null && y > maxYear);
-          if (isDisabled) {
-            cell.disabled = true;
-            cell.classList.add('bc-dp-year-item-disabled');
-          } else {
-            cell.addEventListener('click', () => { viewYear = y; viewMode = 'days'; rebuild(); });
-          }
-          yearGrid.appendChild(cell);
-        }
-        panel.appendChild(yearGrid);
-        return panel;
+      const selectorsWrap = document.createElement('div');
+      selectorsWrap.className = 'bc-dp-selectors';
+
+      // Month dropdown selector
+      const monthSelect = document.createElement('select');
+      monthSelect.className = 'bc-dp-select bc-dp-month-select';
+      monthSelect.setAttribute('aria-label', 'Select Month');
+      MONTH_NAMES.forEach((name, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = name;
+        if (idx === viewMonth) opt.selected = true;
+        if (min && viewYear === minYear && idx < min.getMonth()) opt.disabled = true;
+        if (max && viewYear === maxYear && idx > max.getMonth()) opt.disabled = true;
+        monthSelect.appendChild(opt);
+      });
+      monthSelect.onchange = (e) => {
+        e.stopPropagation();
+        viewMonth = parseInt(e.target.value, 10);
+        rebuild();
+      };
+
+      // Year dropdown selector
+      const yearSelect = document.createElement('select');
+      yearSelect.className = 'bc-dp-select bc-dp-year-select';
+      yearSelect.setAttribute('aria-label', 'Select Year');
+
+      const currentYear = new Date().getFullYear();
+      const startYear = minYear !== null ? minYear : Math.min(1920, viewYear - 10);
+      const endYear = maxYear !== null ? maxYear : Math.max(currentYear + 10, viewYear + 10);
+
+      for (let y = endYear; y >= startYear; y--) {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = String(y);
+        if (y === viewYear) opt.selected = true;
+        yearSelect.appendChild(opt);
       }
+      yearSelect.onchange = (e) => {
+        e.stopPropagation();
+        viewYear = parseInt(e.target.value, 10);
+        rebuild();
+      };
+
+      selectorsWrap.append(monthSelect, yearSelect);
+
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'bc-dp-nav';
+      nextBtn.innerHTML = '&#8250;';
+      nextBtn.setAttribute('aria-label', 'Next month');
+      const canNext = !max || (viewYear < maxYear || (viewYear === maxYear && viewMonth < max.getMonth()));
+      if (!canNext) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.35';
+        nextBtn.style.cursor = 'not-allowed';
+      } else {
+        nextBtn.onclick = (e) => {
+          e.stopPropagation();
+          viewMonth++;
+          if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+          rebuild();
+        };
+      }
+
+      header.append(prevBtn, selectorsWrap, nextBtn);
+      panel.appendChild(header);
 
       const grid = document.createElement('div');
       grid.className = 'bc-dp-grid';
