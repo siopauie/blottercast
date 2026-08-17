@@ -48,6 +48,18 @@ const BCApi = {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   },
+  lookupResetEmail(identity) {
+    return this._fetch(`${BC_API}/api/auth.php?action=lookup_reset_email`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity }),
+    });
+  },
+  resetPasswordOtp(email, newPassword, token = '') {
+    return this._fetch(`${BC_API}/api/auth.php?action=reset_password_otp`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword, token }),
+    });
+  },
 
   // ---- records: incidents / blotter / settlements ----
   list(type, params = {}) {

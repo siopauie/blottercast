@@ -218,4 +218,73 @@ if ($action === 'change_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     json_response(['ok' => true]);
 }
 
+// ── Forgot Password: Step 1 - Lookup Email by Username/Email ──
+if ($action === 'lookup_reset_email' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $in = body();
+    $identity = trim($in['identity'] ?? '');
+    if ($identity === '') json_error('Username or email is required');
+
+    $stmt = $mysqli->prepare('SELECT id, username, email, full_name, status FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)');
+    $stmt->bind_param('ss', $identity, $identity);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user || empty($user['email'])) {
+        json_error('No account with a registered email found. Please contact your administrator.', 404);
+    }
+    if ($user['status'] !== 'Active') {
+        json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
+    }
+
+    $em = $user['email'];
+    $parts = explode('@', $em);
+    $namePart = $parts[0];
+    $domainPart = $parts[1] ?? '';
+    $maskedName = strlen($namePart) > 2 ? substr($namePart, 0, 1) . str_repeat('*', max(3, strlen($namePart) - 2)) . substr($namePart, -1) : substr($namePart, 0, 1) . '***';
+    $maskedEmail = $maskedName . '@' . $domainPart;
+
+    json_response([
+        'ok' => true,
+        'email' => $user['email'],
+        'masked_email' => $maskedEmail,
+        'full_name' => $user['full_name']
+    ]);
+}
+
+// ── Forgot Password: Step 2 - Verify & Reset Password ──
+if ($action === 'reset_password_otp' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $in = body();
+    $email = trim($in['email'] ?? '');
+    $newPassword = $in['newPassword'] ?? '';
+    if ($email === '' || $newPassword === '') json_error('Email and new password are required');
+
+    $stmt = $mysqli->prepare('SELECT id, username, full_name, status FROM users WHERE LOWER(email) = LOWER(?)');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        json_error('Account not found for email: ' . $email, 404);
+    }
+    if ($user['status'] !== 'Active') {
+        json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
+    }
+
+    $settings = getSecuritySettings();
+    if (strlen($newPassword) < $settings['min_password_length']) {
+        json_error("Password must be at least {$settings['min_password_length']} characters long");
+    }
+
+    $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+    $upd = $mysqli->prepare('UPDATE users SET password = ?, password_changed_at = NOW(), failed_attempts = 0, locked_until = NULL WHERE id = ?');
+    $upd->bind_param('si', $hash, $user['id']);
+    $upd->execute();
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Reset', 'System', 'Password reset successfully via OTP')");
+    $log->bind_param('s', $user['username']);
+    $log->execute();
+
+    json_response(['ok' => true, 'message' => 'Password reset successfully']);
+}
+
 json_error('Unknown action', 404);
