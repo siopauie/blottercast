@@ -13,6 +13,14 @@ function bcTodayLocalStr() {
   return `${y}-${m}-${day}`;
 }
 
+function bcDebounce(fn, wait = 250) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Active nav highlight
   const current = window.location.pathname.split('/').pop() || 'index.html';

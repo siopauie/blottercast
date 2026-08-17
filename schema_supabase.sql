@@ -112,6 +112,9 @@ CREATE TABLE IF NOT EXISTS census_records (
   updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_census_name ON census_records (last_name, first_name);
+CREATE INDEX IF NOT EXISTS idx_census_zone ON census_records (zone_id);
+
 -- ---------- Blotter records ----------
 CREATE TABLE IF NOT EXISTS blotter_records (
   id                SERIAL PRIMARY KEY,
@@ -130,6 +133,11 @@ CREATE TABLE IF NOT EXISTS blotter_records (
   created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_blotter_date_id ON blotter_records (date_filed DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_blotter_complainant_id ON blotter_records (complainant_id);
+CREATE INDEX IF NOT EXISTS idx_blotter_respondent_id ON blotter_records (respondent_id);
+CREATE INDEX IF NOT EXISTS idx_blotter_status ON blotter_records (status);
 
 -- ---------- Settlement monitor ----------
 CREATE TABLE IF NOT EXISTS settlements (
@@ -150,6 +158,10 @@ CREATE TABLE IF NOT EXISTS settlements (
   created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_settlements_blotter_id ON settlements (blotter_id);
+CREATE INDEX IF NOT EXISTS idx_settlements_date_id ON settlements (date_filed DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_settlements_status ON settlements (status);
 
 -- ---------- ML Runs ----------
 CREATE TABLE IF NOT EXISTS ml_runs (

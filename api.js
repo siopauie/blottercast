@@ -7,7 +7,26 @@ const BC_API = '.'; // same-origin, relative to current folder: http://localhost
 // Direct Flask calls are no longer made from the browser — all ML requests
 // go through api/ml_proxy.php so login + role permissions are enforced.
 
+const _bcApiCache = new Map();
+
 const BCApi = {
+  _cache: _bcApiCache,
+  invalidateCache(match = '') {
+    if (!match) { _bcApiCache.clear(); return; }
+    for (const key of _bcApiCache.keys()) {
+      if (key.includes(match)) _bcApiCache.delete(key);
+    }
+  },
+  async _fetchCached(url, ttlMs = 20000) {
+    const cached = _bcApiCache.get(url);
+    const now = Date.now();
+    if (cached && (now - cached.time < ttlMs)) {
+      return cached.data;
+    }
+    const data = await this._fetch(url);
+    _bcApiCache.set(url, { time: now, data });
+    return data;
+  },
   async _fetch(url, opts = {}) {
     const res = await fetch(url, { credentials: 'include', ...opts });
     if (res.status === 401) {
@@ -72,18 +91,24 @@ const BCApi = {
     const qs = new URLSearchParams({ type, ...params }).toString();
     return this._fetch(`${BC_API}/api/records.php?${qs}`);
   },
-  create(type, data) {
-    return this._fetch(`${BC_API}/api/records.php?type=${type}`, {
+  async create(type, data) {
+    const res = await this._fetch(`${BC_API}/api/records.php?type=${type}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
+    this.invalidateCache(type);
+    return res;
   },
-  update(type, id, data) {
-    return this._fetch(`${BC_API}/api/records.php?type=${type}&id=${id}`, {
+  async update(type, id, data) {
+    const res = await this._fetch(`${BC_API}/api/records.php?type=${type}&id=${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
+    this.invalidateCache(type);
+    return res;
   },
-  remove(type, id) {
-    return this._fetch(`${BC_API}/api/records.php?type=${type}&id=${id}`, { method: 'DELETE' });
+  async remove(type, id) {
+    const res = await this._fetch(`${BC_API}/api/records.php?type=${type}&id=${id}`, { method: 'DELETE' });
+    this.invalidateCache(type);
+    return res;
   },
   // Preview-only look-ahead at the next Docket No. / Report No. (doesn't
   // reserve it — the real number is generated fresh again at save time).
@@ -104,25 +129,33 @@ const BCApi = {
     const qs = year ? `&year=${year}` : '';
     return this._fetch(`${BC_API}/api/analytics.php?action=trends${qs}`);
   },
-  zones() { return this._fetch(`${BC_API}/api/analytics.php?action=zones`); },
+  zones() { return this._fetchCached(`${BC_API}/api/analytics.php?action=zones`, 60000); },
 
   // ---- users & audit log ----
   users() { return this._fetch(`${BC_API}/api/users.php?action=list`); },
-  createUser(data) {
-    return this._fetch(`${BC_API}/api/users.php?action=create`, {
+  async createUser(data) {
+    const res = await this._fetch(`${BC_API}/api/users.php?action=create`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
+    this.invalidateCache('users');
+    return res;
   },
-  updateUser(id, data) {
-    return this._fetch(`${BC_API}/api/users.php?action=update&id=${id}`, {
+  async updateUser(id, data) {
+    const res = await this._fetch(`${BC_API}/api/users.php?action=update&id=${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
+    this.invalidateCache('users');
+    return res;
   },
-  toggleUserStatus(id) {
-    return this._fetch(`${BC_API}/api/users.php?action=toggle_status&id=${id}`, { method: 'POST' });
+  async toggleUserStatus(id) {
+    const res = await this._fetch(`${BC_API}/api/users.php?action=toggle_status&id=${id}`, { method: 'POST' });
+    this.invalidateCache('users');
+    return res;
   },
-  deleteUser(id) {
-    return this._fetch(`${BC_API}/api/users.php?action=delete&id=${id}`, { method: 'DELETE' });
+  async deleteUser(id) {
+    const res = await this._fetch(`${BC_API}/api/users.php?action=delete&id=${id}`, { method: 'DELETE' });
+    this.invalidateCache('users');
+    return res;
   },
   auditLog(limit = 10) {
     return this._fetch(`${BC_API}/api/users.php?action=audit&limit=${limit}`);
@@ -139,6 +172,7 @@ const BCApi = {
       try { msg = (await res.json()).error || msg; } catch (e) {}
       throw new Error(msg);
     }
+    this.invalidateCache('users');
     return res.json();
   },
   async importBlotterFile(file) {
@@ -153,12 +187,15 @@ const BCApi = {
       try { msg = (await res.json()).error || msg; } catch (e) {}
       throw new Error(msg);
     }
+    this.invalidateCache('blotter');
     return res.json();
   },
-  removeSignature(userId) {
-    return this._fetch(`${BC_API}/api/users.php?action=remove_signature&id=${userId}`, { method: 'POST' });
+  async removeSignature(userId) {
+    const res = await this._fetch(`${BC_API}/api/users.php?action=remove_signature&id=${userId}`, { method: 'POST' });
+    this.invalidateCache('users');
+    return res;
   },
-  captainSignature() { return this._fetch(`${BC_API}/api/users.php?action=captain_signature`); },
+  captainSignature() { return this._fetchCached(`${BC_API}/api/users.php?action=captain_signature`, 60000); },
   notifList(limit = 20) { return this._fetch(`${BC_API}/api/notifications.php?action=list&limit=${limit}`); },
   notifUnreadCount() { return this._fetch(`${BC_API}/api/notifications.php?action=unread_count`); },
   notifMarkRead(id) { return this._fetch(`${BC_API}/api/notifications.php?action=mark_read&id=${id}`, { method: 'POST' }); },
@@ -172,25 +209,31 @@ const BCApi = {
   // Preview-only look-ahead at the next O.R. No. for Clearance / Residency /
   // Non-Residency forms — same look-ahead pattern as peekSeq() above.
   peekOr() { return this._fetch(`${BC_API}/api/documents.php?type=or_peek`); },
-  docCreate(type, data, isBulkImport = false) {
+  async docCreate(type, data, isBulkImport = false) {
     const headers = { 'Content-Type': 'application/json' };
     if (isBulkImport) headers['X-Bulk-Import'] = '1';
-    return this._fetch(`${BC_API}/api/documents.php?type=${type}`, {
+    const res = await this._fetch(`${BC_API}/api/documents.php?type=${type}`, {
       method: 'POST', headers, body: JSON.stringify(data),
     });
+    this.invalidateCache(type);
+    return res;
   },
-  docUpdate(type, id, data) {
-    return this._fetch(`${BC_API}/api/documents.php?type=${type}&id=${id}`, {
+  async docUpdate(type, id, data) {
+    const res = await this._fetch(`${BC_API}/api/documents.php?type=${type}&id=${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
+    this.invalidateCache(type);
+    return res;
   },
-  docDelete(type, id) {
-    return this._fetch(`${BC_API}/api/documents.php?type=${type}&id=${id}`, { method: 'DELETE' });
+  async docDelete(type, id) {
+    const res = await this._fetch(`${BC_API}/api/documents.php?type=${type}&id=${id}`, { method: 'DELETE' });
+    this.invalidateCache(type);
+    return res;
   },
 
   // ---- settings & backup ----
-  settingsList() { return this._fetch(`${BC_API}/api/settings.php?action=list`); },
-  letterheadInfo() { return this._fetch(`${BC_API}/api/settings.php?action=letterhead`); },
+  settingsList() { return this._fetchCached(`${BC_API}/api/settings.php?action=list`, 30000); },
+  letterheadInfo() { return this._fetchCached(`${BC_API}/api/settings.php?action=letterhead`, 60000); },
   getMlModel() { return this._fetch(`${BC_API}/api/settings.php?action=ml_model`); },
   autoBackupCheck() { return this._fetch(`${BC_API}/api/settings.php?action=auto_backup_check`); },
   setMlModel(task, model) {
