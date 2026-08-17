@@ -493,6 +493,12 @@ function require_login(): void {
  * truth instead of each guessing its own fallback.
  */
 function getSecuritySettings(): array {
+    static $cached = null;
+    if ($cached !== null) return $cached;
+    if (!empty($_SESSION['sec_settings']) && is_array($_SESSION['sec_settings'])) {
+        $cached = $_SESSION['sec_settings'];
+        return $cached;
+    }
     $defaults = [
         'lockout_enabled'      => true,
         'session_timeout'      => 30,
@@ -500,15 +506,21 @@ function getSecuritySettings(): array {
         'min_password_length'  => 8,
         'password_expiry_days' => 90,
     ];
-    $mysqli = db();
-    $keys = "'" . implode("','", array_keys($defaults)) . "'";
-    $rows = $mysqli->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ($keys)")->fetch_all(MYSQLI_ASSOC);
-    $out = $defaults;
-    foreach ($rows as $r) {
-        $key = $r['setting_key'];
-        $out[$key] = ($key === 'lockout_enabled') ? ($r['setting_value'] === '1' || $r['setting_value'] === 'true') : (int)$r['setting_value'];
+    try {
+        $mysqli = db();
+        $keys = "'" . implode("','", array_keys($defaults)) . "'";
+        $rows = $mysqli->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ($keys)")->fetch_all(MYSQLI_ASSOC);
+        $out = $defaults;
+        foreach ($rows as $r) {
+            $key = $r['setting_key'];
+            $out[$key] = ($key === 'lockout_enabled') ? ($r['setting_value'] === '1' || $r['setting_value'] === 'true') : (int)$r['setting_value'];
+        }
+        $cached = $out;
+        $_SESSION['sec_settings'] = $out;
+        return $out;
+    } catch (Throwable $t) {
+        return $defaults;
     }
-    return $out;
 }
 
 if (!function_exists('logAudit')) {

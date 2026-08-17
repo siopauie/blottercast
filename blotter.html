@@ -130,28 +130,28 @@
         <span class="text-white/80 text-sm font-medium">Total Blotters</span>
         <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="blotter" data-icon-size="18"></div>
       </div>
-      <div class="font-display text-3xl" id="blTotalCount">0</div>
+      <div class="font-display text-3xl" id="blTotalCount"><span class="opacity-40 animate-pulse">—</span></div>
     </div>
     <div class="stat-card-grad moss">
       <div class="flex items-center justify-between mb-3">
         <span class="text-white/80 text-sm font-medium">Ongoing</span>
         <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="play" data-icon-size="18"></div>
       </div>
-      <div class="font-display text-3xl" id="blOngoingCount">0</div>
+      <div class="font-display text-3xl" id="blOngoingCount"><span class="opacity-40 animate-pulse">—</span></div>
     </div>
     <div class="stat-card-grad sunset">
       <div class="flex items-center justify-between mb-3">
         <span class="text-white/80 text-sm font-medium">Pending</span>
         <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="clock" data-icon-size="18"></div>
       </div>
-      <div class="font-display text-3xl" id="blPendingCount">0</div>
+      <div class="font-display text-3xl" id="blPendingCount"><span class="opacity-40 animate-pulse">—</span></div>
     </div>
     <div class="stat-card-grad dark">
       <div class="flex items-center justify-between mb-3">
         <span class="text-white/70 text-sm font-medium">Resolved</span>
         <div class="stat-icon-badge w-9 h-9 rounded-xl" data-icon="check" data-icon-size="18"></div>
       </div>
-      <div class="font-display text-3xl text-white" id="blResolvedCount">0</div>
+      <div class="font-display text-3xl text-white" id="blResolvedCount"><span class="opacity-40 animate-pulse">—</span></div>
     </div>
   </div>
 
@@ -198,7 +198,15 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="blotterTableBody"></tbody>
+          <tbody id="blotterTableBody">
+            <tr class="animate-pulse">
+              <td colspan="10" class="text-center py-8 text-forest-400">
+                <div class="flex items-center justify-center gap-2">
+                  <span class="w-4 h-4 rounded-full border-2 border-forest-400 border-t-transparent animate-spin"></span> Loading records…
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
