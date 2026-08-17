@@ -469,24 +469,41 @@
 <script>
   // ── Supabase OAuth Setup ──
   const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
-  // Read anon key if configured on window or local storage, or default
-  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('bc_supabase_anon') || '';
-
   let sbClient = null;
-  if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+
+  async function initSupabase() {
+    if (sbClient) return sbClient;
     try {
-      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch(e) {
-      console.warn('Supabase initialization:', e);
+      const res = await fetch('api/auth.php?action=public_config');
+      if (res.ok) {
+        const cfg = await res.json();
+        if (cfg.supabase_url && cfg.supabase_anon_key && window.supabase) {
+          sbClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+          return sbClient;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load public_config:', e);
     }
+    const savedKey = localStorage.getItem('bc_supabase_anon');
+    if (savedKey && window.supabase) {
+      try {
+        sbClient = window.supabase.createClient(SUPABASE_URL, savedKey);
+      } catch (e) {}
+    }
+    return sbClient;
   }
+
+  // Pre-initialize on load
+  initSupabase();
 
   async function handleGoogleLogin() {
     const alert = document.getElementById('loginAlert');
     const alertText = document.getElementById('loginAlertMsg');
     alert.classList.remove('show');
 
-    if (!sbClient) {
+    const client = await initSupabase();
+    if (!client) {
       const key = prompt('Please paste your Supabase Project Anon Key (found in Supabase Dashboard -> Project Settings -> API):');
       if (key && key.trim()) {
         localStorage.setItem('bc_supabase_anon', key.trim());
@@ -522,16 +539,11 @@
 
   // Check for returning OAuth session on page load
   window.addEventListener('DOMContentLoaded', async () => {
-    if (!sbClient) {
-      const savedKey = localStorage.getItem('bc_supabase_anon');
-      if (savedKey && window.supabase) {
-        try { sbClient = window.supabase.createClient(SUPABASE_URL, savedKey); } catch(e){}
-      }
-    }
-    if (!sbClient) return;
+    const client = await initSupabase();
+    if (!client) return;
 
     try {
-      const { data: { session }, error } = await sbClient.auth.getSession();
+      const { data: { session }, error } = await client.auth.getSession();
       if (session && session.user && session.user.email) {
         document.getElementById('successMsg').textContent = `Signed in with Google as ${session.user.email} — Redirecting…`;
         document.getElementById('successOverlay').classList.add('show');
