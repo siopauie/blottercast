@@ -300,3 +300,11 @@ INSERT INTO system_settings (setting_key, setting_value) VALUES
  ('ml_type_model', 'gradient_boosting'),
  ('ml_hotspot_model', 'random_forest')
 ON CONFLICT (setting_key) DO NOTHING;
+
+-- ---------- Default System Users ----------
+INSERT INTO users (username, password, full_name, email, contact_no, role, status) VALUES
+ ('admin',    '$2y$10$gPdQVfP/sd8qLe9ASooKY.pSrUS0Hp1H32Z9ramldZEHp6wixbHKS', 'Administrator',       'admin@mapulanglupa.gov.ph',    '0917-000-0001', 'System Admin',     'Active'),
+ ('kapitan',  '$2y$10$mqEn7A9uSs.PvL0H7Q/0Q.RRP.rmuPqDCedGYbn0NZRV8Woxj6RUW', 'Kapitan Jose Reyes', 'kapitan@mapulanglupa.gov.ph',  '0917-000-0002', 'Barangay Captain', 'Active'),
+ ('jdelacuz', '$2y$10$GPffyEFuaDBsuZMLKogo7OQz..dhdqTFYXzVnRGqjPZVWP0pgg/Cy', 'Juan Dela Cruz II',  'jdelacruz@mapulanglupa.gov.ph', '0917-000-0003', 'Desk Officer',     'Active'),
+ ('pencoder', '$2y$10$1JgTlm8TofG.0qZ/KaPiAe62DE7KWk7sGbV/lUjv5m98KWoJMLmDa', 'Pedro Encoder',      'pencoder@mapulanglupa.gov.ph',  '0917-000-0005', 'Data Encoder',     'Active')
+ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password;
