@@ -11,8 +11,13 @@ const BCApi = {
   async _fetch(url, opts = {}) {
     const res = await fetch(url, { credentials: 'include', ...opts });
     if (res.status === 401) {
-      window.location.href = 'login.html';
-      throw new Error('Not authenticated');
+      let msg = 'Not authenticated';
+      try { msg = (await res.json()).error || msg; } catch (e) {}
+      const isLoginPage = window.location.pathname.endsWith('login.html') || window.location.pathname === '/' || url.includes('action=login');
+      if (!isLoginPage) {
+        window.location.href = 'login.html';
+      }
+      throw new Error(msg);
     }
     if (!res.ok) {
       let msg = 'Request failed';
