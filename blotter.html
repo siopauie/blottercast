@@ -789,8 +789,8 @@
 
   document.querySelector('[onclick="openModal(\'blotterModal\')"]').onclick = openAdd;
   (async function () {
-    await requireAuth();
-    try { await loadCensusResidentsForBlotterPickers(); } catch (err) { showToast('Could not load residents: ' + err.message, 'error'); }
+    requireAuth();
+    loadCensusResidentsForBlotterPickers().catch(() => {});
     try { await loadBlotter(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
   })();
 </script>

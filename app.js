@@ -85,12 +85,27 @@ async function requireAuth() {
       if (nameEl) nameEl.textContent = cachedUser.full_name;
       if (roleEl) roleEl.textContent = cachedUser.role;
       if (avatarEl) avatarEl.textContent = bcInitials(cachedUser.full_name);
+
+      // Revalidate in the background without blocking page render
+      BCApi.me().then(status => {
+        if (!status || !status.authenticated) {
+          sessionStorage.removeItem('bc_user');
+          window.location.href = 'login.html';
+        } else {
+          sessionStorage.setItem('bc_user', JSON.stringify(status.user));
+          if (status.user.mustChangePassword && typeof bcShowForcedPasswordChange === 'function') {
+            bcShowForcedPasswordChange();
+          }
+        }
+      }).catch(() => {});
+
+      return cachedUser;
     } catch (e) {}
   }
 
   try {
     const status = await BCApi.me();
-    if (!status.authenticated) {
+    if (!status || !status.authenticated) {
       sessionStorage.removeItem('bc_user');
       window.location.href = 'login.html';
       return null;
@@ -99,7 +114,7 @@ async function requireAuth() {
     sessionStorage.setItem('bc_user', JSON.stringify(status.user));
     const role = status.user.role;
     if (typeof enforcePageAccess === 'function' && !enforcePageAccess(role)) {
-      return null; // enforcePageAccess already redirected away
+      return null;
     }
     if (typeof applyNavPermissions === 'function') applyNavPermissions(role);
     if (typeof applyElementPermissionsLive === 'function') applyElementPermissionsLive(role);
@@ -110,7 +125,9 @@ async function requireAuth() {
     if (nameEl) nameEl.textContent = status.user.full_name;
     if (roleEl) roleEl.textContent = status.user.role;
     if (avatarEl) avatarEl.textContent = bcInitials(status.user.full_name);
-    if (status.user.mustChangePassword) bcShowForcedPasswordChange();
+    if (status.user.mustChangePassword && typeof bcShowForcedPasswordChange === 'function') {
+      bcShowForcedPasswordChange();
+    }
     return status.user;
   } catch (e) {
     sessionStorage.removeItem('bc_user');
