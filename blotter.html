@@ -426,7 +426,7 @@
       return;
     }
     if (r.age !== null && r.age !== undefined && r.age < 15) {
-      bcAlert('Complainant/filer must be at least 15 years old.');
+      bcAlert('Both complainant and respondent must be at least 15 years old.');
       bcResidentPickerClear('f_complainantSearch');
       document.getElementById('f_complainant').value = '';
       return;
@@ -443,7 +443,7 @@
       return;
     }
     if (r.age !== null && r.age !== undefined && r.age < 15) {
-      bcAlert('Complainant/filer must be at least 15 years old.');
+      bcAlert('Both complainant and respondent must be at least 15 years old.');
       bcResidentPickerClear('f_respondentSearch');
       document.getElementById('f_respondent').value = '';
       return;
@@ -673,18 +673,18 @@
     if (!vals.type) { await bcAlert('Please select the case Type.'); return; }
     if (!vals.status) { await bcAlert('Please select the Status.'); return; }
 
-    // Age validation: Filer/complainant and recorded party must be at least 15 years old
+    // Age validation: Both complainant and respondent must be at least 15 years old (>= 15)
     if (complainantId) {
       const compResident = censusResidentsForBlotter.find(x => x.id === Number(complainantId));
       if (compResident && compResident.age !== null && compResident.age !== undefined && compResident.age < 15) {
-        await bcAlert('Complainant/filer must be at least 15 years old.');
+        await bcAlert('Both complainant and respondent must be at least 15 years old.');
         return;
       }
     }
     if (respondentId) {
       const respResident = censusResidentsForBlotter.find(x => x.id === Number(respondentId));
       if (respResident && respResident.age !== null && respResident.age !== undefined && respResident.age < 15) {
-        await bcAlert('Complainant/filer must be at least 15 years old.');
+        await bcAlert('Both complainant and respondent must be at least 15 years old.');
         return;
       }
     }

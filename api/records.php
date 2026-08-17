@@ -188,7 +188,7 @@ if ($type === 'blotter') {
             if ($cRow && !empty($cRow['date_of_birth'])) {
                 $cAge = computeAge($cRow['date_of_birth']);
                 if ($cAge !== null && $cAge < 15) {
-                    json_error('Complainant/filer must be at least 15 years old.');
+                    json_error('Both complainant and respondent must be at least 15 years old.');
                 }
             }
         }
@@ -200,7 +200,7 @@ if ($type === 'blotter') {
             if ($rRow && !empty($rRow['date_of_birth'])) {
                 $rAge = computeAge($rRow['date_of_birth']);
                 if ($rAge !== null && $rAge < 15) {
-                    json_error('Complainant/filer must be at least 15 years old.');
+                    json_error('Both complainant and respondent must be at least 15 years old.');
                 }
             }
         }
@@ -243,7 +243,7 @@ if ($type === 'blotter') {
             if ($cRow && !empty($cRow['date_of_birth'])) {
                 $cAge = computeAge($cRow['date_of_birth']);
                 if ($cAge !== null && $cAge < 15) {
-                    json_error('Complainant/filer must be at least 15 years old.');
+                    json_error('Both complainant and respondent must be at least 15 years old.');
                 }
             }
         }
@@ -255,7 +255,7 @@ if ($type === 'blotter') {
             if ($rRow && !empty($rRow['date_of_birth'])) {
                 $rAge = computeAge($rRow['date_of_birth']);
                 if ($rAge !== null && $rAge < 15) {
-                    json_error('Complainant/filer must be at least 15 years old.');
+                    json_error('Both complainant and respondent must be at least 15 years old.');
                 }
             }
         }
