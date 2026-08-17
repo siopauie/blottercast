@@ -204,6 +204,9 @@ if ($type === 'census') {
         // it also tolerates same-birthday-different-year data-entry variance
         // being treated as distinct people.
         $age = computeAge($dob);
+        if ($age !== null && $age < 3) {
+            json_error('Resident must be at least 3 years old to be recorded in the census.');
+        }
         if ($age !== null) {
             $dupStmt = $mysqli->prepare(
                 'SELECT id FROM census_records
@@ -277,6 +280,9 @@ if ($type === 'census') {
         // Same duplicate check as create, excluding this record itself so
         // editing a resident's own unrelated fields doesn't false-positive.
         $age = computeAge($dob);
+        if ($age !== null && $age < 3) {
+            json_error('Resident must be at least 3 years old to be recorded in the census.');
+        }
         if ($age !== null) {
             $dupStmt = $mysqli->prepare(
                 'SELECT id FROM census_records

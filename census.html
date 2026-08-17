@@ -262,8 +262,21 @@
 <script>
 let censusData = [];
 
+function computeResidentAge(dobStr) {
+  if (!dobStr) return null;
+  const bdate = new Date(dobStr);
+  if (isNaN(bdate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - bdate.getFullYear();
+  const m = today.getMonth() - bdate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 function mapResident(r) {
-  const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+  const age = computeResidentAge(r.date_of_birth);
   return {
     id: Number(r.id), resNo: r.resident_no, lastName: r.last_name, firstName: r.first_name, midName: r.middle_name || '',
     dob: r.date_of_birth || '', age: age ?? '—',
@@ -435,7 +448,16 @@ async function saveResident(){
   if (vals.lastName && !bcIsValidName(vals.lastName)) formatErrors.push('Last Name should only contain letters (no numbers).');
   if (vals.firstName && !bcIsValidName(vals.firstName)) formatErrors.push('First Name should only contain letters (no numbers).');
   if (vals.middleName && !bcIsValidName(vals.middleName)) formatErrors.push('Middle Name should only contain letters (no numbers).');
-  if (vals.dob && bcIsFutureDate(vals.dob)) formatErrors.push('Date of Birth cannot be in the future.');
+  if (vals.dob) {
+    if (bcIsFutureDate(vals.dob)) {
+      formatErrors.push('Date of Birth cannot be in the future.');
+    } else {
+      const age = computeResidentAge(vals.dob);
+      if (age !== null && age < 3) {
+        formatErrors.push('Resident must be at least 3 years old to be recorded in the census.');
+      }
+    }
+  }
   if (vals.contactNo && !bcIsValidContact(vals.contactNo)) formatErrors.push('Contact Number should be a valid PH mobile number (e.g. 09171234567).');
   if (vals.occupation && /[0-9]/.test(vals.occupation)) formatErrors.push('Occupation should not contain numbers.');
   if (formatErrors.length) {
