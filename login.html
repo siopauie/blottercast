@@ -542,34 +542,67 @@
     const isOAuthReturn = window.location.hash.includes('access_token') || window.location.search.includes('code=') || window.location.hash.includes('error=');
     if (!isOAuthReturn) return;
 
+    const alert = document.getElementById('loginAlert');
+    const alertText = document.getElementById('loginAlertMsg');
+    const btn = document.getElementById('googleBtn');
+    const btnText = document.getElementById('googleBtnText');
+
+    if (btn && btnText) {
+      btn.style.opacity = '0.7';
+      btn.style.pointerEvents = 'none';
+      btnText.textContent = 'Verifying Google account…';
+    }
+
     const client = await initSupabase();
-    if (!client) return;
+    if (!client) {
+      if (btn && btnText) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btnText.textContent = 'Continue with Google'; }
+      return;
+    }
 
     try {
       const { data: { session }, error } = await client.auth.getSession();
-      if (session && session.user && session.user.email) {
-        document.getElementById('successMsg').textContent = `Signed in with Google as ${session.user.email} — Redirecting…`;
-        document.getElementById('successOverlay').classList.add('show');
 
-        // Clean up hash from URL
-        if (window.history.replaceState) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
+      // Always clear client-side Supabase session right away so next visits don't auto-trigger
+      await client.auth.signOut().catch(() => {});
 
-        const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
-        const res = await BCApi.googleLogin(session.user.email, fullName, session.access_token);
-        // Clear the client-side Supabase token so logging out won't auto-re-login
-        await client.auth.signOut().catch(() => {});
-        if (res && res.user) {
-          sessionStorage.setItem('bc_user', JSON.stringify(res.user));
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
-        }
-      }
-    } catch (err) {
-      console.warn('OAuth session exchange:', err);
-      // Clean up hash if error
+      // Clean up hash from URL
       if (window.history.replaceState) {
         window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      if (error) throw error;
+
+      if (session && session.user && session.user.email) {
+        const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
+        
+        // Verify with BlotterCast backend database
+        const res = await BCApi.googleLogin(session.user.email, fullName, session.access_token);
+        
+        if (res && res.user) {
+          sessionStorage.setItem('bc_user', JSON.stringify(res.user));
+          document.getElementById('successMsg').textContent = `Signed in as ${res.user.full_name} (${res.user.role}) — Redirecting…`;
+          document.getElementById('successOverlay').classList.add('show');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
+          return;
+        }
+      } else {
+        throw new Error('Google sign-in did not return user account details.');
+      }
+    } catch (err) {
+      console.warn('OAuth session exchange failed:', err);
+      if (btn && btnText) {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btnText.textContent = 'Continue with Google';
+      }
+      document.getElementById('successOverlay').classList.remove('show');
+      alert.classList.add('show');
+      if (alertText) alertText.textContent = err.message || 'Could not sign in with this Google account.';
+      
+      const form = document.getElementById('loginForm');
+      if (form) {
+        form.style.animation = 'shake 0.4s ease';
+        setTimeout(() => form.style.animation = '', 400);
       }
     }
   });
