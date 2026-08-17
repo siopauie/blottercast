@@ -816,7 +816,7 @@
       const { data, error } = await client.auth.signInWithOtp({
         email: resetTargetEmail,
         options: {
-          shouldCreateUser: false
+          shouldCreateUser: true
         }
       });
       if (error) throw error;
