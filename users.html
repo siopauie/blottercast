@@ -262,11 +262,34 @@ document.getElementById('permMatrix').innerHTML = permissions.map(p=>`
 let usersData = []; let usersPage = 1; const USERS_ROWS = 8;
 let editUserId = null;
 
+function formatUserDateTime(raw) {
+  if (!raw || raw === 'Never' || raw === 'null' || raw === 'undefined') return 'Never';
+  let d;
+  if (typeof raw === 'string') {
+    let str = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(str)) {
+      str = str.replace(' ', 'T');
+    }
+    d = new Date(str);
+  } else {
+    d = new Date(raw);
+  }
+  if (!d || isNaN(d.getTime())) return 'Never';
+  return d.toLocaleString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+}
+
 function mapUser(u) {
   return {
     id: Number(u.id), name: u.full_name, username: u.username, email: u.email || '',
     contact: u.contact_no || '', role: u.role, status: u.status, signaturePath: u.signature_path || null,
-    lastLogin: u.last_login ? new Date(u.last_login).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : 'Never',
+    lastLogin: formatUserDateTime(u.last_login),
   };
 }
 
@@ -283,7 +306,7 @@ async function loadAuditLog() {
       ? '<tr><td colspan="5" class="text-center py-6 text-forest-400">No activity recorded yet.</td></tr>'
       : rows.map(r => `
         <tr>
-          <td class="text-xs text-forest-400">${new Date(r.created_at).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })}</td>
+          <td class="text-xs text-forest-400">${formatUserDateTime(r.created_at)}</td>
           <td class="font-semibold text-forest-700 text-sm">${r.username}</td>
           <td><span class="badge ${r.action==='Created'?'badge-resolved':r.action==='Deleted'?'badge-not-complied':'badge-ongoing'}">${r.action}</span></td>
           <td class="text-sm text-forest-600">${r.module}</td>

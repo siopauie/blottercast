@@ -60,9 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
-    // Correct password: clear any lockout state.
-    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?');
-    $clear->bind_param('i', $user['id']);
+    // Correct password: clear any lockout state and update last_login.
+    $now = date('Y-m-d H:i:s');
+    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?');
+    $clear->bind_param('si', $now, $user['id']);
     $clear->execute();
 
     // Password Expiry (days): flag it so the frontend can force a change
@@ -122,9 +123,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'google_login') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
-    // Clear any lockout state on successful Google login
-    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?');
-    $clear->bind_param('i', $user['id']);
+    // Clear any lockout state on successful Google login and record last_login
+    $now = date('Y-m-d H:i:s');
+    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?');
+    $clear->bind_param('si', $now, $user['id']);
     $clear->execute();
 
     $_SESSION['user_id'] = $user['id'];
