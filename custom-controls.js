@@ -216,7 +216,7 @@
     if (input.dataset.bcDate || input.hidden) return;
     input.dataset.bcDate = '1';
     input.classList.add('bc-date-enhanced');
-    attachFieldIcon(input,
+    const wrap = attachFieldIcon(input,
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>'
     );
 
@@ -406,8 +406,8 @@
 
     function open() {
       closeActivePopover();
-      viewYear = undefined; viewMonth = undefined;
-      viewMode = 'days'; yearRangeStart = undefined;
+      viewYear = undefined;
+      viewMonth = undefined;
       panelRef = build();
       document.body.appendChild(panelRef);
       positionPopover(panelRef, input);
@@ -418,12 +418,18 @@
       };
     }
 
-    input.addEventListener('mousedown', (e) => {
+    const handleTrigger = (e) => {
       e.preventDefault();
       input.focus();
       if (activePopover && activePopover.trigger === input) closeActivePopover();
       else open();
+    };
+
+    input.addEventListener('mousedown', handleTrigger);
+    if (wrap) wrap.addEventListener('mousedown', (e) => {
+      if (e.target !== input) handleTrigger(e);
     });
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
       if (e.key === 'Escape') closeActivePopover();
