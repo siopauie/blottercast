@@ -213,85 +213,101 @@
 
 <!-- Add/Edit Modal -->
 <div class="modal-overlay" id="blotterModal">
-  <div class="modal-box" style="width:720px">
-    <div class="flex items-center justify-between mb-6">
+  <div class="modal-box max-w-2xl" style="width: 720px;">
+    <div class="flex items-center justify-between mb-5">
       <h2 class="font-display text-xl text-forest-800" id="modalTitle">New Blotter Entry</h2>
       <button onclick="closeModal('blotterModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
     </div>
     <form id="blotterForm" class="space-y-4">
       <input type="hidden" id="editId"/>
+
+      <!-- Row 1: Docket No & Date Filed -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="form-label">Docket No.</label>
-          <input type="text" id="f_docketNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled/>
+          <div class="flex items-center h-6 mb-1">
+            <label class="form-label mb-0">Docket No.</label>
+          </div>
+          <input type="text" id="f_docketNo" class="form-input bg-forest-50" placeholder="Auto-generated on save" disabled style="height: 42px;"/>
         </div>
         <div>
-          <label class="form-label">Date Filed</label>
-          <input type="date" id="f_dateFiled" class="form-input" data-no-future/>
+          <div class="flex items-center h-6 mb-1">
+            <label class="form-label mb-0">Date Filed</label>
+          </div>
+          <input type="date" id="f_dateFiled" class="form-input" data-no-future style="height: 42px;"/>
         </div>
       </div>
+
+      <!-- Row 2: Complainant & Address -->
       <div class="grid grid-cols-2 gap-4">
         <div class="relative">
-          <div class="flex items-center justify-between min-h-[24px] mb-1">
+          <div class="flex items-center justify-between h-6 mb-1">
             <label class="form-label mb-0">Name of Complainant <span class="text-red-500">*</span></label>
-            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer whitespace-nowrap" id="f_complainantOutsideLabel">
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer select-none whitespace-nowrap" id="f_complainantOutsideLabel">
               <input type="checkbox" id="f_complainantOutside" class="rounded" onchange="toggleComplainantOutside()"/> Not a resident / outside party
             </label>
           </div>
-          <input type="text" id="f_complainantSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers/>
-          <input type="text" id="f_complainantFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers/>
+          <input type="text" id="f_complainantSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers style="height: 42px;"/>
+          <input type="text" id="f_complainantFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers style="height: 42px;"/>
           <input type="hidden" id="f_complainant"/>
           <input type="hidden" id="f_complainantId"/>
           <div id="f_complainantSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
         </div>
         <div>
-          <div class="flex items-center min-h-[24px] mb-1">
+          <div class="flex items-center h-6 mb-1">
             <label class="form-label mb-0">Complainant Address</label>
           </div>
-          <input type="text" id="f_complainantAddr" class="form-input" placeholder="Address"/>
+          <input type="text" id="f_complainantAddr" class="form-input" placeholder="Address" style="height: 42px;"/>
         </div>
       </div>
+
+      <!-- Row 3: Respondent & Address -->
       <div class="grid grid-cols-2 gap-4">
         <div class="relative">
-          <div class="flex items-center justify-between min-h-[24px] mb-1">
+          <div class="flex items-center justify-between h-6 mb-1">
             <label class="form-label mb-0">Name of Respondent <span class="text-red-500">*</span></label>
-            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer whitespace-nowrap" id="f_respondentOutsideLabel">
+            <label class="flex items-center gap-1.5 text-xs text-forest-500 cursor-pointer select-none whitespace-nowrap" id="f_respondentOutsideLabel">
               <input type="checkbox" id="f_respondentOutside" class="rounded" onchange="toggleRespondentOutside()"/> Not a resident / outside party
             </label>
           </div>
-          <input type="text" id="f_respondentSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers/>
-          <input type="text" id="f_respondentFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers/>
+          <input type="text" id="f_respondentSearch" class="form-input" placeholder="Type a name to search Census…" autocomplete="off" data-no-numbers style="height: 42px;"/>
+          <input type="text" id="f_respondentFreeText" class="form-input hidden" placeholder="Full name" data-no-numbers style="height: 42px;"/>
           <input type="hidden" id="f_respondent"/>
           <input type="hidden" id="f_respondentId"/>
           <div id="f_respondentSuggestions" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-forest-200 rounded-xl shadow-lg"></div>
         </div>
         <div>
-          <div class="flex items-center min-h-[24px] mb-1">
+          <div class="flex items-center h-6 mb-1">
             <label class="form-label mb-0">Respondent Address</label>
           </div>
-          <input type="text" id="f_respondentAddr" class="form-input" placeholder="Address"/>
+          <input type="text" id="f_respondentAddr" class="form-input" placeholder="Address" style="height: 42px;"/>
         </div>
       </div>
-      <div class="p-2.5 bg-forest-50 border border-forest-100 rounded-xl text-xs text-forest-600 flex items-start gap-2">
-        <span data-icon="info" data-icon-size="14" class="text-forest-500 mt-0.5 shrink-0"></span>
-        <span>Either the complainant or the respondent can be marked <strong>"Not a resident"</strong> if they're from outside the barangay — but not both, since at least one party must be a registered Census resident.</span>
-      </div>
+
+      <p class="text-xs text-forest-400 -mt-1 leading-relaxed">Either the complainant or the respondent can be marked "Not a resident" if they're from outside the barangay — but not both, since at least one party must be a registered Census resident.</p>
+
+      <!-- Row 4: Nature of Case, Type, Status -->
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <label class="form-label">Nature of Case</label>
-          <input type="text" id="f_nature" class="form-input" placeholder="e.g. Pag-aaway" data-no-numbers/>
+          <div class="flex items-center h-6 mb-1">
+            <label class="form-label mb-0">Nature of Case</label>
+          </div>
+          <input type="text" id="f_nature" class="form-input" placeholder="e.g. Pag-aaway" data-no-numbers style="height: 42px;"/>
         </div>
         <div>
-          <label class="form-label">Type</label>
-          <select id="f_type" class="form-input" required>
+          <div class="flex items-center h-6 mb-1">
+            <label class="form-label mb-0">Type</label>
+          </div>
+          <select id="f_type" class="form-input" required style="height: 42px;">
             <option value="" selected disabled hidden>Select…</option>
             <option value="CRIM">Criminal</option>
             <option value="CIVIL">Civil</option>
           </select>
         </div>
         <div>
-          <label class="form-label">Status</label>
-          <select id="f_status" class="form-input" required>
+          <div class="flex items-center h-6 mb-1">
+            <label class="form-label mb-0">Status</label>
+          </div>
+          <select id="f_status" class="form-input" required style="height: 42px;">
             <option value="" selected disabled hidden>Select…</option>
             <option value="Pending">Pending</option>
             <option value="Ongoing">Ongoing</option>
@@ -299,7 +315,9 @@
           </select>
         </div>
       </div>
-      <div class="flex justify-end gap-3 pt-2">
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-3 pt-3">
         <button type="button" onclick="closeModal('blotterModal')" class="btn-secondary">Cancel</button>
         <button type="button" onclick="saveBlotter()" class="btn-primary">Save Entry</button>
       </div>
