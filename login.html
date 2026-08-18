@@ -140,6 +140,7 @@
     .sc-dot { width: 6px; height: 6px; border-radius: 50%; }
     .sc-dot.green { background: var(--green-light); box-shadow: 0 0 6px var(--green-light); animation: blink 1.5s infinite; }
     .sc-dot.amber { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+    .sc-dot.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; animation: blink 1.5s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
     /* ── RIGHT PANEL (LOGIN FORM) ── */
@@ -435,8 +436,8 @@
       <div class="sc-value" id="cardSystemStatus"><span class="sc-dot green"></span> Online</div>
     </div>
     <div class="status-card">
-      <div class="sc-label" id="cardRiskAlertLabel">Risk Alert – Zone 1</div>
-      <div class="sc-value" id="cardRiskAlertVal"><span class="sc-dot amber"></span> High Risk</div>
+      <div class="sc-label" id="cardRiskAlertLabel">Risk Alert</div>
+      <div class="sc-value" id="cardRiskAlertVal"><span class="sc-dot green"></span> Low Risk</div>
     </div>
     <div class="status-card">
       <div class="sc-label">Last Model Train</div>
@@ -1126,40 +1127,142 @@
 
   // Dynamic Live Stats for Left Panel & Status Cards
   async function loadPublicStats() {
+    function applyStats(stats) {
+      if (!stats) return;
+
+      // Bottom Counter Metrics
+      const bCount = Number(stats.blotter_count ?? 0);
+      const blotterEl = document.getElementById('statBlotterCount');
+      if (blotterEl) {
+        blotterEl.textContent = bCount > 0 ? (bCount >= 100 ? bCount + '+' : String(bCount)) : (stats.blotter_count !== undefined ? String(bCount) : '0');
+      }
+
+      const accEl = document.getElementById('statMlAccuracy');
+      if (accEl) {
+        accEl.textContent = stats.ml_accuracy || '—';
+      }
+
+      const zonesEl = document.getElementById('statZonesCount');
+      if (zonesEl) {
+        zonesEl.textContent = (stats.zones_count !== undefined && stats.zones_count !== null) ? String(stats.zones_count) : '0';
+      }
+
+      // Floating Status Cards
+      const sysEl = document.getElementById('cardSystemStatus');
+      if (sysEl) {
+        const isOnline = (stats.system_status || '').toLowerCase() === 'online';
+        sysEl.innerHTML = `<span class="sc-dot ${isOnline ? 'green' : 'red'}"></span> ${stats.system_status || (isOnline ? 'Online' : 'Offline')}`;
+      }
+
+      const alertLabel = document.getElementById('cardRiskAlertLabel');
+      if (alertLabel) {
+        alertLabel.textContent = `Risk Alert – ${stats.risk_zone || 'Zone 1'}`;
+      }
+
+      const alertVal = document.getElementById('cardRiskAlertVal');
+      if (alertVal) {
+        const lvl = stats.risk_level || 'Low Risk';
+        const isHigh = lvl.toLowerCase().includes('high');
+        const isMod = lvl.toLowerCase().includes('moderate') || lvl.toLowerCase().includes('medium');
+        const dotClass = isHigh ? 'amber' : (isMod ? 'amber' : 'green');
+        alertVal.innerHTML = `<span class="sc-dot ${dotClass}"></span> ${lvl}`;
+      }
+
+      const trainEl = document.getElementById('cardLastTrain');
+      if (trainEl) {
+        trainEl.textContent = stats.last_model_train || 'No training runs yet';
+      }
+    }
+
     try {
       const res = await fetch('api/auth.php?action=public_stats');
-      if (!res.ok) throw new Error('Network error');
-      const data = await res.json();
-      if (data && data.ok) {
-        const bCount = data.blotter_count ?? 0;
-        document.getElementById('statBlotterCount').textContent = bCount > 0 ? bCount + '+' : '0';
-        document.getElementById('statMlAccuracy').textContent = data.ml_accuracy || '91.2%';
-        document.getElementById('statZonesCount').textContent = data.zones_count || '8';
-
-        // Floating status cards
-        const sysEl = document.getElementById('cardSystemStatus');
-        if (sysEl) sysEl.innerHTML = '<span class="sc-dot green"></span> ' + (data.system_status || 'Online');
-
-        const alertLabel = document.getElementById('cardRiskAlertLabel');
-        if (alertLabel) alertLabel.textContent = `Risk Alert – ${data.risk_zone || 'Zone 1'}`;
-
-        const alertVal = document.getElementById('cardRiskAlertVal');
-        if (alertVal) {
-          const dotClass = data.risk_level === 'High Risk' ? 'amber' : 'green';
-          alertVal.innerHTML = `<span class="sc-dot ${dotClass}"></span> ${data.risk_level || 'High Risk'}`;
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          applyStats(data);
+          return;
         }
-
-        const trainEl = document.getElementById('cardLastTrain');
-        if (trainEl) trainEl.textContent = data.last_model_train || 'Jan 20, 2025';
       }
     } catch (e) {
-      // Fallback defaults
-      document.getElementById('statBlotterCount').textContent = '247+';
-      document.getElementById('statMlAccuracy').textContent = '91.2%';
-      document.getElementById('statZonesCount').textContent = '8';
-      const trainEl = document.getElementById('cardLastTrain');
-      if (trainEl) trainEl.textContent = 'Jan 20, 2025';
+      console.warn('API public_stats fetch failed, checking client-side Supabase query if available...', e);
     }
+
+    // Direct Supabase fallback if backend API is not responding
+    try {
+      if (window.supabase) {
+        const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
+        const savedKey = localStorage.getItem('bc_supabase_anon');
+        if (savedKey) {
+          const client = window.supabase.createClient(SUPABASE_URL, savedKey);
+          const [bRes, zRes, mlRes] = await Promise.all([
+            client.from('blotter_records').select('id', { count: 'exact', head: true }),
+            client.from('zones').select('zone_id', { count: 'exact', head: true }),
+            client.from('ml_runs').select('*').order('id', { ascending: false }).limit(1)
+          ]);
+
+          let accuracy = '—';
+          let lastTrain = 'No training runs yet';
+          let riskZone = 'Zone 1';
+          let riskLevel = 'Low Risk';
+
+          if (mlRes.data && mlRes.data.length > 0) {
+            const run = mlRes.data[0];
+            const ts = run.trained_at || run.created_at;
+            if (ts) {
+              const d = new Date(ts);
+              if (!isNaN(d.getTime())) {
+                lastTrain = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              }
+            }
+            try {
+              const occ = typeof run.occurrence_metrics_json === 'string' ? JSON.parse(run.occurrence_metrics_json) : run.occurrence_metrics_json;
+              const active = run.active_occurrence_model || 'random_forest';
+              const acc = occ?.[active]?.accuracy ?? occ?.[active.toLowerCase()]?.accuracy ?? occ?.['RandomForest']?.accuracy ?? Object.values(occ || {})[0]?.accuracy;
+              if (acc !== undefined && acc !== null) {
+                const aNum = Number(acc);
+                accuracy = (aNum <= 1 ? (aNum * 100).toFixed(1) : aNum.toFixed(1)) + '%';
+              }
+            } catch (_) {}
+
+            try {
+              const hs = typeof run.hotspots_json === 'string' ? JSON.parse(run.hotspots_json) : run.hotspots_json;
+              if (Array.isArray(hs) && hs.length > 0) {
+                const sortedHs = [...hs].sort((a, b) => (b.meanDailyProb || 0) - (a.meanDailyProb || 0));
+                const top = sortedHs[0];
+                const z = String(top.zone || '1');
+                riskZone = (z.toLowerCase().includes('zone') || isNaN(z)) ? z : `Zone ${z}`;
+                const p = Number(top.meanDailyProb || 0);
+                riskLevel = p >= 0.20 ? 'High Risk' : (p >= 0.13 ? 'Moderate Risk' : 'Low Risk');
+              }
+            } catch (_) {}
+          }
+
+          applyStats({
+            system_status: 'Online',
+            blotter_count: bRes.count ?? 0,
+            zones_count: zRes.count ?? 0,
+            ml_accuracy: accuracy,
+            risk_zone: riskZone,
+            risk_level: riskLevel,
+            last_model_train: lastTrain
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase fallback error:', err);
+    }
+
+    // Default offline/empty state when uncontactable
+    applyStats({
+      system_status: 'Offline',
+      blotter_count: 0,
+      zones_count: 0,
+      ml_accuracy: '—',
+      risk_zone: 'Zone 1',
+      risk_level: 'Low Risk',
+      last_model_train: 'Unavailable'
+    });
   }
   loadPublicStats();
 </script>

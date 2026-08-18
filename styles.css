@@ -592,40 +592,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    (1795x2539px, ratio 0.707) — do not change .cert-sheet's aspect-ratio
    without re-measuring, or the overlay will drift off the letterhead. */
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    overflow: visible !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
   body * { visibility: hidden; }
   #certPrint, #certPrint * { visibility: visible; }
-  #certPrint {
-    position: absolute !important;
-    inset: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .cert-sheet {
-    box-shadow: none !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-  }
+  #certPrint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .cert-sheet { box-shadow: none !important; }
 }
 .cert-sheet {
   position: relative; width: 680px; aspect-ratio: 1795 / 2539;
@@ -633,74 +603,71 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .cert-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .cert-ov {
-  position: absolute; font-family: 'Times New Roman', Times, serif; color: #111;
+  position: absolute; font-family: 'Georgia', serif; color: #1a1a1a;
   left: 8%; right: 8%; width: 84%;
 }
 .cert-ov-or {
-  top: 19.8%; left: 8%; right: 8%; width: 84%;
-  font-size: 0.62rem; color: #444; text-align: right;
-  font-family: 'Times New Roman', Times, serif; font-weight: 500;
+  top: 20%; left: 6%; right: 6%; width: 88%;
+  font-size: 0.6rem; color: #555; text-align: right;
 }
 .cert-ov-title {
-  top: 22.8%; font-size: 1.45rem; font-weight: 900; color: #111;
-  text-align: center; letter-spacing: 0.04em; text-transform: uppercase;
-  text-decoration: underline; text-underline-offset: 4px;
-  font-family: 'Times New Roman', Times, serif;
+  top: 22.8%; font-size: 1.55rem; font-weight: 700; color: #111;
+  text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 6px;
 }
 .cert-ov-title-non{
-  top: 19.5%; font-size: 1.45rem; font-weight: 900; color: #111;
-  text-align: center; letter-spacing: 0.04em; text-transform: uppercase;
-  text-decoration: underline; text-underline-offset: 4px;
-  font-family: 'Times New Roman', Times, serif;
+  top: 19.8%; font-size: 1.55rem; font-weight: 700; color: #111;
+  text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 6px;
 }
 .cert-ov-body {
-  top: 28%; left: 9%; right: 9%; width: 82%;
-  font-size: 0.72rem; line-height: 1.5; text-align: justify;
-  font-family: 'Times New Roman', Times, serif; color: #111;
+  top: 28.2%; font-size: 0.8rem; line-height: 1.85; text-align: justify;
 }
-.cert-ov-body p { text-indent: 2.2em; margin-bottom: 0.45em; }
-.cert-ov-body p.no-indent { text-indent: 0; margin-bottom: 0.45em; }
+.cert-ov-body p { text-indent: 2.4em; margin-bottom: 0.85em; }
+.cert-ov-body p.no-indent { text-indent: 0; }
 .cert-name { font-weight: 700; text-decoration: underline; text-transform: uppercase; }
-.cert-blank { border-bottom: 1px solid #222; display: inline-block; min-width: 90px; text-align: center; font-weight: 600; }
+.cert-blank { border-bottom: 1px solid #333; display: inline-block; min-width: 100px; text-align: center; font-weight: 600; }
 .cert-ov-voter {
-  top: 68.8%; left: 52%; right: 9%; width: 39%;
-  font-size: 0.84rem; font-weight: 700; color: #1e5c1e; text-align: left;
-  font-family: 'Times New Roman', Times, serif;
-  letter-spacing: 0.02em; white-space: nowrap;
+  top: 70.3%; left: 54%; right: 5%; width: 41%;
+  font-size: 0.95rem; font-weight: 700; color: #1e5c1e; text-align: left;
 }
 .cert-ov-sigimg {
-  top: 80.5%; left: 50%; width: 42%; height: 5%;
+  top: 82.3%; left: 53%; width: 38%; height: 4.2%;
   display: flex; align-items: flex-end; justify-content: center;
 }
 .cert-ov-sigimg img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .cert-ov-sigblock {
-  top: 85%; left: 50%; right: 8%; width: 42%; text-align: center;
+  top: 86.8%; left: 50%; right: 5%; width: 45%; text-align: center;
 }
 .cert-ov-chairman-name {
-  font-size: 0.84rem; font-weight: 800; text-transform: uppercase; color: #111;
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #111;
   border-bottom: 1.5px solid #222; padding-bottom: 2px;
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 .cert-ov-chairman-title {
-  font-size: 0.7rem; color: #222; margin-top: 3px; letter-spacing: 0.02em; font-weight: 600;
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.2;
+  font-size: 0.65rem; color: #444; margin-top: 2px; letter-spacing: 0.05em;
+  line-height: 1.3;
 }
 
+/* Applicant's "Signature over Printed Name" — mirrors the Chairman's
+   sigblock (same row, same top offset) but sits on the LEFT so the two
+   signature blocks flank each other, the same pairing Non-Residency
+   already uses (its own applicant-name line sits above the Chairman's
+   signature). Residency/Clearance/Indigency's letterheads don't have a
+   pre-printed line here, so both the underline (via border-bottom on the
+   name itself, same technique as .cert-ov-chairman-name) and the label
+   are rendered live. */
 .cert-ov-applicant-sigblock {
-  top: 85%; left: 8%; right: auto; width: 38%; text-align: center;
+  top: 86.8%; left: 8%; right: auto; width: 40%; text-align: center;
 }
 .cert-ov-applicant-name {
-  font-size: 0.84rem; font-weight: 700; text-transform: uppercase; color: #111;
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #111;
   border-bottom: 1.5px solid #222; padding-bottom: 2px; min-height: 1.1em;
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 .cert-ov-applicant-title {
-  font-size: 0.68rem; color: #333; margin-top: 3px; letter-spacing: 0.02em; font-weight: 600;
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.2;
+  font-size: 0.65rem; color: #444; margin-top: 2px; letter-spacing: 0.05em;
+  line-height: 1.3;
 }
 
 /* Certificate of Non-Residency's body text sits in a narrower column to

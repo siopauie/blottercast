@@ -664,24 +664,85 @@
   }, { threshold: 0.12 });
   reveals.forEach(el => observer.observe(el));
 
-  // Dynamic Live Stats
+  // Dynamic Live Stats for Hero Metrics
   async function loadPublicStats() {
+    function applyStats(stats) {
+      if (!stats) return;
+      const bCount = Number(stats.blotter_count ?? 0);
+      const blotterEl = document.getElementById('heroBlotterCount');
+      if (blotterEl) {
+        blotterEl.textContent = bCount > 0 ? (bCount >= 100 ? bCount + '+' : String(bCount)) : (stats.blotter_count !== undefined ? String(bCount) : '0');
+      }
+
+      const accEl = document.getElementById('heroMlAccuracy');
+      if (accEl) {
+        accEl.textContent = stats.ml_accuracy || '—';
+      }
+
+      const zonesEl = document.getElementById('heroZonesCount');
+      if (zonesEl) {
+        zonesEl.textContent = (stats.zones_count !== undefined && stats.zones_count !== null) ? String(stats.zones_count) : '0';
+      }
+    }
+
     try {
       const res = await fetch('api/auth.php?action=public_stats');
-      if (!res.ok) throw new Error('Network error');
-      const data = await res.json();
-      if (data && data.ok) {
-        const bCount = data.blotter_count ?? 0;
-        document.getElementById('heroBlotterCount').textContent = bCount > 0 ? bCount + '+' : '0';
-        document.getElementById('heroMlAccuracy').textContent = data.ml_accuracy || '91.2%';
-        document.getElementById('heroZonesCount').textContent = data.zones_count || '8';
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          applyStats(data);
+          return;
+        }
       }
     } catch (e) {
-      // Fallback
-      document.getElementById('heroBlotterCount').textContent = '247+';
-      document.getElementById('heroMlAccuracy').textContent = '91.2%';
-      document.getElementById('heroZonesCount').textContent = '8';
+      console.warn('API public_stats fetch failed, attempting client fallback...', e);
     }
+
+    // Direct Supabase fallback if backend API is not responding
+    try {
+      if (window.supabase) {
+        const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
+        const savedKey = localStorage.getItem('bc_supabase_anon');
+        if (savedKey) {
+          const client = window.supabase.createClient(SUPABASE_URL, savedKey);
+          const [bRes, zRes, mlRes] = await Promise.all([
+            client.from('blotter_records').select('id', { count: 'exact', head: true }),
+            client.from('zones').select('zone_id', { count: 'exact', head: true }),
+            client.from('ml_runs').select('*').order('id', { ascending: false }).limit(1)
+          ]);
+
+          let accuracy = '—';
+          if (mlRes.data && mlRes.data.length > 0) {
+            const run = mlRes.data[0];
+            try {
+              const occ = typeof run.occurrence_metrics_json === 'string' ? JSON.parse(run.occurrence_metrics_json) : run.occurrence_metrics_json;
+              const active = run.active_occurrence_model || 'random_forest';
+              const acc = occ?.[active]?.accuracy ?? occ?.[active.toLowerCase()]?.accuracy ?? occ?.['RandomForest']?.accuracy ?? Object.values(occ || {})[0]?.accuracy;
+              if (acc !== undefined && acc !== null) {
+                const aNum = Number(acc);
+                accuracy = (aNum <= 1 ? (aNum * 100).toFixed(1) : aNum.toFixed(1)) + '%';
+              }
+            } catch (_) {}
+          }
+
+          applyStats({
+            blotter_count: bRes.count ?? 0,
+            zones_count: zRes.count ?? 0,
+            ml_accuracy: accuracy
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase fallback error:', err);
+    }
+
+    // Default empty state when uncontactable
+    applyStats({
+      blotter_count: 0,
+      zones_count: 0,
+      ml_accuracy: '—'
+    });
   }
   loadPublicStats();
 </script>

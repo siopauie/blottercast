@@ -2,7 +2,6 @@
 require __DIR__ . '/config.php';
 
 $action = $_GET['action'] ?? '';
-$mysqli = db();
 
 if ($action === 'public_config') {
     $url = getEnvVal('NEXT_PUBLIC_SUPABASE_URL') ?: (getEnvVal('SUPABASE_URL') ?: 'https://fzvepwddggfendczjecg.supabase.co');
@@ -13,66 +12,144 @@ if ($action === 'public_config') {
     ]);
 }
 
-if ($action === 'public_stats') {
+if ($action === 'public_stats' || $action === 'health' || $action === 'ping') {
+    $mysqli = db(true);
+    $systemStatus = $mysqli ? 'Online' : 'Offline';
     $blotterCount = 0;
     $incidentCount = 0;
-    $zonesCount = 8;
-    $accuracy = '91.2%';
-    $lastModelTrain = 'Jan 20, 2025';
+    $zonesCount = 0;
+    $accuracy = '—';
+    $lastModelTrain = 'No training runs yet';
     $riskZone = 'Zone 1';
-    $riskLevel = 'High Risk';
+    $riskLevel = 'Low Risk';
 
-    try {
-        $blotterRes = $mysqli->query("SELECT COUNT(*) AS total FROM blotter_records");
-        if ($blotterRes) {
-            $row = $blotterRes->fetch_assoc();
-            $blotterCount = (int)($row['total'] ?? 0);
-        }
-    } catch (\Throwable $e) {}
-
-    try {
-        $incRes = $mysqli->query("SELECT COUNT(*) AS total FROM incidents");
-        if ($incRes) {
-            $row = $incRes->fetch_assoc();
-            $incidentCount = (int)($row['total'] ?? 0);
-        }
-    } catch (\Throwable $e) {}
-
-    try {
-        $zonesRes = $mysqli->query("SELECT COUNT(*) AS total FROM zones");
-        if ($zonesRes) {
-            $row = $zonesRes->fetch_assoc();
-            $cnt = (int)($row['total'] ?? 0);
-            if ($cnt > 0) $zonesCount = $cnt;
-        }
-    } catch (\Throwable $e) {}
-
-    try {
-        $mlRes = $mysqli->query("SELECT created_at, occurrence_metrics_json FROM ml_runs ORDER BY id DESC LIMIT 1");
-        if ($mlRes && ($mlRow = $mlRes->fetch_assoc())) {
-            if (!empty($mlRow['created_at'])) {
-                $lastModelTrain = date('M j, Y', strtotime($mlRow['created_at']));
+    if ($mysqli) {
+        // 1. Blotter Records Count (live from blotter_records table)
+        try {
+            $blotterRes = $mysqli->query("SELECT COUNT(*) AS total FROM blotter_records");
+            if ($blotterRes && ($row = $blotterRes->fetch_assoc())) {
+                $blotterCount = (int)($row['total'] ?? 0);
             }
-            if (!empty($mlRow['occurrence_metrics_json'])) {
-                $m = json_decode($mlRow['occurrence_metrics_json'], true);
-                if (isset($m['RandomForest']['accuracy'])) {
-                    $accuracy = round($m['RandomForest']['accuracy'] * 100, 1) . '%';
+        } catch (\Throwable $e) {}
+
+        // 2. Incident Records Count
+        try {
+            $incRes = $mysqli->query("SELECT COUNT(*) AS total FROM incidents");
+            if ($incRes && ($row = $incRes->fetch_assoc())) {
+                $incidentCount = (int)($row['total'] ?? 0);
+            }
+        } catch (\Throwable $e) {}
+
+        // 3. Monitored Zones Count (dynamic count of active monitored zones)
+        try {
+            $zonesRes = $mysqli->query("SELECT COUNT(*) AS total FROM zones");
+            if ($zonesRes && ($row = $zonesRes->fetch_assoc())) {
+                $cnt = (int)($row['total'] ?? 0);
+                if ($cnt > 0) $zonesCount = $cnt;
+            }
+        } catch (\Throwable $e) {}
+
+        if ($zonesCount === 0) {
+            try {
+                $dZoneRes = $mysqli->query("SELECT COUNT(DISTINCT zone_id) AS total FROM incidents WHERE zone_id IS NOT NULL AND TRIM(zone_id) != ''");
+                if ($dZoneRes && ($row = $dZoneRes->fetch_assoc())) {
+                    $cnt = (int)($row['total'] ?? 0);
+                    if ($cnt > 0) $zonesCount = $cnt;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 4. ML Run Metrics (Test Accuracy, Timestamp, Hotspot Risk Alerts)
+        $mlFound = false;
+        try {
+            $mlRes = $mysqli->query("SELECT * FROM ml_runs ORDER BY id DESC LIMIT 1");
+            if ($mlRes && ($mlRow = $mlRes->fetch_assoc())) {
+                $mlFound = true;
+                
+                // Real timestamp from latest ML training run
+                $ts = $mlRow['trained_at'] ?? ($mlRow['created_at'] ?? null);
+                if (!empty($ts)) {
+                    $timeVal = strtotime($ts);
+                    if ($timeVal !== false && $timeVal > 0) {
+                        $lastModelTrain = date('M j, Y', $timeVal);
+                    }
+                }
+
+                // Live test accuracy metric from latest active model artifact/metadata
+                $activeOcc = $mlRow['active_occurrence_model'] ?? 'random_forest';
+                $occMetrics = !empty($mlRow['occurrence_metrics_json']) ? json_decode($mlRow['occurrence_metrics_json'], true) : [];
+                $accFound = null;
+
+                if (is_array($occMetrics)) {
+                    if (isset($occMetrics[$activeOcc]['accuracy'])) {
+                        $accFound = $occMetrics[$activeOcc]['accuracy'];
+                    } elseif (isset($occMetrics[strtolower($activeOcc)]['accuracy'])) {
+                        $accFound = $occMetrics[strtolower($activeOcc)]['accuracy'];
+                    } elseif (isset($occMetrics['random_forest']['accuracy'])) {
+                        $accFound = $occMetrics['random_forest']['accuracy'];
+                    } elseif (isset($occMetrics['RandomForest']['accuracy'])) {
+                        $accFound = $occMetrics['RandomForest']['accuracy'];
+                    } else {
+                        foreach ($occMetrics as $mKey => $mData) {
+                            if (is_array($mData) && isset($mData['accuracy'])) {
+                                $accFound = $mData['accuracy'];
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if ($accFound === null && !empty($mlRow['hotspot_metrics_json'])) {
+                    $hotMetrics = json_decode($mlRow['hotspot_metrics_json'], true);
+                    if (is_array($hotMetrics)) {
+                        foreach ($hotMetrics as $mData) {
+                            if (is_array($mData) && isset($mData['accuracy'])) {
+                                $accFound = $mData['accuracy'];
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if ($accFound !== null) {
+                    $accNum = (float)$accFound;
+                    $accuracy = round($accNum <= 1.0 ? $accNum * 100 : $accNum, 1) . '%';
+                }
+
+                // Risk Alert: Fetch the actual highest-risk zone and its calculated level
+                if (!empty($mlRow['hotspots_json'])) {
+                    $hotspots = json_decode($mlRow['hotspots_json'], true);
+                    if (is_array($hotspots) && !empty($hotspots)) {
+                        usort($hotspots, function($a, $b) {
+                            return ($b['meanDailyProb'] ?? 0) <=> ($a['meanDailyProb'] ?? 0);
+                        });
+                        $top = $hotspots[0];
+                        $zRaw = trim((string)($top['zone'] ?? '1'));
+                        $riskZone = (is_numeric($zRaw) || stripos($zRaw, 'zone') === false) ? ('Zone ' . $zRaw) : $zRaw;
+                        $p = (float)($top['meanDailyProb'] ?? 0);
+                        $riskLevel = $p >= 0.20 ? 'High Risk' : ($p >= 0.13 ? 'Moderate Risk' : 'Low Risk');
+                    }
                 }
             }
-        }
-    } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {}
 
-    try {
-        $topZoneRes = $mysqli->query("SELECT zone_id, COUNT(*) AS cnt FROM incidents WHERE zone_id IS NOT NULL AND zone_id != '' GROUP BY zone_id ORDER BY cnt DESC LIMIT 1");
-        if ($topZoneRes && ($tzRow = $topZoneRes->fetch_assoc())) {
-            $riskZone = $tzRow['zone_id'];
-            $cnt = (int)$tzRow['cnt'];
-            $riskLevel = $cnt >= 10 ? 'High Risk' : ($cnt >= 5 ? 'Moderate Risk' : 'Low Risk');
+        // Fallback for Risk Alert from incident density if ML run not yet performed
+        if (!$mlFound) {
+            try {
+                $topZoneRes = $mysqli->query("SELECT zone_id, COUNT(*) AS cnt FROM incidents WHERE zone_id IS NOT NULL AND TRIM(zone_id) != '' GROUP BY zone_id ORDER BY cnt DESC LIMIT 1");
+                if ($topZoneRes && ($tzRow = $topZoneRes->fetch_assoc())) {
+                    $zRaw = trim((string)$tzRow['zone_id']);
+                    $riskZone = (is_numeric($zRaw) || stripos($zRaw, 'zone') === false) ? ('Zone ' . $zRaw) : $zRaw;
+                    $cnt = (int)$tzRow['cnt'];
+                    $riskLevel = $cnt >= 10 ? 'High Risk' : ($cnt >= 5 ? 'Moderate Risk' : 'Low Risk');
+                }
+            } catch (\Throwable $e) {}
         }
-    } catch (\Throwable $e) {}
+    }
 
     json_response([
-        'ok' => true,
+        'ok' => ($systemStatus === 'Online'),
+        'system_status' => $systemStatus,
         'blotter_count' => $blotterCount,
         'incident_count' => $incidentCount,
         'total_records' => $blotterCount + $incidentCount,
@@ -80,10 +157,11 @@ if ($action === 'public_stats') {
         'zones_count' => $zonesCount,
         'risk_zone' => $riskZone,
         'risk_level' => $riskLevel,
-        'last_model_train' => $lastModelTrain,
-        'system_status' => 'Online'
+        'last_model_train' => $lastModelTrain
     ]);
 }
+
+$mysqli = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     $in = body();

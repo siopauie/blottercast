@@ -341,7 +341,7 @@ class BlotterPdoAdapter {
     }
 }
 
-function db() {
+function db(bool $allowFailure = false) {
     static $conn = null;
     if ($conn === null) {
         $cred = getDbCredentials();
@@ -358,17 +358,22 @@ function db() {
                 ]);
                 $conn = new BlotterPdoAdapter($pdo);
             } catch (PDOException $e) {
+                if ($allowFailure) return null;
                 json_error('Supabase / PostgreSQL connection error: ' . $e->getMessage(), 500);
             }
         } else {
-            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+            mysqli_report(MYSQLI_REPORT_OFF);
             $conn = mysqli_init();
             if ($cred['ssl']) {
                 $conn->ssl_set(NULL, NULL, NULL, NULL, NULL);
             }
-            @$conn->real_connect($cred['host'], $cred['user'], $cred['pass'], $cred['name'], $cred['port'], NULL, $cred['ssl'] ? MYSQLI_CLIENT_SSL : 0);
-            if ($conn->connect_error) {
-                json_error('Database connection error: ' . $conn->connect_error, 500);
+            $connected = @$conn->real_connect($cred['host'], $cred['user'], $cred['pass'], $cred['name'], $cred['port'], NULL, $cred['ssl'] ? MYSQLI_CLIENT_SSL : 0);
+            if (!$connected || $conn->connect_error) {
+                if ($allowFailure) {
+                    $conn = null;
+                    return null;
+                }
+                json_error('Database connection error: ' . ($conn->connect_error ?: 'Could not connect to host'), 500);
             }
             $conn->set_charset('utf8mb4');
         }
@@ -401,7 +406,8 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
 
     public function read($id): string|false {
         try {
-            $mysqli = db();
+            $mysqli = db(true);
+            if (!$mysqli) return '';
             $stmt = $mysqli->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ?");
             $key = "sess_" . $id;
             $stmt->bind_param("s", $key);
@@ -419,7 +425,8 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
             return true; // Skip redundant DB write when session is unchanged
         }
         try {
-            $mysqli = db();
+            $mysqli = db(true);
+            if (!$mysqli) return true;
             $key = "sess_" . $id;
             $stmt = $mysqli->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
             $stmt->bind_param("ss", $key, $data);
@@ -427,20 +434,21 @@ class BlotterDbSessionHandler implements SessionHandlerInterface {
             if ($res) $this->lastData = $data;
             return $res;
         } catch (Throwable $t) {
-            return false;
+            return true;
         }
     }
 
     public function destroy($id): bool {
         try {
-            $mysqli = db();
+            $mysqli = db(true);
+            if (!$mysqli) return true;
             $key = "sess_" . $id;
             $stmt = $mysqli->prepare("DELETE FROM system_settings WHERE setting_key = ?");
             $stmt->bind_param("s", $key);
             $this->lastData = '';
             return (bool)$stmt->execute();
         } catch (Throwable $t) {
-            return false;
+            return true;
         }
     }
 
