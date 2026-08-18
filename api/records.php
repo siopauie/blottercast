@@ -29,6 +29,20 @@ function zoneCoords($mysqli, string $zoneId): array {
     return [round($row['lat'] + $jitter(), 6), round($row['lng'] + $jitter(), 6)];
 }
 
+if (!function_exists('computeAge')) {
+    function computeAge(?string $dob): ?int {
+        if (!$dob || trim($dob) === '') return null;
+        try {
+            $d = new DateTime($dob);
+            $now = new DateTime();
+            if ($d > $now) return null;
+            return (int)$d->diff($now)->y;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
 /**
  * Next sequential number for the year, e.g. nextSeqNo($mysqli, 'incidents',
  * 'report_no', 'INC', 4) -> "INC-2026-0007". Counts existing rows for the
@@ -163,20 +177,6 @@ if ($type === 'blotter') {
         $sameNameTyped = $complainant !== '' && $respondent !== '' && strtolower(trim($complainant)) === strtolower(trim($respondent));
         if ($sameCensusPerson || $sameNameTyped) {
             json_error('Complainant and respondent cannot be the same person.');
-        }
-
-        if (!function_exists('computeAge')) {
-            function computeAge(?string $dob): ?int {
-                if (!$dob) return null;
-                try {
-                    $d = new DateTime($dob);
-                    $now = new DateTime();
-                    if ($d > $now) return null;
-                    return (int)$d->diff($now)->y;
-                } catch (Exception $e) {
-                    return null;
-                }
-            }
         }
 
         // Age validation: Only individuals aged 15 years old and above can file or be recorded in blotter

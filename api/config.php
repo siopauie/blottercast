@@ -535,3 +535,17 @@ if (!function_exists('logAudit')) {
         }
     }
 }
+
+if (!function_exists('computeAge')) {
+    function computeAge(?string $dob): ?int {
+        if (!$dob || trim($dob) === '') return null;
+        try {
+            $d = new DateTime($dob);
+            $now = new DateTime();
+            if ($d > $now) return null;
+            return (int)$d->diff($now)->y;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}
