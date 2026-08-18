@@ -40,7 +40,16 @@ if ($action === 'public_stats' || $action === 'health' || $action === 'ping') {
             }
         } catch (\Throwable $e) {}
 
-        // 3. Monitored Zones Count (dynamic count of active monitored zones)
+        // 3. Settlement Records Count
+        $settlementCount = 0;
+        try {
+            $stlRes = $mysqli->query("SELECT COUNT(*) AS total FROM settlements");
+            if ($stlRes && ($row = $stlRes->fetch_assoc())) {
+                $settlementCount = (int)($row['total'] ?? 0);
+            }
+        } catch (\Throwable $e) {}
+
+        // 4. Monitored Zones Count (dynamic count of active monitored zones)
         try {
             $zonesRes = $mysqli->query("SELECT COUNT(*) AS total FROM zones");
             if ($zonesRes && ($row = $zonesRes->fetch_assoc())) {
@@ -59,7 +68,7 @@ if ($action === 'public_stats' || $action === 'health' || $action === 'ping') {
             } catch (\Throwable $e) {}
         }
 
-        // 4. ML Run Metrics (Test Accuracy, Timestamp, Hotspot Risk Alerts)
+        // 5. ML Run Metrics (Test Accuracy, Timestamp, Hotspot Risk Alerts)
         $mlFound = false;
         try {
             $mlRes = $mysqli->query("SELECT * FROM ml_runs ORDER BY id DESC LIMIT 1");
@@ -147,12 +156,16 @@ if ($action === 'public_stats' || $action === 'health' || $action === 'ping') {
         }
     }
 
+    $overallTotal = $blotterCount + $incidentCount + ($settlementCount ?? 0);
+
     json_response([
         'ok' => ($systemStatus === 'Online'),
         'system_status' => $systemStatus,
         'blotter_count' => $blotterCount,
         'incident_count' => $incidentCount,
-        'total_records' => $blotterCount + $incidentCount,
+        'settlement_count' => ($settlementCount ?? 0),
+        'total_records' => $overallTotal,
+        'overall_records' => $overallTotal,
         'ml_accuracy' => $accuracy,
         'zones_count' => $zonesCount,
         'risk_zone' => $riskZone,

@@ -416,8 +416,8 @@
       <p>Turning every blotter entry into a data point. Every incident into a pattern. Every pattern into a prediction that keeps your community safer.</p>
       <div class="left-stats">
         <div class="left-stat">
-          <div class="left-stat-num" id="statBlotterCount">…</div>
-          <div class="left-stat-label">Blotter Records</div>
+          <div class="left-stat-num" id="statOverallCount">…</div>
+          <div class="left-stat-label">Overall Records</div>
         </div>
         <div class="left-stat">
           <div class="left-stat-num" id="statMlAccuracy">…</div>
@@ -1133,10 +1133,10 @@
       if (!stats) return;
 
       // Bottom Counter Metrics
-      const bCount = Number(stats.blotter_count ?? 0);
-      const blotterEl = document.getElementById('statBlotterCount');
-      if (blotterEl) {
-        blotterEl.textContent = bCount > 0 ? (bCount >= 100 ? bCount + '+' : String(bCount)) : (stats.blotter_count !== undefined ? String(bCount) : '0');
+      const totalCount = Number(stats.overall_records ?? stats.total_records ?? (Number(stats.blotter_count || 0) + Number(stats.incident_count || 0) + Number(stats.settlement_count || 0)));
+      const countEl = document.getElementById('statOverallCount') || document.getElementById('statBlotterCount');
+      if (countEl) {
+        countEl.textContent = totalCount > 0 ? (totalCount >= 1000 ? totalCount.toLocaleString() : String(totalCount)) : '0';
       }
 
       const accEl = document.getElementById('statMlAccuracy');
@@ -1196,8 +1196,10 @@
         const savedKey = localStorage.getItem('bc_supabase_anon');
         if (savedKey) {
           const client = window.supabase.createClient(SUPABASE_URL, savedKey);
-          const [bRes, zRes, mlRes] = await Promise.all([
+          const [bRes, incRes, stlRes, zRes, mlRes] = await Promise.all([
             client.from('blotter_records').select('id', { count: 'exact', head: true }),
+            client.from('incidents').select('id', { count: 'exact', head: true }),
+            client.from('settlements').select('id', { count: 'exact', head: true }),
             client.from('zones').select('zone_id', { count: 'exact', head: true }),
             client.from('ml_runs').select('*').order('id', { ascending: false }).limit(1)
           ]);
@@ -1239,9 +1241,15 @@
             } catch (_) {}
           }
 
+          const sumRecords = (bRes.count ?? 0) + (incRes.count ?? 0) + (stlRes.count ?? 0);
+
           applyStats({
             system_status: 'Online',
             blotter_count: bRes.count ?? 0,
+            incident_count: incRes.count ?? 0,
+            settlement_count: stlRes.count ?? 0,
+            overall_records: sumRecords,
+            total_records: sumRecords,
             zones_count: zRes.count ?? 0,
             ml_accuracy: accuracy,
             risk_zone: riskZone,
@@ -1258,6 +1266,8 @@
     // Default offline/empty state when uncontactable
     applyStats({
       system_status: 'Offline',
+      overall_records: 0,
+      total_records: 0,
       blotter_count: 0,
       zones_count: 0,
       ml_accuracy: '—',
