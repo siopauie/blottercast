@@ -384,7 +384,10 @@ function renderResidents(){
       <td><span class="badge ${r.status==='Active'?'badge-resolved':r.status==='Deceased'?'badge-not-complied':'badge-pending'}">${r.status}</span></td>
       <td>
         <div class="row-actions">
-          <button onclick="issueDoc(${r.id})" class="icon-btn" title="Issue Document"><span data-icon="reports" data-icon-size="16"></span></button>
+          ${r.status==='Deceased'
+            ? `<button disabled class="icon-btn opacity-30 cursor-not-allowed" title="Cannot issue Barangay Clearance for a deceased resident"><span data-icon="reports" data-icon-size="16"></span></button>`
+            : `<button onclick="issueDoc(${r.id})" class="icon-btn" title="Issue Document"><span data-icon="reports" data-icon-size="16"></span></button>`
+          }
           <button onclick="editResident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
           <button onclick="deleteResident(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
         </div>
@@ -513,6 +516,12 @@ async function deleteResident(id){
 }
 function issueDoc(id){
   const r=censusData.find(x=>x.id===id);
+  if (!r) return;
+  if (r.status === 'Deceased') {
+    showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
+    return;
+  }
   showToast(`Redirecting to issue a document for ${r.firstName} ${r.lastName}…`);
   sessionStorage.setItem('bc_prefill_resident_id', String(id));
   setTimeout(()=>{ window.location.href='clearance.html'; },900);

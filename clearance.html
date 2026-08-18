@@ -268,14 +268,16 @@ let residentOptions = []; // census residents available to pick for a new cleara
 
 async function loadResidentOptionsForPicker() {
   const raw = await BCApi.docList('census');
-  residentOptions = raw.map(r => {
-    const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
-    return {
-      id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
-      age, civilStatus: r.civil_status, address: r.address || '', voterStatus: r.voter_status,
-      householdNo: r.household_no || '',
-    };
-  });
+  residentOptions = raw
+    .filter(r => r.status !== 'Deceased')
+    .map(r => {
+      const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+      return {
+        id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
+        age, civilStatus: r.civil_status, address: r.address || '', voterStatus: r.voter_status,
+        householdNo: r.household_no || '', status: r.status || 'Active'
+      };
+    });
   bcInitResidentPicker('cl_residentSearch', 'cl_residentId', 'cl_residentSuggestions', residentOptions, onResidentPicked);
 }
 
@@ -287,6 +289,12 @@ async function onResidentPicked(r) {
     warningBox.classList.add('hidden');
     listEl.innerHTML = '';
     document.getElementById('cl_blotter_ack').checked = false;
+    return;
+  }
+  if (r.status === 'Deceased') {
+    await bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
+    showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    bcResidentPickerClear('cl_residentSearch');
     return;
   }
   document.getElementById('cl_name_display').value = `${r.lastName}, ${r.firstName} ${r.middleName}`.trim();
@@ -411,6 +419,14 @@ async function issueClearance(){
   const fee=document.getElementById('cl_fee').value;
   if(!residentId){await bcAlert('Please select the resident this clearance is for.');return;}
   if(!purpose){await bcAlert('Please select the purpose of this clearance.');return;}
+
+  const rCheck = residentOptions.find(x => x.id === Number(residentId));
+  if (rCheck && rCheck.status === 'Deceased') {
+    await bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
+    showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    return;
+  }
+
   const warningVisible = !document.getElementById('cl_blotter_warning').classList.contains('hidden');
   if (warningVisible && !document.getElementById('cl_blotter_ack').checked) {
     await bcAlert('This resident has blotter record(s) on file. Please review them and check the acknowledgment box before issuing this clearance.');
@@ -422,7 +438,7 @@ async function issueClearance(){
       residentId, purpose, orNo, fee, dateIssued: new Date().toISOString().slice(0,10),
     });
 
-    const r = residentOptions.find(x => x.id === Number(residentId));
+    const r = residentOptions.find(x => x.id === Number(residentId)) || rCheck;
     const now = new Date();
     document.getElementById('c_name').textContent=`${r.lastName}, ${r.firstName} ${r.middleName}`.trim().toUpperCase();
     document.getElementById('c_applicant_name').textContent=`${r.lastName}, ${r.firstName} ${r.middleName}`.trim().toUpperCase();
@@ -461,9 +477,15 @@ async function issueClearance(){
   // Prefill from Census "Issue Document" action, if present
   const prefillResidentId = sessionStorage.getItem('bc_prefill_resident_id');
   if (prefillResidentId) {
-    bcResidentPickerChoose('cl_residentSearch', Number(prefillResidentId));
     sessionStorage.removeItem('bc_prefill_resident_id');
-    openModal('clearanceFormModal');
+    const matched = residentOptions.find(x => x.id === Number(prefillResidentId));
+    if (matched && matched.status === 'Deceased') {
+      await bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
+      showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    } else if (matched) {
+      bcResidentPickerChoose('cl_residentSearch', Number(prefillResidentId));
+      openModal('clearanceFormModal');
+    }
   }
   try { await loadLog(); } catch (err) { showToast('Could not load clearance log: ' + err.message, 'error'); }
 })();
