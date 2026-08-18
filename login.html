@@ -347,6 +347,36 @@
       letter-spacing: 0.35em; font-size: 1.25rem; font-weight: 700; text-align: center;
       font-family: monospace, monospace;
     }
+    .btn-resend-otp {
+      width: 100%;
+      padding: 12px 16px;
+      margin-top: 0.75rem;
+      background: #ffffff;
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      color: #374151;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-resend-otp:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      color: #111827;
+    }
+    .btn-resend-otp:disabled {
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      color: #9ca3af;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
 
     @keyframes fade-up {
       from { opacity: 0; transform: translateY(20px); }
@@ -554,16 +584,18 @@
           <span class="btn-text">Verify Code</span>
         </button>
 
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.25rem; font-size:0.82rem;">
-          <a href="javascript:void(0)" onclick="backToStep1()" style="color:#6b7280; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;" class="hover:text-forest-700">
-            <span>←</span> Change email
-          </a>
-          <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="background:none; border:none; color:var(--green-main); font-weight:600; cursor:pointer; font-size:0.82rem; padding:0; text-decoration:none;" class="hover:underline">
-            Resend Code
-          </button>
+        <button type="button" class="btn-resend-otp" id="btnResendOtp" onclick="handleResendOtp()">
+          Resend Code
+        </button>
+
+        <div id="resendFeedback" style="display:none; text-align:center; font-size:0.78rem; color:#15803d; margin-top:0.5rem; font-weight:500;">
+          ✓ A new 6-digit verification code has been sent!
         </div>
-        <div id="resendFeedback" style="display:none; text-align:center; font-size:0.78rem; color:#15803d; margin-top:0.6rem; font-weight:500;">
-          ✓ New verification code sent!
+
+        <div style="text-align:center; margin-top:1rem;">
+          <a href="javascript:void(0)" onclick="backToStep1()" style="font-size:0.82rem; color:#6b7280; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;" class="hover:text-forest-700 hover:underline">
+            ← Change email
+          </a>
         </div>
       </div>
 
@@ -859,7 +891,7 @@
       document.getElementById('forgotModalSubtitle').textContent = 'Enter the 6-digit code sent to your email.';
       const otpInput = document.getElementById('resetOtp');
       if (otpInput) { otpInput.value = ''; otpInput.focus(); }
-      startResendCooldown(30);
+      startResendCooldown(60);
     } catch (err) {
       btn.classList.remove('loading');
       alertEl.classList.add('show');
@@ -892,11 +924,11 @@
         document.getElementById('resetMaskedEmail').textContent = res.masked_email;
       }
       if (feedback) {
-        feedback.textContent = '✓ New verification code sent!';
+        feedback.textContent = '✓ A new 6-digit verification code has been sent!';
         feedback.style.display = 'block';
         setTimeout(() => { if (feedback) feedback.style.display = 'none'; }, 4000);
       }
-      startResendCooldown(30);
+      startResendCooldown(60);
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Resend Code';
@@ -912,9 +944,7 @@
     if (resendCooldownTimer) clearInterval(resendCooldownTimer);
 
     btn.disabled = true;
-    btn.style.cursor = 'not-allowed';
-    btn.style.opacity = '0.6';
-    btn.textContent = `Resend Code (${resendSecondsLeft}s)`;
+    btn.textContent = `Resend code in ${resendSecondsLeft}s`;
 
     resendCooldownTimer = setInterval(() => {
       resendSecondsLeft--;
@@ -922,11 +952,9 @@
         clearInterval(resendCooldownTimer);
         resendCooldownTimer = null;
         btn.disabled = false;
-        btn.style.cursor = 'pointer';
-        btn.style.opacity = '1';
         btn.textContent = 'Resend Code';
       } else {
-        btn.textContent = `Resend Code (${resendSecondsLeft}s)`;
+        btn.textContent = `Resend code in ${resendSecondsLeft}s`;
       }
     }, 1000);
   }
