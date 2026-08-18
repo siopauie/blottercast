@@ -594,12 +594,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media print {
   body * { visibility: hidden; }
   #certPrint, #certPrint * { visibility: visible; }
-  #certPrint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #certPrint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; overflow: visible !important; }
   .cert-sheet { box-shadow: none !important; }
 }
+#certPrint {
+  overflow-x: auto;
+  max-width: 100%;
+}
 .cert-sheet {
-  position: relative; width: 680px; aspect-ratio: 1795 / 2539;
-  background: white; box-shadow: var(--shadow-md);
+  position: relative;
+  width: 680px;
+  min-width: 680px;
+  max-width: 680px;
+  aspect-ratio: 1795 / 2539;
+  background: white;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
 }
 .cert-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .cert-ov {
@@ -614,11 +624,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   top: 22.8%; font-size: 1.55rem; font-weight: 700; color: #111;
   text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
   text-decoration: underline; text-underline-offset: 6px;
+  white-space: nowrap;
 }
 .cert-ov-title-non{
   top: 19.8%; font-size: 1.55rem; font-weight: 700; color: #111;
   text-align: center; letter-spacing: 0.03em; text-transform: uppercase;
   text-decoration: underline; text-underline-offset: 6px;
+  white-space: nowrap;
 }
 .cert-ov-body {
   top: 28.2%; font-size: 0.8rem; line-height: 1.85; text-align: justify;
