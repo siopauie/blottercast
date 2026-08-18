@@ -195,29 +195,55 @@ if ($type === 'blotter') {
             json_error('Complainant and respondent cannot be the same person.');
         }
 
-        // Age validation: Only individuals aged 15 years old and above can file or be recorded in blotter
+        // Deceased and Age validation for Complainant
         if ($complainantId) {
-            $stmtC = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtC = $mysqli->prepare('SELECT date_of_birth, status FROM census_records WHERE id = ?');
             $stmtC->bind_param('i', $complainantId);
             $stmtC->execute();
             $cRow = $stmtC->get_result()->fetch_assoc();
-            if ($cRow && !empty($cRow['date_of_birth'])) {
-                $cAge = computeAge($cRow['date_of_birth']);
-                if ($cAge !== null && $cAge < 15) {
-                    json_error('Both complainant and respondent must be at least 15 years old.');
+            if ($cRow) {
+                if (isset($cRow['status']) && strcasecmp(trim($cRow['status']), 'Deceased') === 0) {
+                    json_error('Cannot file a blotter complaint for a deceased resident.', 422);
+                }
+                if (!empty($cRow['date_of_birth'])) {
+                    $cAge = computeAge($cRow['date_of_birth']);
+                    if ($cAge !== null && $cAge < 15) {
+                        json_error('Both complainant and respondent must be at least 15 years old.');
+                    }
                 }
             }
+        } elseif ($complainant !== '') {
+            $stmtDecC = $mysqli->prepare("SELECT id FROM census_records WHERE status = 'Deceased' AND (CONCAT(last_name, ', ', first_name) = ? OR CONCAT(first_name, ' ', last_name) = ?)");
+            $stmtDecC->bind_param('ss', $complainant, $complainant);
+            $stmtDecC->execute();
+            if ($stmtDecC->get_result()->fetch_assoc()) {
+                json_error('Cannot file a blotter complaint for a deceased resident.', 422);
+            }
         }
+
+        // Deceased and Age validation for Respondent
         if ($respondentId) {
-            $stmtR = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtR = $mysqli->prepare('SELECT date_of_birth, status FROM census_records WHERE id = ?');
             $stmtR->bind_param('i', $respondentId);
             $stmtR->execute();
             $rRow = $stmtR->get_result()->fetch_assoc();
-            if ($rRow && !empty($rRow['date_of_birth'])) {
-                $rAge = computeAge($rRow['date_of_birth']);
-                if ($rAge !== null && $rAge < 15) {
-                    json_error('Both complainant and respondent must be at least 15 years old.');
+            if ($rRow) {
+                if (isset($rRow['status']) && strcasecmp(trim($rRow['status']), 'Deceased') === 0) {
+                    json_error('Cannot report a deceased person in a blotter record.', 422);
                 }
+                if (!empty($rRow['date_of_birth'])) {
+                    $rAge = computeAge($rRow['date_of_birth']);
+                    if ($rAge !== null && $rAge < 15) {
+                        json_error('Both complainant and respondent must be at least 15 years old.');
+                    }
+                }
+            }
+        } elseif ($respondent !== '') {
+            $stmtDecR = $mysqli->prepare("SELECT id FROM census_records WHERE status = 'Deceased' AND (CONCAT(last_name, ', ', first_name) = ? OR CONCAT(first_name, ' ', last_name) = ?)");
+            $stmtDecR->bind_param('ss', $respondent, $respondent);
+            $stmtDecR->execute();
+            if ($stmtDecR->get_result()->fetch_assoc()) {
+                json_error('Cannot report a deceased person in a blotter record.', 422);
             }
         }
 
@@ -254,29 +280,55 @@ if ($type === 'blotter') {
             json_error('Complainant and respondent cannot be the same person.');
         }
 
-        // Age validation: Only individuals aged 15 years old and above can file or be recorded in blotter
+        // Deceased and Age validation for Complainant
         if ($complainantId) {
-            $stmtC = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtC = $mysqli->prepare('SELECT date_of_birth, status FROM census_records WHERE id = ?');
             $stmtC->bind_param('i', $complainantId);
             $stmtC->execute();
             $cRow = $stmtC->get_result()->fetch_assoc();
-            if ($cRow && !empty($cRow['date_of_birth'])) {
-                $cAge = computeAge($cRow['date_of_birth']);
-                if ($cAge !== null && $cAge < 15) {
-                    json_error('Both complainant and respondent must be at least 15 years old.');
+            if ($cRow) {
+                if (isset($cRow['status']) && strcasecmp(trim($cRow['status']), 'Deceased') === 0) {
+                    json_error('Cannot file a blotter complaint for a deceased resident.', 422);
+                }
+                if (!empty($cRow['date_of_birth'])) {
+                    $cAge = computeAge($cRow['date_of_birth']);
+                    if ($cAge !== null && $cAge < 15) {
+                        json_error('Both complainant and respondent must be at least 15 years old.');
+                    }
                 }
             }
+        } elseif ($complainant !== '') {
+            $stmtDecC = $mysqli->prepare("SELECT id FROM census_records WHERE status = 'Deceased' AND (CONCAT(last_name, ', ', first_name) = ? OR CONCAT(first_name, ' ', last_name) = ?)");
+            $stmtDecC->bind_param('ss', $complainant, $complainant);
+            $stmtDecC->execute();
+            if ($stmtDecC->get_result()->fetch_assoc()) {
+                json_error('Cannot file a blotter complaint for a deceased resident.', 422);
+            }
         }
+
+        // Deceased and Age validation for Respondent
         if ($respondentId) {
-            $stmtR = $mysqli->prepare('SELECT date_of_birth FROM census_records WHERE id = ?');
+            $stmtR = $mysqli->prepare('SELECT date_of_birth, status FROM census_records WHERE id = ?');
             $stmtR->bind_param('i', $respondentId);
             $stmtR->execute();
             $rRow = $stmtR->get_result()->fetch_assoc();
-            if ($rRow && !empty($rRow['date_of_birth'])) {
-                $rAge = computeAge($rRow['date_of_birth']);
-                if ($rAge !== null && $rAge < 15) {
-                    json_error('Both complainant and respondent must be at least 15 years old.');
+            if ($rRow) {
+                if (isset($rRow['status']) && strcasecmp(trim($rRow['status']), 'Deceased') === 0) {
+                    json_error('Cannot report a deceased person in a blotter record.', 422);
                 }
+                if (!empty($rRow['date_of_birth'])) {
+                    $rAge = computeAge($rRow['date_of_birth']);
+                    if ($rAge !== null && $rAge < 15) {
+                        json_error('Both complainant and respondent must be at least 15 years old.');
+                    }
+                }
+            }
+        } elseif ($respondent !== '') {
+            $stmtDecR = $mysqli->prepare("SELECT id FROM census_records WHERE status = 'Deceased' AND (CONCAT(last_name, ', ', first_name) = ? OR CONCAT(first_name, ' ', last_name) = ?)");
+            $stmtDecR->bind_param('ss', $respondent, $respondent);
+            $stmtDecR->execute();
+            if ($stmtDecR->get_result()->fetch_assoc()) {
+                json_error('Cannot report a deceased person in a blotter record.', 422);
             }
         }
 

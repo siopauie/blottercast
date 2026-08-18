@@ -416,11 +416,12 @@
     document.getElementById('blResolvedCount').textContent = blotterData.filter(r => r.status === 'Resolved').length;
   }
 
-  let censusResidentsForBlotter = []; // shared options list for both complainant and respondent pickers
+  let censusResidentsForBlotter = []; // active resident options for complainant and respondent pickers
+  let allCensusResidents = []; // complete list including deceased for submission validation
 
   async function loadCensusResidentsForBlotterPickers() {
     const raw = await BCApi.docList('census');
-    censusResidentsForBlotter = raw.map(r => {
+    allCensusResidents = raw.map(r => {
       let age = null;
       if (r.date_of_birth) {
         const bdate = new Date(r.date_of_birth);
@@ -436,14 +437,23 @@
       return {
         id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
         age, dateOfBirth: r.date_of_birth || null, address: r.address || '', householdNo: r.household_no || '',
+        status: r.status || 'Active',
       };
     });
+
+    censusResidentsForBlotter = allCensusResidents.filter(r => r.status !== 'Deceased');
     bcInitResidentPicker('f_complainantSearch', 'f_complainantId', 'f_complainantSuggestions', censusResidentsForBlotter, onComplainantPicked);
     bcInitResidentPicker('f_respondentSearch', 'f_respondentId', 'f_respondentSuggestions', censusResidentsForBlotter, onRespondentPicked);
   }
 
   function onComplainantPicked(r) {
     if (!r) {
+      document.getElementById('f_complainant').value = '';
+      return;
+    }
+    if (r.status === 'Deceased') {
+      bcAlert('Cannot file a blotter complaint for a deceased resident.');
+      bcResidentPickerClear('f_complainantSearch');
       document.getElementById('f_complainant').value = '';
       return;
     }
@@ -461,6 +471,12 @@
 
   function onRespondentPicked(r) {
     if (!r) {
+      document.getElementById('f_respondent').value = '';
+      return;
+    }
+    if (r.status === 'Deceased') {
+      bcAlert('Cannot report a deceased person in a blotter record.');
+      bcResidentPickerClear('f_respondentSearch');
       document.getElementById('f_respondent').value = '';
       return;
     }
@@ -694,6 +710,41 @@
     }
     if (!vals.type) { await bcAlert('Please select the case Type.'); return; }
     if (!vals.status) { await bcAlert('Please select the Status.'); return; }
+
+    // Deceased validation: Neither complainant nor respondent can be a deceased resident
+    if (complainantId) {
+      const compResident = allCensusResidents.find(x => x.id === Number(complainantId));
+      if (compResident && compResident.status === 'Deceased') {
+        await bcAlert('Cannot file a blotter complaint for a deceased resident.');
+        return;
+      }
+    } else if (vals.complainant) {
+      const compDeceased = allCensusResidents.find(x => x.status === 'Deceased' && (
+        `${x.lastName}, ${x.firstName}`.toLowerCase() === vals.complainant.toLowerCase() ||
+        `${x.firstName} ${x.lastName}`.toLowerCase() === vals.complainant.toLowerCase()
+      ));
+      if (compDeceased) {
+        await bcAlert('Cannot file a blotter complaint for a deceased resident.');
+        return;
+      }
+    }
+
+    if (respondentId) {
+      const respResident = allCensusResidents.find(x => x.id === Number(respondentId));
+      if (respResident && respResident.status === 'Deceased') {
+        await bcAlert('Cannot report a deceased person in a blotter record.');
+        return;
+      }
+    } else if (vals.respondent) {
+      const respDeceased = allCensusResidents.find(x => x.status === 'Deceased' && (
+        `${x.lastName}, ${x.firstName}`.toLowerCase() === vals.respondent.toLowerCase() ||
+        `${x.firstName} ${x.lastName}`.toLowerCase() === vals.respondent.toLowerCase()
+      ));
+      if (respDeceased) {
+        await bcAlert('Cannot report a deceased person in a blotter record.');
+        return;
+      }
+    }
 
     // Age validation: Both complainant and respondent must be at least 15 years old (>= 15)
     if (complainantId) {
