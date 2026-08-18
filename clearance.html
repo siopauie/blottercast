@@ -269,7 +269,7 @@ let residentOptions = []; // census residents available to pick for a new cleara
 async function loadResidentOptionsForPicker() {
   const raw = await BCApi.docList('census');
   residentOptions = raw
-    .filter(r => r.status !== 'Deceased')
+    .filter(r => r.status !== 'Deceased' && r.status !== 'Transferred')
     .map(r => {
       const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
       return {
@@ -294,6 +294,12 @@ async function onResidentPicked(r) {
   if (r.status === 'Deceased') {
     await bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
     showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    bcResidentPickerClear('cl_residentSearch');
+    return;
+  }
+  if (r.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
     bcResidentPickerClear('cl_residentSearch');
     return;
   }
@@ -426,6 +432,11 @@ async function issueClearance(){
     showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
     return;
   }
+  if (rCheck && rCheck.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    return;
+  }
 
   const warningVisible = !document.getElementById('cl_blotter_warning').classList.contains('hidden');
   if (warningVisible && !document.getElementById('cl_blotter_ack').checked) {
@@ -482,6 +493,9 @@ async function issueClearance(){
     if (matched && matched.status === 'Deceased') {
       await bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
       showToast('Cannot issue Barangay Clearance for a deceased resident.', 'error');
+    } else if (matched && matched.status === 'Transferred') {
+      await bcAlert('Cannot issue certificate: Resident has already transferred.');
+      showToast('Cannot issue certificate: Resident has already transferred.', 'error');
     } else if (matched) {
       bcResidentPickerChoose('cl_residentSearch', Number(prefillResidentId));
       openModal('clearanceFormModal');

@@ -345,8 +345,13 @@ if ($type === 'clearance') {
         $res = $resident->get_result()->fetch_assoc();
         if (!$res) json_error('That resident does not exist in Census.', 404);
 
-        if (isset($res['status']) && strcasecmp(trim($res['status']), 'Deceased') === 0) {
-            json_error('Cannot issue Barangay Clearance for a deceased resident.', 422);
+        if (isset($res['status'])) {
+            if (strcasecmp(trim($res['status']), 'Deceased') === 0) {
+                json_error('Cannot issue Barangay Clearance for a deceased resident.', 422);
+            }
+            if (strcasecmp(trim($res['status']), 'Transferred') === 0) {
+                json_error('Cannot issue certificate: Resident has already transferred.', 422);
+            }
         }
 
         $ctrlNo = ($d['ctrlNo'] ?? '') ?: nextCtrlNo($mysqli, 'barangay_clearance', 'BC');
@@ -399,11 +404,20 @@ if ($type === 'residency') {
         $residentId = (int)($d['residentId'] ?? 0);
         if (!$residentId) json_error('A certificate of residency must be issued to an existing census resident.');
 
-        $resident = $mysqli->prepare('SELECT last_name, first_name, middle_name, date_of_birth, civil_status, address FROM census_records WHERE id = ?');
+        $resident = $mysqli->prepare('SELECT last_name, first_name, middle_name, date_of_birth, civil_status, address, status FROM census_records WHERE id = ?');
         $resident->bind_param('i', $residentId);
         $resident->execute();
         $res = $resident->get_result()->fetch_assoc();
         if (!$res) json_error('That resident does not exist in Census.', 404);
+
+        if (isset($res['status'])) {
+            if (strcasecmp(trim($res['status']), 'Deceased') === 0) {
+                json_error('Cannot issue Certificate of Residency for a deceased resident.', 422);
+            }
+            if (strcasecmp(trim($res['status']), 'Transferred') === 0) {
+                json_error('Cannot issue certificate: Resident has already transferred.', 422);
+            }
+        }
 
         $ctrlNo = ($d['ctrlNo'] ?? '') ?: nextCtrlNo($mysqli, 'barangay_residency', 'BR');
         $fullName = trim($res['last_name'] . ', ' . $res['first_name'] . ' ' . ($res['middle_name'] ?? ''));
@@ -512,11 +526,20 @@ if ($type === 'indigency') {
         $residentId = (int)($d['residentId'] ?? 0);
         if (!$residentId) json_error('A certificate must be issued to an existing census resident.');
 
-        $resident = $mysqli->prepare('SELECT last_name, first_name, middle_name, date_of_birth, civil_status, address FROM census_records WHERE id = ?');
+        $resident = $mysqli->prepare('SELECT last_name, first_name, middle_name, date_of_birth, civil_status, address, status FROM census_records WHERE id = ?');
         $resident->bind_param('i', $residentId);
         $resident->execute();
         $res = $resident->get_result()->fetch_assoc();
         if (!$res) json_error('That resident does not exist in Census.', 404);
+
+        if (isset($res['status'])) {
+            if (strcasecmp(trim($res['status']), 'Deceased') === 0) {
+                json_error('Cannot issue Certificate of Indigency for a deceased resident.', 422);
+            }
+            if (strcasecmp(trim($res['status']), 'Transferred') === 0) {
+                json_error('Cannot issue certificate: Resident has already transferred.', 422);
+            }
+        }
 
         $ctrlNo = ($d['ctrlNo'] ?? '') ?: nextCtrlNo($mysqli, 'indigency_certificates', 'CI');
         $fullName = trim($res['last_name'] . ', ' . $res['first_name'] . ' ' . ($res['middle_name'] ?? ''));

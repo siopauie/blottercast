@@ -266,13 +266,16 @@ let indResidentOptions = []; // census residents available to pick for a new cer
 
 async function loadIndResidentOptionsForPicker() {
   const raw = await BCApi.docList('census');
-  indResidentOptions = raw.map(r => {
-    const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
-    return {
-      id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
-      age, civilStatus: r.civil_status, address: r.address || '', householdNo: r.household_no || '',
-    };
-  });
+  indResidentOptions = raw
+    .filter(r => r.status !== 'Deceased' && r.status !== 'Transferred')
+    .map(r => {
+      const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+      return {
+        id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
+        age, civilStatus: r.civil_status, address: r.address || '', householdNo: r.household_no || '',
+        status: r.status || 'Active',
+      };
+    });
   bcInitResidentPicker('if_residentSearch', 'if_residentId', 'if_residentSuggestions', indResidentOptions, onIndResidentPicked);
 }
 
@@ -284,6 +287,18 @@ async function onIndResidentPicked(r) {
     warningBox.classList.add('hidden');
     listEl.innerHTML = '';
     document.getElementById('if_blotter_ack').checked = false;
+    return;
+  }
+  if (r.status === 'Deceased') {
+    await bcAlert('Cannot issue Certificate of Indigency for a deceased resident.');
+    showToast('Cannot issue Certificate of Indigency for a deceased resident.', 'error');
+    bcResidentPickerClear('if_residentSearch');
+    return;
+  }
+  if (r.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    bcResidentPickerClear('if_residentSearch');
     return;
   }
   document.getElementById('if_name_display').value = `${r.lastName}, ${r.firstName} ${r.middleName}`.trim();
@@ -386,6 +401,19 @@ async function issueIndigency(){
   const residentId=document.getElementById('if_residentId').value;
   const purpose=document.getElementById('if_purpose').value;
   if(!residentId){await bcAlert('Please select the resident this certificate is for.');return;}
+
+  const rCheck = indResidentOptions.find(x => x.id === Number(residentId));
+  if (rCheck && rCheck.status === 'Deceased') {
+    await bcAlert('Cannot issue Certificate of Indigency for a deceased resident.');
+    showToast('Cannot issue Certificate of Indigency for a deceased resident.', 'error');
+    return;
+  }
+  if (rCheck && rCheck.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    return;
+  }
+
   if(!purpose){await bcAlert('Please select the purpose of this certificate.');return;}
   const warningVisible = !document.getElementById('if_blotter_warning').classList.contains('hidden');
   if (warningVisible && !document.getElementById('if_blotter_ack').checked) {
@@ -400,10 +428,6 @@ async function issueIndigency(){
 
     closeModal('indFormModal');
     resetIndigencyForm();
-    // Reload the log from the server, then reuse the same preview path as the
-    // "Preview" (eye) icon so the certificate always reflects what's actually
-    // in the database, instead of re-deriving it from the (possibly stale)
-    // client-side resident picker cache.
     await loadIndLog();
     previewInd(Number(result.id));
     showToast('Certificate of Indigency issued! Preview updated.');
@@ -422,7 +446,26 @@ async function issueIndigency(){
       sigWrap.innerHTML = `<img src="${cap.signaturePath}" alt="Punong Barangay signature"/>`;
     }
   } catch (e) { /* no active Barangay Captain on file yet — signature block stays blank */ }
+
   try { await loadIndResidentOptionsForPicker(); } catch (err) { showToast('Could not load residents: ' + err.message, 'error'); }
+
+  // Prefill from Census "Issue Document" action, if present
+  const prefillResidentId = sessionStorage.getItem('bc_prefill_resident_id');
+  if (prefillResidentId) {
+    sessionStorage.removeItem('bc_prefill_resident_id');
+    const matched = indResidentOptions.find(x => x.id === Number(prefillResidentId));
+    if (matched && matched.status === 'Deceased') {
+      await bcAlert('Cannot issue Certificate of Indigency for a deceased resident.');
+      showToast('Cannot issue Certificate of Indigency for a deceased resident.', 'error');
+    } else if (matched && matched.status === 'Transferred') {
+      await bcAlert('Cannot issue certificate: Resident has already transferred.');
+      showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    } else if (matched) {
+      bcResidentPickerChoose('if_residentSearch', Number(prefillResidentId));
+      openModal('indFormModal');
+    }
+  }
+
   try { await loadIndLog(); } catch (err) { showToast('Could not load indigency log: ' + err.message, 'error'); }
 })();
 </script>

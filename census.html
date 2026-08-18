@@ -386,6 +386,8 @@ function renderResidents(){
         <div class="row-actions">
           ${r.status==='Deceased'
             ? `<button disabled class="icon-btn opacity-30 cursor-not-allowed" title="Cannot issue Barangay Clearance for a deceased resident"><span data-icon="reports" data-icon-size="16"></span></button>`
+            : r.status==='Transferred'
+            ? `<button disabled class="icon-btn opacity-30 cursor-not-allowed" title="Cannot issue certificate: Resident has already transferred."><span data-icon="reports" data-icon-size="16"></span></button>`
             : `<button onclick="issueDoc(${r.id})" class="icon-btn" title="Issue Document"><span data-icon="reports" data-icon-size="16"></span></button>`
           }
           <button onclick="editResident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
@@ -514,6 +516,7 @@ async function deleteResident(id){
     showToast(err.message, 'error');
   }
 }
+
 function issueDoc(id){
   const r=censusData.find(x=>x.id===id);
   if (!r) return;
@@ -522,13 +525,18 @@ function issueDoc(id){
     bcAlert('Cannot issue Barangay Clearance for a deceased resident.');
     return;
   }
+  if (r.status === 'Transferred') {
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    bcAlert('Cannot issue certificate: Resident has already transferred.');
+    return;
+  }
   showToast(`Redirecting to issue a document for ${r.firstName} ${r.lastName}…`);
   sessionStorage.setItem('bc_prefill_resident_id', String(id));
   setTimeout(()=>{ window.location.href='clearance.html'; },900);
 }
 
 function parseCsv(text) {
-  const lines = text.split(/\\r?\\n/).filter(l => l.trim() !== '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
   if (lines.length < 2) return [];
   const headers = lines[0].split(',').map(h => h.trim());
   return lines.slice(1).map(line => {

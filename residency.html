@@ -275,13 +275,16 @@ let resResidentOptions = []; // census residents available to pick for a new cer
 
 async function loadResResidentOptionsForPicker() {
   const raw = await BCApi.docList('census');
-  resResidentOptions = raw.map(r => {
-    const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
-    return {
-      id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
-      age, civilStatus: r.civil_status, address: r.address || '', householdNo: r.household_no || '', voterStatus: r.voter_status,
-    };
-  });
+  resResidentOptions = raw
+    .filter(r => r.status !== 'Deceased' && r.status !== 'Transferred')
+    .map(r => {
+      const age = r.date_of_birth ? Math.floor((new Date() - new Date(r.date_of_birth)) / 31557600000) : null;
+      return {
+        id: Number(r.id), lastName: r.last_name, firstName: r.first_name, middleName: r.middle_name || '',
+        age, civilStatus: r.civil_status, address: r.address || '', householdNo: r.household_no || '', voterStatus: r.voter_status,
+        status: r.status || 'Active',
+      };
+    });
   bcInitResidentPicker('rs_residentSearch', 'rs_residentId', 'rs_residentSuggestions', resResidentOptions, onResResidentPicked);
 }
 
@@ -293,6 +296,18 @@ async function onResResidentPicked(r) {
     warningBox.classList.add('hidden');
     listEl.innerHTML = '';
     document.getElementById('rs_blotter_ack').checked = false;
+    return;
+  }
+  if (r.status === 'Deceased') {
+    await bcAlert('Cannot issue Certificate of Residency for a deceased resident.');
+    showToast('Cannot issue Certificate of Residency for a deceased resident.', 'error');
+    bcResidentPickerClear('rs_residentSearch');
+    return;
+  }
+  if (r.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    bcResidentPickerClear('rs_residentSearch');
     return;
   }
   document.getElementById('rs_name_display').value = `${r.lastName}, ${r.firstName} ${r.middleName}`.trim();
@@ -452,6 +467,19 @@ async function issueResidency(){
   const orNo=document.getElementById('rs_or').value.trim();
   const fee=document.getElementById('rs_fee').value;
   if(!residentId){await bcAlert('Please select the resident this certificate is for.');return;}
+
+  const rCheck = resResidentOptions.find(x => x.id === Number(residentId));
+  if (rCheck && rCheck.status === 'Deceased') {
+    await bcAlert('Cannot issue Certificate of Residency for a deceased resident.');
+    showToast('Cannot issue Certificate of Residency for a deceased resident.', 'error');
+    return;
+  }
+  if (rCheck && rCheck.status === 'Transferred') {
+    await bcAlert('Cannot issue certificate: Resident has already transferred.');
+    showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    return;
+  }
+
   if(yearsResidency===''){await bcAlert(`Please enter the resident's duration of residency (in ${durationUnit}).`);return;}
   if(durationUnit==='months' && (Number(yearsResidency)<2 || Number(yearsResidency)>11)){
     await bcAlert('Months of residency must be between 2 and 11. For 12 months or more, switch the unit to Years instead.');
@@ -471,10 +499,6 @@ async function issueResidency(){
 
     closeModal('residencyFormModal');
     resetResidencyForm();
-    // Reload the log from the server, then reuse the same preview path as the
-    // "Preview" (eye) icon so the certificate always reflects what's actually
-    // in the database, instead of re-deriving it from the (possibly stale)
-    // client-side resident picker cache.
     await loadResLog();
     previewResLog(Number(result.id));
     showToast('Certificate of Residency issued! Preview updated.');
@@ -495,6 +519,24 @@ async function issueResidency(){
   } catch (e) { /* no active Barangay Captain on file yet — signature block stays blank */ }
 
   try { await loadResResidentOptionsForPicker(); } catch (err) { showToast('Could not load residents: ' + err.message, 'error'); }
+
+  // Prefill from Census "Issue Document" action, if present
+  const prefillResidentId = sessionStorage.getItem('bc_prefill_resident_id');
+  if (prefillResidentId) {
+    sessionStorage.removeItem('bc_prefill_resident_id');
+    const matched = resResidentOptions.find(x => x.id === Number(prefillResidentId));
+    if (matched && matched.status === 'Deceased') {
+      await bcAlert('Cannot issue Certificate of Residency for a deceased resident.');
+      showToast('Cannot issue Certificate of Residency for a deceased resident.', 'error');
+    } else if (matched && matched.status === 'Transferred') {
+      await bcAlert('Cannot issue certificate: Resident has already transferred.');
+      showToast('Cannot issue certificate: Resident has already transferred.', 'error');
+    } else if (matched) {
+      bcResidentPickerChoose('rs_residentSearch', Number(prefillResidentId));
+      openModal('residencyFormModal');
+    }
+  }
+
   try { await loadResLog(); } catch (err) { showToast('Could not load residency log: ' + err.message, 'error'); }
 })();
 </script>
