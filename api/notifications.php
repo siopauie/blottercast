@@ -26,68 +26,88 @@ $userId = (int)($_SESSION['user_id'] ?? 0);
  * queries, and it means alerts appear without needing a cron job.
  */
 function generateNotifications($mysqli): void {
-    if (!empty($_SESSION['last_notif_gen']) && (time() - (int)$_SESSION['last_notif_gen']) < 60) {
+    if (!empty($_SESSION['last_notif_gen']) && (time() - (int)$_SESSION['last_notif_gen']) < 30) {
         return;
     }
     $_SESSION['last_notif_gen'] = time();
 
-    // 1) New High-priority incidents (last 3 days, not already alerted)
-    $stmt = $mysqli->query(
-        "SELECT id, report_no, location, zone_id FROM incidents
-         WHERE priority = 'High' AND incident_date >= (CURDATE() - INTERVAL 3 DAY)
-         AND id NOT IN (SELECT ref_id FROM notifications WHERE type='new_incident' AND ref_table='incidents' AND ref_id IS NOT NULL)"
-    );
-    foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $r) {
-        $title = 'High-priority incident reported';
-        $body = "{$r['report_no']} at {$r['location']} ({$r['zone_id']})";
-        $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('new_incident', ?, ?, 'critical', 'incident.html', 'incidents', ?)");
-        $ins->bind_param('ssi', $title, $body, $r['id']);
-        $ins->execute();
-    }
+    // Clean up any historic duplicate 'Zone Zone' text
+    try {
+        $mysqli->query("UPDATE notifications SET body = REPLACE(body, 'Zone Zone ', 'Zone ') WHERE body LIKE '%Zone Zone %'");
+    } catch (\Throwable $e) {}
+
+    // 1) New incidents (last 7 days, not already alerted)
+    try {
+        $stmt = $mysqli->query(
+            "SELECT id, report_no, location, zone_id, category, priority FROM incidents
+             WHERE incident_date >= (CURDATE() - INTERVAL 7 DAY)
+             AND id NOT IN (SELECT ref_id FROM notifications WHERE type IN ('new_incident','incident_created') AND ref_table='incidents' AND ref_id IS NOT NULL)
+             ORDER BY id DESC LIMIT 10"
+        );
+        if ($stmt) {
+            foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $r) {
+                $isHigh = ($r['priority'] === 'High');
+                $title = $isHigh ? 'High-priority incident reported' : 'New incident report filed';
+                $zStr = !empty($r['zone_id']) ? " ({$r['zone_id']})" : '';
+                $body = "{$r['report_no']}: {$r['category']} at {$r['location']}{$zStr}";
+                $sev = $isHigh ? 'critical' : 'warning';
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('new_incident', ?, ?, ?, 'incident.html', 'incidents', ?)");
+                $ins->bind_param('sssi', $title, $body, $sev, $r['id']);
+                $ins->execute();
+            }
+        }
+    } catch (\Throwable $e) {}
 
     // 2) Settlements still Pending after 14+ days since filing
-    $stmt = $mysqli->query(
-        "SELECT id, case_no, case_title FROM settlements
-         WHERE status = 'Pending' AND date_filed <= (CURDATE() - INTERVAL 14 DAY)
-         AND id NOT IN (SELECT ref_id FROM notifications WHERE type='settlement_overdue' AND ref_table='settlements' AND ref_id IS NOT NULL)"
-    );
-    foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $r) {
-        $title = 'Settlement follow-up overdue';
-        $body = "{$r['case_no']}" . ($r['case_title'] ? " ({$r['case_title']})" : '') . ' has been pending for 14+ days';
-        $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('settlement_overdue', ?, ?, 'warning', 'settlement.html', 'settlements', ?)");
-        $ins->bind_param('ssi', $title, $body, $r['id']);
-        $ins->execute();
-    }
+    try {
+        $stmt = $mysqli->query(
+            "SELECT id, case_no, case_title FROM settlements
+             WHERE status = 'Pending' AND date_filed <= (CURDATE() - INTERVAL 14 DAY)
+             AND id NOT IN (SELECT ref_id FROM notifications WHERE type='settlement_overdue' AND ref_table='settlements' AND ref_id IS NOT NULL)
+             LIMIT 10"
+        );
+        if ($stmt) {
+            foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $r) {
+                $title = 'Settlement follow-up overdue';
+                $body = "{$r['case_no']}" . ($r['case_title'] ? " ({$r['case_title']})" : '') . ' has been pending for 14+ days';
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('settlement_overdue', ?, ?, 'warning', 'settlement.html', 'settlements', ?)");
+                $ins->bind_param('ssi', $title, $body, $r['id']);
+                $ins->execute();
+            }
+        }
+    } catch (\Throwable $e) {}
 
     // 3) Latest ML run: any zone above the configured risk threshold
-    $thresholdRow = $mysqli->query("SELECT setting_value FROM system_settings WHERE setting_key='risk_threshold'")->fetch_assoc();
-    $threshold = ((float)($thresholdRow['setting_value'] ?? 75)) / 100;
+    try {
+        $thresholdRow = $mysqli->query("SELECT setting_value FROM system_settings WHERE setting_key='risk_threshold'")->fetch_assoc();
+        $threshold = ((float)($thresholdRow['setting_value'] ?? 75)) / 100;
 
-    $run = $mysqli->query('SELECT id, hotspots_json FROM ml_runs ORDER BY id DESC LIMIT 1')->fetch_assoc();
-    if ($run) {
-        $hotspots = json_decode($run['hotspots_json'], true) ?: [];
-        foreach ($hotspots as $h) {
-            if (($h['meanDailyProb'] ?? 0) < $threshold) continue;
-            // De-dupe on the ml_runs id (via ref_id) so a re-train that still
-            // flags the same zone doesn't spam a second identical alert.
-            $refId = (int)$run['id'];
-            $zone = $h['zone'] ?? '?';
-            $exists = $mysqli->prepare(
-                "SELECT id FROM notifications WHERE type='high_risk_zone' AND ref_table='ml_runs' AND ref_id=? AND body LIKE ?"
-            );
-            $zoneLike = "%$zone%";
-            $exists->bind_param('is', $refId, $zoneLike);
-            $exists->execute();
-            if ($exists->get_result()->fetch_assoc()) continue;
+        $run = $mysqli->query('SELECT id, hotspots_json FROM ml_runs ORDER BY id DESC LIMIT 1')->fetch_assoc();
+        if ($run && !empty($run['hotspots_json'])) {
+            $hotspots = json_decode($run['hotspots_json'], true) ?: [];
+            foreach ($hotspots as $h) {
+                if (($h['meanDailyProb'] ?? 0) < $threshold) continue;
+                $refId = (int)$run['id'];
+                $rawZone = trim((string)($h['zone'] ?? '1'));
+                $zoneStr = (stripos($rawZone, 'zone') === false && is_numeric($rawZone)) ? "Zone $rawZone" : $rawZone;
+                
+                $exists = $mysqli->prepare(
+                    "SELECT id FROM notifications WHERE type='high_risk_zone' AND ref_table='ml_runs' AND ref_id=? AND body LIKE ?"
+                );
+                $zoneLike = "%$zoneStr%";
+                $exists->bind_param('is', $refId, $zoneLike);
+                $exists->execute();
+                if ($exists->get_result()->fetch_assoc()) continue;
 
-            $pct = round($h['meanDailyProb'] * 100);
-            $title = 'Elevated incident risk forecast';
-            $body = "Zone $zone is forecast at {$pct}% daily incident probability, above the configured threshold";
-            $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('high_risk_zone', ?, ?, 'warning', 'predictions.html', 'ml_runs', ?)");
-            $ins->bind_param('ssi', $title, $body, $refId);
-            $ins->execute();
+                $pct = round($h['meanDailyProb'] * 100);
+                $title = 'Elevated incident risk forecast';
+                $body = "{$zoneStr} is forecast at {$pct}% daily incident probability, above the configured threshold";
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('high_risk_zone', ?, ?, 'warning', 'predictions.html', 'ml_runs', ?)");
+                $ins->bind_param('ssi', $title, $body, $refId);
+                $ins->execute();
+            }
         }
-    }
+    } catch (\Throwable $e) {}
 }
 
 if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {

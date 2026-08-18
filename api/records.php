@@ -52,6 +52,14 @@ if (!function_exists('computeAge')) {
  */
 require __DIR__ . '/nextseq.php';
 
+function logSystemNotification($mysqli, $type, $title, $body, $severity, $link, $refTable, $refId): void {
+    try {
+        $stmt = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('ssssssi', $type, $title, $body, $severity, $link, $refTable, $refId);
+        $stmt->execute();
+    } catch (\Throwable $e) {}
+}
+
 // ---------------- INCIDENTS ----------------
 if ($type === 'incidents') {
     if ($method === 'GET') {
@@ -101,7 +109,12 @@ if ($type === 'incidents') {
         $status = $d['status'] ?? 'Under Investigation';
         $stmt->bind_param('ssssssssssssss', $reportNo, $date, $time, $hourStr, $zoneId, $location, $latStr, $lngStr, $category, $desc, $reporter, $officer, $priority, $status);
         $stmt->execute();
-        json_response(['ok' => true, 'id' => $mysqli->insert_id], 201);
+        $newId = $mysqli->insert_id;
+
+        $sev = ($priority === 'High') ? 'critical' : 'warning';
+        logSystemNotification($mysqli, 'new_incident', $priority === 'High' ? 'High-priority incident reported' : 'New incident report filed', "{$reportNo}: {$category} at {$location} ({$zoneId})", $sev, 'incident.html', 'incidents', $newId);
+
+        json_response(['ok' => true, 'id' => $newId], 201);
     }
 
     if ($method === 'PUT') {
@@ -125,6 +138,9 @@ if ($type === 'incidents') {
         $reporter = $d['reporter'] ?? ''; $officer = $d['officer'] ?? ''; $priority = $d['priority'] ?? 'Medium'; $status = $d['status'] ?? 'Under Investigation';
         $stmt->bind_param('sssssssssssssi', $date, $time, $hourStr, $zoneId, $location, $latStr, $lngStr, $category, $desc, $reporter, $officer, $priority, $status, $id);
         $stmt->execute();
+
+        logSystemNotification($mysqli, 'incident_updated', 'Incident report updated', "{$category} report ({$location}) status updated to {$status}", 'info', 'incident.html', 'incidents', $id);
+
         json_response(['ok' => true]);
     }
 
@@ -212,7 +228,11 @@ if ($type === 'blotter') {
         );
         $stmt->bind_param('sssississsss', $docketNo, $dateFiled, $complainant, $complainantId, $complainantAddr, $respondent, $respondentId, $respondentAddr, $nature, $caseType, $status, $zoneId);
         $stmt->execute();
-        json_response(['ok' => true, 'id' => $mysqli->insert_id], 201);
+        $newId = $mysqli->insert_id;
+
+        logSystemNotification($mysqli, 'blotter_created', 'New blotter record filed', "{$docketNo}: {$complainant} vs. {$respondent} ({$nature})", 'warning', 'blotter.html', 'blotter_records', $newId);
+
+        json_response(['ok' => true, 'id' => $newId], 201);
     }
     if ($method === 'PUT') {
         $id = (int)($_GET['id'] ?? 0);
@@ -262,6 +282,9 @@ if ($type === 'blotter') {
 
         $stmt->bind_param('ssississsssi', $dateFiled, $complainant, $complainantId, $complainantAddr, $respondent, $respondentId, $respondentAddr, $nature, $caseType, $status, $zoneId, $id);
         $stmt->execute();
+
+        logSystemNotification($mysqli, 'blotter_updated', 'Blotter record updated', "{$nature} case ({$complainant} vs {$respondent}) status updated to {$status}", 'info', 'blotter.html', 'blotter_records', $id);
+
         json_response(['ok' => true]);
     }
     if ($method === 'DELETE') {
@@ -319,7 +342,11 @@ if ($type === 'settlements') {
         $blotterIdStr = (string)$blotterId;
         $stmt->bind_param('sssssssssssss', $blotterIdStr, $caseNo, $caseTitle, $complaintTitle, $nature, $dateFiled, $dateConf, $action, $dateSettlement, $dateExecution, $mainPoint, $status, $remarks);
         $stmt->execute();
-        json_response(['ok' => true, 'id' => $mysqli->insert_id], 201);
+        $newId = $mysqli->insert_id;
+
+        logSystemNotification($mysqli, 'settlement_created', 'New settlement hearing created', "{$caseNo}: {$caseTitle} ({$complaintTitle})", 'warning', 'settlement.html', 'settlements', $newId);
+
+        json_response(['ok' => true, 'id' => $newId], 201);
     }
     if ($method === 'PUT') {
         $id = (int)($_GET['id'] ?? 0);
@@ -335,6 +362,9 @@ if ($type === 'settlements') {
         $mainPoint = $d['mainPoint'] ?? ''; $status = $d['status'] ?? 'Pending'; $remarks = $d['remarks'] ?? '';
         $stmt->bind_param('sssssssi', $dateConf, $action, $dateSettlement, $dateExecution, $mainPoint, $status, $remarks, $id);
         $stmt->execute();
+
+        logSystemNotification($mysqli, 'settlement_updated', 'Settlement record updated', "Settlement hearing status updated to {$status}", 'info', 'settlement.html', 'settlements', $id);
+
         json_response(['ok' => true]);
     }
     if ($method === 'DELETE') {

@@ -567,14 +567,20 @@ const NOTIF_SEVERITY_ICON = { critical: 'warning', warning: 'clock', info: 'bell
 const NOTIF_SEVERITY_COLOR = { critical: '#dc2626', warning: '#d97706', info: '#23703c' };
 
 function timeAgo(dateStr) {
-  const seconds = Math.floor((Date.now() - new Date(dateStr.replace(' ', 'T'))) / 1000);
-  if (seconds < 60) return 'just now';
+  if (!dateStr) return 'just now';
+  const ts = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T')).getTime();
+  if (isNaN(ts)) return 'just now';
+  const diffMs = Date.now() - ts;
+  const seconds = Math.max(0, Math.floor(diffMs / 1000));
+  if (seconds < 45) return 'just now';
   const mins = Math.floor(seconds / 60);
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
 }
 
 async function refreshNotifBadge() {
@@ -582,8 +588,9 @@ async function refreshNotifBadge() {
   if (!badge) return;
   try {
     const res = await BCApi.notifUnreadCount();
-    badge.classList.toggle('hidden', res.count === 0);
-  } catch (e) { /* not fatal — badge just stays as-is */ }
+    const count = Number(res?.count ?? 0);
+    badge.classList.toggle('hidden', count === 0);
+  } catch (e) { /* badge stays as-is on offline */ }
 }
 
 async function toggleNotifPanel() {
@@ -594,23 +601,33 @@ async function toggleNotifPanel() {
   if (!opening) return;
 
   const list = document.getElementById('notifList');
-  list.innerHTML = '<div class="px-4 py-6 text-center text-forest-400 text-sm">Loading…</div>';
+  if (!list) return;
+  list.innerHTML = '<div class="px-4 py-6 text-center text-forest-400 text-sm">Loading notifications…</div>';
   try {
-    const items = await BCApi.notifList(20);
-    if (items.length === 0) {
+    const items = await BCApi.notifList(30);
+    if (!items || items.length === 0) {
       list.innerHTML = '<div class="px-4 py-8 text-center text-forest-400 text-sm">No notifications yet.</div>';
     } else {
-      list.innerHTML = items.map(n => `
-        <a href="${n.link || '#'}" onclick="markNotifRead(${n.id})"
-           class="flex gap-3 px-4 py-3 border-b border-forest-50 hover:bg-forest-50 transition-colors ${n.is_read == 0 ? 'bg-forest-50/60' : ''}">
-          <span style="color:${NOTIF_SEVERITY_COLOR[n.severity] || '#23703c'}" data-icon="${NOTIF_SEVERITY_ICON[n.severity] || 'bell'}" data-icon-size="16" class="flex-shrink-0 mt-0.5"></span>
-          <span class="flex-1 min-w-0">
-            <span class="block text-sm font-semibold text-forest-800 truncate">${n.title}</span>
-            <span class="block text-xs text-forest-500 mt-0.5">${n.body}</span>
-            <span class="block text-xs text-forest-400 mt-1">${timeAgo(n.created_at)}</span>
-          </span>
-          ${n.is_read == 0 ? '<span class="w-2 h-2 rounded-full bg-forest-500 flex-shrink-0 mt-1.5"></span>' : ''}
-        </a>`).join('');
+      list.innerHTML = items.map(n => {
+        const isUnread = (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
+        const bgClass = isUnread ? 'bg-[#f0f9f2] is-unread' : 'bg-white is-read';
+        const dotHtml = isUnread ? '<span class="notif-dot w-2 h-2 rounded-full bg-forest-500 flex-shrink-0 mt-1.5"></span>' : '';
+        const timeStr = timeAgo(n.created_at);
+        const icon = NOTIF_SEVERITY_ICON[n.severity] || 'bell';
+        const color = NOTIF_SEVERITY_COLOR[n.severity] || '#23703c';
+
+        return `
+          <a href="${n.link || '#'}" data-notif-id="${n.id}" onclick="markNotifRead(event, ${n.id}, '${n.link || ''}')"
+             class="flex items-start gap-3 px-4 py-3 border-b border-forest-50 transition-colors hover:bg-forest-100/50 ${bgClass}">
+            <span style="color:${color}" data-icon="${icon}" data-icon-size="16" class="flex-shrink-0 mt-0.5"></span>
+            <span class="flex-1 min-w-0">
+              <span class="block text-sm font-semibold text-forest-800 truncate">${n.title}</span>
+              <span class="block text-xs text-forest-600 mt-0.5 leading-relaxed">${n.body}</span>
+              <span class="block text-xs text-forest-400 mt-1 font-medium">${timeStr}</span>
+            </span>
+            ${dotHtml}
+          </a>`;
+      }).join('');
     }
   } catch (e) {
     list.innerHTML = '<div class="px-4 py-6 text-center text-red-500 text-sm">Could not load notifications.</div>';
@@ -618,20 +635,46 @@ async function toggleNotifPanel() {
   refreshNotifBadge();
 }
 
-async function markNotifRead(id) {
-  try { await BCApi.notifMarkRead(id); refreshNotifBadge(); } catch (e) {}
+async function markNotifRead(e, id, link) {
+  // Optimistic UI state update: switch from green to white background and remove green dot
+  const item = (e && e.currentTarget) ? e.currentTarget : document.querySelector(`[data-notif-id="${id}"]`);
+  if (item) {
+    item.classList.remove('bg-[#f0f9f2]', 'bg-forest-50/60', 'is-unread');
+    item.classList.add('bg-white', 'is-read');
+    const dot = item.querySelector('.notif-dot');
+    if (dot) dot.remove();
+  }
+
+  // Update bell red dot indicator
+  const unreadRemaining = document.querySelectorAll('#notifList .is-unread').length;
+  const badge = document.getElementById('notifBadge');
+  if (badge && unreadRemaining === 0) {
+    badge.classList.add('hidden');
+  }
+
+  try {
+    await BCApi.notifMarkRead(id);
+  } catch (err) {}
+  refreshNotifBadge();
 }
 
 async function markAllNotifsRead() {
+  // Optimistic UI state update: clear all unread backgrounds and green dots immediately
+  const unreadItems = document.querySelectorAll('#notifList .is-unread');
+  unreadItems.forEach(item => {
+    item.classList.remove('bg-[#f0f9f2]', 'bg-forest-50/60', 'is-unread');
+    item.classList.add('bg-white', 'is-read');
+    const dot = item.querySelector('.notif-dot');
+    if (dot) dot.remove();
+  });
+
+  const badge = document.getElementById('notifBadge');
+  if (badge) badge.classList.add('hidden');
+
   try {
     await BCApi.notifMarkAllRead();
-    const panel = document.getElementById('notifPanel');
-    if (panel && !panel.classList.contains('hidden')) {
-      panel.classList.add('hidden');
-      await toggleNotifPanel();
-    }
-    refreshNotifBadge();
   } catch (e) {}
+  refreshNotifBadge();
 }
 
 document.addEventListener('click', (e) => {
@@ -641,6 +684,10 @@ document.addEventListener('click', (e) => {
     panel.classList.add('hidden');
   }
 });
+
+// Periodic notification badge sync every 45 seconds & on window focus
+setInterval(refreshNotifBadge, 45000);
+window.addEventListener('focus', refreshNotifBadge);
 
 // ── Resident search-picker (replaces the old <select> dropdown) ────
 // Shared by Clearance, Certificate of Residency, and Certificate of
