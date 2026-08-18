@@ -110,9 +110,12 @@ function generateNotifications($mysqli): void {
     } catch (\Throwable $e) {}
 }
 
+$userId = (int)($_SESSION['user_id'] ?? 1);
+if ($userId <= 0) $userId = 1;
+
 if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     generateNotifications($mysqli);
-    $limit = min(50, max(1, (int)($_GET['limit'] ?? 20)));
+    $limit = min(50, max(1, (int)($_GET['limit'] ?? 30)));
     $stmt = $mysqli->prepare(
         "SELECT n.*, (nr.notification_id IS NOT NULL) AS is_read
          FROM notifications n
@@ -133,25 +136,30 @@ if ($action === 'unread_count' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     );
     $stmt->bind_param('i', $userId);
     $stmt->execute();
-    json_response(['count' => (int)$stmt->get_result()->fetch_assoc()['c']]);
+    json_response(['count' => (int)($stmt->get_result()->fetch_assoc()['c'] ?? 0)]);
 }
 
 if ($action === 'mark_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_GET['id'] ?? 0);
     if (!$id) json_error('id required');
-    $stmt = $mysqli->prepare('INSERT IGNORE INTO notification_reads (user_id, notification_id) VALUES (?, ?)');
-    $stmt->bind_param('ii', $userId, $id);
-    $stmt->execute();
+    try {
+        $stmt = $mysqli->prepare('INSERT INTO notification_reads (user_id, notification_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id)');
+        $stmt->bind_param('ii', $userId, $id);
+        $stmt->execute();
+    } catch (\Throwable $e) {}
     json_response(['ok' => true]);
 }
 
 if ($action === 'mark_all_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $mysqli->prepare(
-        'INSERT IGNORE INTO notification_reads (user_id, notification_id)
-         SELECT ?, id FROM notifications'
-    );
-    $stmt->bind_param('i', $userId);
-    $stmt->execute();
+    try {
+        $stmt = $mysqli->prepare(
+            'INSERT INTO notification_reads (user_id, notification_id)
+             SELECT ?, id FROM notifications
+             ON DUPLICATE KEY UPDATE user_id=VALUES(user_id)'
+        );
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+    } catch (\Throwable $e) {}
     json_response(['ok' => true]);
 }
 

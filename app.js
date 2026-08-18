@@ -583,14 +583,59 @@ function timeAgo(dateStr) {
   return `${months}mo ago`;
 }
 
+function getLocalReadNotifs() {
+  try {
+    return JSON.parse(localStorage.getItem('bc_read_notifs') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function setLocalNotifRead(id) {
+  try {
+    const list = getLocalReadNotifs();
+    const strId = String(id);
+    if (!list.includes(strId)) {
+      list.push(strId);
+      localStorage.setItem('bc_read_notifs', JSON.stringify(list));
+    }
+  } catch (e) {}
+}
+
+function setLocalAllNotifsRead(ids) {
+  try {
+    const list = getLocalReadNotifs();
+    ids.forEach(id => {
+      const strId = String(id);
+      if (!list.includes(strId)) list.push(strId);
+    });
+    localStorage.setItem('bc_read_notifs', JSON.stringify(list));
+    localStorage.setItem('bc_all_notifs_read_ts', String(Date.now()));
+  } catch (e) {}
+}
+
 async function refreshNotifBadge() {
   const badge = document.getElementById('notifBadge');
   if (!badge) return;
   try {
-    const res = await BCApi.notifUnreadCount();
-    const count = Number(res?.count ?? 0);
-    badge.classList.toggle('hidden', count === 0);
-  } catch (e) { /* badge stays as-is on offline */ }
+    const items = await BCApi.notifList(30);
+    const localRead = getLocalReadNotifs();
+    const allReadTs = Number(localStorage.getItem('bc_all_notifs_read_ts') || 0);
+
+    const unreadCount = (items || []).filter(n => {
+      if (localRead.includes(String(n.id))) return false;
+      if (allReadTs > 0) {
+        const notifTs = new Date(n.created_at.includes('T') ? n.created_at : n.created_at.replace(' ', 'T')).getTime();
+        if (!isNaN(notifTs) && notifTs <= allReadTs) return false;
+      }
+      return (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
+    }).length;
+
+    badge.classList.toggle('hidden', unreadCount === 0);
+  } catch (e) {
+    const unreadInDom = document.querySelectorAll('#notifList .is-unread').length;
+    badge.classList.toggle('hidden', unreadInDom === 0);
+  }
 }
 
 async function toggleNotifPanel() {
@@ -605,11 +650,20 @@ async function toggleNotifPanel() {
   list.innerHTML = '<div class="px-4 py-6 text-center text-forest-400 text-sm">Loading notifications…</div>';
   try {
     const items = await BCApi.notifList(30);
+    const localRead = getLocalReadNotifs();
+    const allReadTs = Number(localStorage.getItem('bc_all_notifs_read_ts') || 0);
+
     if (!items || items.length === 0) {
       list.innerHTML = '<div class="px-4 py-8 text-center text-forest-400 text-sm">No notifications yet.</div>';
     } else {
       list.innerHTML = items.map(n => {
-        const isUnread = (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
+        let isUnread = (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
+        if (localRead.includes(String(n.id))) isUnread = false;
+        if (allReadTs > 0) {
+          const notifTs = new Date(n.created_at.includes('T') ? n.created_at : n.created_at.replace(' ', 'T')).getTime();
+          if (!isNaN(notifTs) && notifTs <= allReadTs) isUnread = false;
+        }
+
         const bgClass = isUnread ? 'bg-[#f0f9f2] is-unread' : 'bg-white is-read';
         const dotHtml = isUnread ? '<span class="notif-dot w-2 h-2 rounded-full bg-forest-500 flex-shrink-0 mt-1.5"></span>' : '';
         const timeStr = timeAgo(n.created_at);
@@ -636,6 +690,8 @@ async function toggleNotifPanel() {
 }
 
 async function markNotifRead(e, id, link) {
+  setLocalNotifRead(id);
+
   // Optimistic UI state update: switch from green to white background and remove green dot
   const item = (e && e.currentTarget) ? e.currentTarget : document.querySelector(`[data-notif-id="${id}"]`);
   if (item) {
@@ -659,6 +715,9 @@ async function markNotifRead(e, id, link) {
 }
 
 async function markAllNotifsRead() {
+  const allIds = Array.from(document.querySelectorAll('#notifList [data-notif-id]')).map(el => el.dataset.notifId);
+  setLocalAllNotifsRead(allIds);
+
   // Optimistic UI state update: clear all unread backgrounds and green dots immediately
   const unreadItems = document.querySelectorAll('#notifList .is-unread');
   unreadItems.forEach(item => {
