@@ -402,10 +402,27 @@
     bcRenderPagination(document.getElementById('incPaginationControls'), incPage, totalPages, (p) => { incPage = p; renderIncidents(); });
   }
 
-  async function openAddIncident() {
+  function resetIncidentForm() {
     incEditId = null;
+    const form = document.getElementById('incidentForm');
+    if (form) form.reset();
+    
+    const ids = ['if_reportNo', 'if_dateReported', 'if_timeReported', 'if_location', 'if_description', 'if_reporter', 'if_officer'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    
+    const selects = ['if_zone', 'if_category', 'if_priority', 'if_status'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.selectedIndex = 0;
+    });
+  }
+
+  async function openAddIncident() {
+    resetIncidentForm();
     document.getElementById('incModalTitle').textContent = 'New Incident Report';
-    document.getElementById('incidentForm').reset();
     openModal('incidentModal');
 
     // Look-ahead preview only, same reasoning as Blotter's Docket No.
@@ -423,23 +440,29 @@
 
   function editIncident(id) {
     const r = incidentData.find(x => x.id === id);
+    if (!r) return;
     incEditId = id;
     document.getElementById('incModalTitle').textContent = 'Edit Incident Report';
-    document.getElementById('if_reportNo').value = r.reportNo;
+    document.getElementById('if_reportNo').value = r.reportNo || '';
     document.getElementById('if_dateReported').value = r.date || '';
     document.getElementById('if_zone').value = r.zone || 'Zone 1';
-    document.getElementById('if_timeReported').value = r.timeReported;
-    document.getElementById('if_location').value = r.location;
-    document.getElementById('if_category').value = r.category;
-    document.getElementById('if_priority').value = r.priority;
-    document.getElementById('if_description').value = r.description;
-    document.getElementById('if_reporter').value = r.reporter;
-    document.getElementById('if_officer').value = r.officer;
-    document.getElementById('if_status').value = r.status;
+    document.getElementById('if_timeReported').value = r.timeReported || '';
+    document.getElementById('if_location').value = (r.location || '').replace(/^Zone\s*\d+\s*[,:-]?\s*/i, '').trim();
+    document.getElementById('if_category').value = r.category || '';
+    document.getElementById('if_priority').value = r.priority || '';
+    document.getElementById('if_description').value = r.description || '';
+    document.getElementById('if_reporter').value = r.reporter || '';
+    document.getElementById('if_officer').value = r.officer || '';
+    document.getElementById('if_status').value = r.status || '';
     openModal('incidentModal');
   }
 
   async function saveIncident() {
+    const selectedZone = document.getElementById('if_zone').value;
+    const rawLocation = document.getElementById('if_location').value.trim();
+    const cleanLocationDetail = rawLocation.replace(/^Zone\s*\d+\s*[,:-]?\s*/i, '').trim();
+    const formattedLocation = cleanLocationDetail ? `${selectedZone}, ${cleanLocationDetail}` : (rawLocation || selectedZone);
+
     const vals = {
       // Same reasoning as Blotter's Docket No.: on create this field only
       // ever shows a look-ahead preview (see openAddIncident()), never a
@@ -450,23 +473,23 @@
       reportNo: incEditId ? document.getElementById('if_reportNo').value.trim() : '',
       date: document.getElementById('if_dateReported').value,
       timeReported: document.getElementById('if_timeReported').value,
-      location: document.getElementById('if_location').value.trim(),
+      location: formattedLocation,
       category: document.getElementById('if_category').value,
       priority: document.getElementById('if_priority').value,
       description: document.getElementById('if_description').value.trim(),
       reporter: document.getElementById('if_reporter').value.trim(),
       officer: document.getElementById('if_officer').value.trim(),
       status: document.getElementById('if_status').value,
-      zone: document.getElementById('if_zone').value,
+      zone: selectedZone,
+      zone_id: selectedZone,
     };
-    if (!vals.location || !vals.reporter) { await bcAlert('Please fill in required fields.'); return; }
+    if (!rawLocation || !vals.reporter) { await bcAlert('Please fill in required fields.'); return; }
     if (!vals.zone) { await bcAlert('Please select the Zone.'); return; }
     if (!vals.category) { await bcAlert('Please select the Category.'); return; }
     if (!vals.priority) { await bcAlert('Please select the Priority Level.'); return; }
     if (!vals.status) { await bcAlert('Please select the Status.'); return; }
     if (vals.reporter && !bcIsValidName(vals.reporter)) { await bcAlert('Reporter Name should only contain letters (no numbers).'); return; }
     if (vals.date && bcIsFutureDateTime(vals.date, vals.timeReported)) { await bcAlert('Date/Time Reported cannot be in the future.'); return; }
-    if (!vals.location.toLowerCase().startsWith('zone')) vals.location = vals.zone + ', ' + vals.location;
     try {
       if (incEditId) {
         const prev = incidentData.find(x => x.id === incEditId);
@@ -477,6 +500,7 @@
         await BCApi.create('incidents', vals);
         showToast('Incident report added! It now feeds the heat map, trends, and predictions.');
       }
+      resetIncidentForm();
       closeModal('incidentModal');
       await loadIncidents();
     } catch (err) {
@@ -486,8 +510,10 @@
 
   function viewIncident(id) {
     const r = incidentData.find(x => x.id === id);
+    if (!r) return;
     const rows = [
       ['Report No.', r.reportNo], ['Date', r.dateReported], ['Time', r.timeReported],
+      ['Zone', r.zone || ''],
       ['Location', r.location], ['Category', r.category], ['Priority', r.priority],
       ['Description', r.description], ['Reporter', r.reporter], ['Officer', r.officer], ['Status', r.status],
     ];

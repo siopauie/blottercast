@@ -123,10 +123,11 @@ if ($type === 'incidents') {
         $id = (int)($_GET['id'] ?? 0);
         if (!$id) json_error('id required');
         $d = body();
-        $zoneId = $d['zone'] ?? 'Zone 1';
+        $zoneId = trim($d['zone'] ?? $d['zone_id'] ?? '');
+        if ($zoneId === '') $zoneId = 'Zone 1';
         [$latDef, $lngDef] = zoneCoords($mysqli, $zoneId);
-        $lat = (isset($d['lat']) && $d['lat'] !== '') ? $d['lat'] : $latDef;
-        $lng = (isset($d['lng']) && $d['lng'] !== '') ? $d['lng'] : $lngDef;
+        $lat = (isset($d['lat']) && $d['lat'] !== '' && $d['lat'] !== null) ? $d['lat'] : $latDef;
+        $lng = (isset($d['lng']) && $d['lng'] !== '' && $d['lng'] !== null) ? $d['lng'] : $lngDef;
         $date = ($d['date'] ?? '') ?: date('Y-m-d');
         $time = ($d['timeReported'] ?? '') ?: '12:00:00';
         if (strlen($time) === 5) $time .= ':00';
@@ -135,11 +136,12 @@ if ($type === 'incidents') {
         $stmt = $mysqli->prepare(
             'UPDATE incidents SET incident_date=?, time_reported=?, hour=?, zone_id=?, location=?, lat=?, lng=?, category=?, description=?, reporter=?, officer=?, priority=?, status=? WHERE id=?'
         );
-        $hourStr = (string)$hour; $latStr = (string)$lat; $lngStr = (string)$lng; $idStr = (string)$id;
+        if (!$stmt) json_error($mysqli->error, 500);
+        $hourStr = (string)$hour; $latStr = (string)$lat; $lngStr = (string)$lng;
         $location = $d['location'] ?? ''; $category = $d['category'] ?? 'Other'; $desc = $d['description'] ?? '';
         $reporter = $d['reporter'] ?? ''; $officer = $d['officer'] ?? ''; $priority = $d['priority'] ?? 'Medium'; $status = $d['status'] ?? 'Under Investigation';
         $stmt->bind_param('sssssssssssssi', $date, $time, $hourStr, $zoneId, $location, $latStr, $lngStr, $category, $desc, $reporter, $officer, $priority, $status, $id);
-        $stmt->execute();
+        if (!$stmt->execute()) json_error($stmt->error, 500);
 
         logSystemNotification($mysqli, 'incident_updated', 'Incident report updated', "{$category} report ({$location}) status updated to {$status}", 'info', 'incident.html', 'incidents', $id);
 
