@@ -199,9 +199,12 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="form-label">Role</label>
-          <select id="uf_role" class="form-input" onchange="updateSignatureSectionVisibility(this.value)">
-            <option>System Admin</option><option>Barangay Captain</option>
-            <option selected>Desk Officer</option><option>Data Encoder</option>
+          <select id="uf_role" class="form-input" onchange="updateSignatureSectionVisibility(this.value)" required>
+            <option value="" selected disabled hidden>Select Role…</option>
+            <option value="System Admin">System Admin</option>
+            <option value="Barangay Captain">Barangay Captain</option>
+            <option value="Desk Officer">Desk Officer</option>
+            <option value="Data Encoder">Data Encoder</option>
           </select>
         </div>
         <!-- Status row: only visible when editing an existing user -->
@@ -419,6 +422,11 @@ function resetPasswordVisibility() {
 function openAddUser() {
   editUserId=null; document.getElementById('userModalTitle').textContent='Add New User';
   document.getElementById('userForm').reset();
+  const roleEl = document.getElementById('uf_role');
+  if (roleEl) {
+    roleEl.selectedIndex = 0;
+    roleEl.value = '';
+  }
   resetPasswordVisibility();
   document.getElementById('uf_username').disabled = false;
   document.getElementById('uf_password').placeholder='Set initial password';
@@ -513,6 +521,7 @@ async function saveUser() {
     password:document.getElementById('uf_password').value,
   };
   if(!vals.name||!vals.username){await bcAlert('Please fill in required fields.');return;}
+  if(!vals.role){await bcAlert('Please select a Role.');return;}
   if (vals.name && !bcIsValidName(vals.name)) { await bcAlert('Full Name should only contain letters (no numbers).'); return; }
   if (vals.email) {
     if (!bcIsValidEmail(vals.email)) {

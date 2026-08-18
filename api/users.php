@@ -82,7 +82,12 @@ if ($action === 'create' && $method === 'POST') {
     $hash = password_hash($password, PASSWORD_BCRYPT);
     $contact = trim($d['contact'] ?? '');
     $contact = $contact === '' ? null : $contact;
-    $role = $d['role'] ?? 'Desk Officer'; $status = $d['status'] ?? 'Active';
+    $validRoles = ['System Admin', 'Barangay Captain', 'Desk Officer', 'Data Encoder'];
+    $role = trim($d['role'] ?? '');
+    if ($role === '' || !in_array($role, $validRoles, true)) {
+        json_error('A valid role is required');
+    }
+    $status = $d['status'] ?? 'Active';
 
     $stmt = $mysqli->prepare('INSERT INTO users (username, password, full_name, email, contact_no, role, status, password_changed_at) VALUES (?,?,?,?,?,?,?,NOW())');
     $stmt->bind_param('sssssss', $username, $hash, $fullName, $email, $contact, $role, $status);
@@ -102,7 +107,12 @@ if ($action === 'update' && $method === 'PUT') {
     $email = $email === '' ? null : $email;
     $contact = trim($d['contact'] ?? '');
     $contact = $contact === '' ? null : $contact;
-    $role = $d['role'] ?? 'Desk Officer'; $status = $d['status'] ?? 'Active';
+    $validRoles = ['System Admin', 'Barangay Captain', 'Desk Officer', 'Data Encoder'];
+    $role = trim($d['role'] ?? '');
+    if ($role === '' || !in_array($role, $validRoles, true)) {
+        json_error('A valid role is required');
+    }
+    $status = $d['status'] ?? 'Active';
     if ($fullName === '') json_error('Name is required');
 
     if ($email !== null) {
