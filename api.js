@@ -85,6 +85,18 @@ const BCApi = {
       body: JSON.stringify({ identity, reset_token, newPassword }),
     });
   },
+  verify2FA(two_factor_token, otp) {
+    return this._fetch(`${BC_API}/api/auth.php?action=verify_2fa`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ two_factor_token, otp }),
+    });
+  },
+  resend2FA(two_factor_token) {
+    return this._fetch(`${BC_API}/api/auth.php?action=resend_2fa`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ two_factor_token }),
+    });
+  },
 
   // ---- records: incidents / blotter / settlements ----
   list(type, params = {}) {
@@ -241,10 +253,15 @@ const BCApi = {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task, model }),
     });
   },
-  settingsSave(values) {
-    return this._fetch(`${BC_API}/api/settings.php?action=save`, {
+  async settingsSave(values) {
+    const res = await this._fetch(`${BC_API}/api/settings.php?action=save`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values),
     });
+    this.invalidateCache('settings');
+    this.invalidateCache('letterhead');
+    this.invalidateCache('captain_signature');
+    this.invalidateCache('users');
+    return res;
   },
   runBackup() { return this._fetch(`${BC_API}/api/settings.php?action=backup`, { method: 'POST' }); },
   backupHistory() { return this._fetch(`${BC_API}/api/settings.php?action=backups`); },

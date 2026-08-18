@@ -508,6 +508,7 @@ function getSecuritySettings(): array {
         return $cached;
     }
     $defaults = [
+        'two_factor_auth'      => false,
         'lockout_enabled'      => true,
         'session_timeout'      => 30,
         'max_failed_logins'    => 5,
@@ -521,7 +522,11 @@ function getSecuritySettings(): array {
         $out = $defaults;
         foreach ($rows as $r) {
             $key = $r['setting_key'];
-            $out[$key] = ($key === 'lockout_enabled') ? ($r['setting_value'] === '1' || $r['setting_value'] === 'true') : (int)$r['setting_value'];
+            if ($key === 'lockout_enabled' || $key === 'two_factor_auth') {
+                $out[$key] = ($r['setting_value'] === '1' || $r['setting_value'] === 'true');
+            } else {
+                $out[$key] = (int)$r['setting_value'];
+            }
         }
         $cached = $out;
         $_SESSION['sec_settings'] = $out;

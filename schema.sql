@@ -351,6 +351,7 @@ INSERT INTO system_settings (setting_key, setting_value) VALUES
  ('spike_threshold', '5'),
  ('notif_inapp', '1'),
  ('notif_retrain', '1'),
+ ('two_factor_auth', '0'),
  ('lockout_enabled', '1'),
  ('session_timeout', '30'),
  ('max_failed_logins', '5'),

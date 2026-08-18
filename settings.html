@@ -182,6 +182,10 @@
         <h3>Authentication Settings</h3>
         <div class="space-y-0">
           <div class="toggle-row">
+            <div><div class="toggle-label">Two-Factor Authentication (2FA)</div><div class="toggle-desc">Require a 6-digit verification code sent to the user's registered Gmail address before completing login</div></div>
+            <button class="toggle-switch off" data-setting="two_factor_auth" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+          <div class="toggle-row">
             <div><div class="toggle-label">Account Lockout After Failed Attempts</div><div class="toggle-desc">Lock account after 5 consecutive failed logins</div></div>
             <button class="toggle-switch on" data-setting="lockout_enabled" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
           </div>

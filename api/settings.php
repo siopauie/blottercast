@@ -242,6 +242,18 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
     }
 
+    // Synchronize active Barangay Captain user full_name if captain_name is updated
+    if (!empty($d['captain_name'])) {
+        $capName = trim((string)$d['captain_name']);
+        if ($capName !== '') {
+            $updCap = $mysqli->prepare("UPDATE users SET full_name = ? WHERE role = 'Barangay Captain' AND status = 'Active'");
+            if ($updCap) {
+                $updCap->bind_param('s', $capName);
+                $updCap->execute();
+            }
+        }
+    }
+
     $user = $_SESSION['username'] ?? 'system';
     $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Updated', 'Settings', 'System settings saved')");
     $log->bind_param('s', $user);

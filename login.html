@@ -649,6 +649,60 @@
   </div>
 </div>
 
+<!-- TWO-FACTOR AUTHENTICATION (2FA) MODAL -->
+<div class="modal-backdrop" id="twoFactorModal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Two-Factor Authentication</div>
+        <div class="modal-subtitle">Enter the 6-digit verification code sent to your registered Gmail address.</div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeTwoFactorModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="alert-error" id="twoFactorAlert" style="margin-bottom:1rem;">
+        <span data-icon="warning" data-icon-size="16"></span>
+        <span id="twoFactorAlertMsg"></span>
+      </div>
+
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 12px; margin-bottom:1.25rem; font-size:0.82rem; color:#166534; display:flex; align-items:center; gap:8px;">
+        <span>✓</span>
+        <span>A 6-digit code was sent to <strong id="twoFactorMaskedEmail"></strong></span>
+      </div>
+
+      <form id="twoFactorForm" onsubmit="handleVerify2Fa(event)">
+        <div class="input-group" style="margin-bottom:1.25rem;">
+          <label class="input-label">6-Digit Verification Code</label>
+          <div class="input-wrap">
+            <input type="text" id="twoFactorOtp" class="form-input otp-input" placeholder="123456" maxlength="6" autocomplete="one-time-code"/>
+          </div>
+          <div class="error-msg" id="twoFactorOtpError">Please enter the 6-digit code.</div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btnVerify2Fa">
+          <div class="spinner" id="twoFactorSpinner"></div>
+          <span class="btn-text">Verify &amp; Sign In</span>
+        </button>
+
+        <button type="button" class="btn-resend-otp" id="btnResend2Fa" onclick="handleResend2Fa()">
+          Resend Code
+        </button>
+
+        <div id="twoFactorResendFeedback" style="display:none; text-align:center; font-size:0.78rem; color:#15803d; margin-top:0.5rem; font-weight:500;">
+          ✓ A new 6-digit verification code has been sent!
+        </div>
+
+        <div style="text-align:center; margin-top:1rem;">
+          <a href="javascript:void(0)" onclick="closeTwoFactorModal()" style="font-size:0.82rem; color:#6b7280; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;" class="hover:text-forest-700 hover:underline">
+            ← Cancel and back to login
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api.js"></script>
 <script src="icons.js"></script>
@@ -1088,10 +1142,17 @@
 
     try {
       const result = await BCApi.login(username, password);
+      btn.classList.remove('loading');
+
+      // Check if Two-Factor Authentication is required
+      if (result && result.requires_2fa) {
+        openTwoFactorModal(result.two_factor_token, result.masked_email);
+        return;
+      }
+
       if (result && result.user) {
         sessionStorage.setItem('bc_user', JSON.stringify(result.user));
       }
-      btn.classList.remove('loading');
       document.getElementById('successMsg').textContent = `Signed in as ${result.user.full_name} — Redirecting…`;
       document.getElementById('successOverlay').classList.add('show');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
@@ -1107,6 +1168,111 @@
     }
   }
 
+  // ── Two-Factor Authentication (2FA) Helpers ──
+  let active2FaToken = null;
+
+  function openTwoFactorModal(token, maskedEmail) {
+    active2FaToken = token;
+    const emailEl = document.getElementById('twoFactorMaskedEmail');
+    if (emailEl) emailEl.textContent = maskedEmail || 'your registered Gmail';
+    const otpInput = document.getElementById('twoFactorOtp');
+    if (otpInput) {
+      otpInput.value = '';
+      otpInput.classList.remove('error');
+    }
+    const errEl = document.getElementById('twoFactorOtpError');
+    if (errEl) errEl.classList.remove('show');
+    const alert = document.getElementById('twoFactorAlert');
+    if (alert) alert.classList.remove('show');
+    const feedback = document.getElementById('twoFactorResendFeedback');
+    if (feedback) feedback.style.display = 'none';
+
+    const modal = document.getElementById('twoFactorModal');
+    if (modal) {
+      modal.classList.add('show');
+      setTimeout(() => {
+        if (otpInput) otpInput.focus();
+      }, 150);
+    }
+  }
+
+  function closeTwoFactorModal() {
+    active2FaToken = null;
+    const modal = document.getElementById('twoFactorModal');
+    if (modal) modal.classList.remove('show');
+  }
+
+  async function handleVerify2Fa(e) {
+    if (e) e.preventDefault();
+    const otpInput = document.getElementById('twoFactorOtp');
+    const otpError = document.getElementById('twoFactorOtpError');
+    const alert = document.getElementById('twoFactorAlert');
+    const alertMsg = document.getElementById('twoFactorAlertMsg');
+    const btn = document.getElementById('btnVerify2Fa');
+
+    otpInput.classList.remove('error');
+    otpError.classList.remove('show');
+    alert.classList.remove('show');
+
+    const otp = otpInput.value.trim();
+    if (!otp || otp.length < 6) {
+      otpInput.classList.add('error');
+      otpError.classList.add('show');
+      return;
+    }
+
+    btn.classList.add('loading');
+
+    try {
+      const result = await BCApi.verify2FA(active2FaToken, otp);
+      if (result && result.user) {
+        sessionStorage.setItem('bc_user', JSON.stringify(result.user));
+      }
+      btn.classList.remove('loading');
+      closeTwoFactorModal();
+      document.getElementById('successMsg').textContent = `Signed in as ${result.user.full_name} — Redirecting…`;
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+    } catch (err) {
+      btn.classList.remove('loading');
+      alert.classList.add('show');
+      if (alertMsg) alertMsg.textContent = err.message || 'Invalid or expired verification code.';
+      otpInput.classList.add('error');
+      const card = document.querySelector('#twoFactorModal .modal-card');
+      if (card) {
+        card.style.animation = 'shake 0.4s ease';
+        setTimeout(() => card.style.animation = '', 400);
+      }
+    }
+  }
+
+  async function handleResend2Fa() {
+    if (!active2FaToken) return;
+    const btn = document.getElementById('btnResend2Fa');
+    const feedback = document.getElementById('twoFactorResendFeedback');
+    const alert = document.getElementById('twoFactorAlert');
+    const alertMsg = document.getElementById('twoFactorAlertMsg');
+    if (alert) alert.classList.remove('show');
+
+    btn.disabled = true;
+    const origText = btn.textContent;
+    btn.textContent = 'Sending code…';
+
+    try {
+      await BCApi.resend2FA(active2FaToken);
+      if (feedback) {
+        feedback.style.display = 'block';
+        setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+      }
+    } catch (err) {
+      if (alert) alert.classList.add('show');
+      if (alertMsg) alertMsg.textContent = err.message || 'Could not resend code. Please try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+
   // Shake keyframe
   const style = document.createElement('style');
   style.textContent = `@keyframes shake {
@@ -1119,11 +1285,17 @@
   document.head.appendChild(style);
 
   // Clear errors on input
-  ['username','password'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => {
-      document.getElementById(id).classList.remove('error');
-      document.getElementById(id+'Error').classList.remove('show');
-      document.getElementById('loginAlert').classList.remove('show');
+  ['username','password','twoFactorOtp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      el.classList.remove('error');
+      const err = document.getElementById(id+'Error');
+      if (err) err.classList.remove('show');
+      const alert = document.getElementById('loginAlert');
+      if (alert) alert.classList.remove('show');
+      const twoFaAlert = document.getElementById('twoFactorAlert');
+      if (twoFaAlert) twoFaAlert.classList.remove('show');
     });
   });
 

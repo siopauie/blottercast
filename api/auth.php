@@ -184,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
 
     $settings = getSecuritySettings();
 
-    $stmt = $mysqli->prepare('SELECT id, username, password, full_name, role, status, failed_attempts, locked_until, password_changed_at FROM users WHERE username = ?');
-    $stmt->bind_param('s', $username);
+    $stmt = $mysqli->prepare('SELECT id, username, password, full_name, email, role, status, failed_attempts, locked_until, password_changed_at FROM users WHERE username = ? OR LOWER(email) = LOWER(?)');
+    $stmt->bind_param('ss', $username, $username);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
@@ -223,16 +223,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
-    // Correct password: clear any lockout state and update last_login.
+    // Two-Factor Authentication Check
+    if (!empty($settings['two_factor_auth'])) {
+        if (empty($user['email'])) {
+            json_error('Two-Factor Authentication is enabled, but no email address is registered for this account. Please contact an administrator.', 403);
+        }
+
+        // Ensure two_factor_codes table exists
+        $mysqli->query("CREATE TABLE IF NOT EXISTS two_factor_codes (
+            id SERIAL PRIMARY KEY,
+            user_id INT NOT NULL,
+            email VARCHAR(150) NOT NULL,
+            otp VARCHAR(10) NOT NULL,
+            token VARCHAR(64) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        $twoFactorToken = bin2hex(random_bytes(24));
+        $expiresAt = date('Y-m-d H:i:s', time() + 10 * 60); // 10 minutes expiry
+
+        $del = $mysqli->prepare('DELETE FROM two_factor_codes WHERE user_id = ?');
+        $del->bind_param('i', $user['id']);
+        $del->execute();
+
+        $ins = $mysqli->prepare('INSERT INTO two_factor_codes (user_id, email, otp, token, expires_at) VALUES (?, ?, ?, ?, ?)');
+        $ins->bind_param('issss', $user['id'], $user['email'], $otp, $twoFactorToken, $expiresAt);
+        $ins->execute();
+
+        // Mask email for display (e.g. j***z@gmail.com)
+        $em = $user['email'];
+        $parts = explode('@', $em);
+        $namePart = $parts[0];
+        $domainPart = $parts[1] ?? '';
+        $maskedName = strlen($namePart) > 2 ? substr($namePart, 0, 1) . str_repeat('*', max(3, strlen($namePart) - 2)) . substr($namePart, -1) : substr($namePart, 0, 1) . '***';
+        $maskedEmail = $maskedName . '@' . $domainPart;
+
+        $emailHtml = "
+        <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 14px; background: #ffffff; color: #1f2937;\">
+          <div style=\"text-align: center; margin-bottom: 20px;\">
+            <h2 style=\"color: #1a5c31; margin: 0; font-size: 24px; font-weight: 700;\">BlotterCast</h2>
+            <p style=\"color: #6b7280; font-size: 13px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em;\">Pamahalaang Barangay ng Mapulang Lupa</p>
+          </div>
+          <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 16px 0 20px;\">
+          <p style=\"font-size: 15px; margin-bottom: 12px;\">Hello <strong>" . htmlspecialchars($user['full_name']) . "</strong>,</p>
+          <p style=\"font-size: 14px; color: #4b5563; line-height: 1.6; margin-bottom: 20px;\">Two-Factor Authentication is enabled for your account. Please enter the 6-digit verification code below to complete your login:</p>
+          
+          <div style=\"text-align: center; margin: 24px 0;\">
+            <div style=\"display: inline-block; background: #f0fdf4; border: 2px dashed #4fa868; border-radius: 12px; padding: 14px 32px; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1a5c31; font-family: Consolas, monospace;\">
+              {$otp}
+            </div>
+          </div>
+          
+          <p style=\"font-size: 13px; color: #6b7280; text-align: center; line-height: 1.5;\">
+            This security code expires in <strong>10 minutes</strong>.<br/>
+            If you did not attempt to sign in, please notify your administrator.
+          </p>
+          <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 24px 0 14px;\">
+          <p style=\"font-size: 11px; color: #9ca3af; text-align: center; margin: 0;\">
+            BlotterCast — Official Barangay Records & Intelligence System
+          </p>
+        </div>";
+
+        $mailResult = sendBrevoEmail(
+            $user['email'],
+            $user['full_name'],
+            'BlotterCast 2FA Verification Code: ' . $otp,
+            $emailHtml
+        );
+
+        if (!$mailResult['ok']) {
+            json_error('Failed to send 2FA verification email: ' . $mailResult['error'], 500);
+        }
+
+        json_response([
+            'ok' => true,
+            'requires_2fa' => true,
+            'two_factor_token' => $twoFactorToken,
+            'masked_email' => $maskedEmail,
+            'message' => 'A 6-digit verification code has been sent to your registered Gmail address.'
+        ]);
+    }
+
+    // Direct Login (2FA disabled):
     $now = date('Y-m-d H:i:s');
     $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?');
     $clear->bind_param('si', $now, $user['id']);
     $clear->execute();
 
-    // Password Expiry (days): flag it so the frontend can force a change
-    // before letting the user do anything else. Still let them into a
-    // session (they proved they know the current password) rather than
-    // locking them out with no self-service way back in.
+    // Password Expiry (days)
     $mustChangePassword = false;
     if ($settings['password_expiry_days'] > 0 && !empty($user['password_changed_at'])) {
         $ageDays = (time() - strtotime($user['password_changed_at'])) / 86400;
@@ -254,6 +334,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
         'username' => $user['username'], 'full_name' => $user['full_name'], 'role' => $user['role'],
         'mustChangePassword' => $mustChangePassword,
     ]]);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'verify_2fa') {
+    $in = body();
+    $token = trim($in['two_factor_token'] ?? '');
+    $otp = trim($in['otp'] ?? '');
+
+    if ($token === '' || $otp === '') {
+        json_error('6-digit verification code is required');
+    }
+
+    $stmt = $mysqli->prepare('SELECT user_id, email FROM two_factor_codes WHERE token = ? AND otp = ? AND expires_at > NOW()');
+    $stmt->bind_param('ss', $token, $otp);
+    $stmt->execute();
+    $codeRecord = $stmt->get_result()->fetch_assoc();
+
+    if (!$codeRecord) {
+        json_error('Invalid or expired verification code. Please try again.', 400);
+    }
+
+    $uStmt = $mysqli->prepare('SELECT id, username, full_name, email, role, status, password_changed_at FROM users WHERE id = ?');
+    $uStmt->bind_param('i', $codeRecord['user_id']);
+    $uStmt->execute();
+    $user = $uStmt->get_result()->fetch_assoc();
+
+    if (!$user || $user['status'] !== 'Active') {
+        json_error('Account is inactive or not found', 403);
+    }
+
+    // Clean up used 2FA code
+    $del = $mysqli->prepare('DELETE FROM two_factor_codes WHERE user_id = ?');
+    $del->bind_param('i', $user['id']);
+    $del->execute();
+
+    $settings = getSecuritySettings();
+    $now = date('Y-m-d H:i:s');
+    $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?');
+    $clear->bind_param('si', $now, $user['id']);
+    $clear->execute();
+
+    $mustChangePassword = false;
+    if ($settings['password_expiry_days'] > 0 && !empty($user['password_changed_at'])) {
+        $ageDays = (time() - strtotime($user['password_changed_at'])) / 86400;
+        $mustChangePassword = $ageDays > $settings['password_expiry_days'];
+    }
+
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['must_change_password'] = $mustChangePassword;
+    $_SESSION['last_activity'] = time();
+
+    $log = $mysqli->prepare("INSERT INTO audit_logs (username, action, module, details) VALUES (?, 'Login', 'System', 'Successful login (2FA Verified)')");
+    $log->bind_param('s', $user['username']);
+    $log->execute();
+
+    json_response(['ok' => true, 'user' => [
+        'username' => $user['username'], 'full_name' => $user['full_name'], 'role' => $user['role'],
+        'mustChangePassword' => $mustChangePassword,
+    ]]);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'resend_2fa') {
+    $in = body();
+    $token = trim($in['two_factor_token'] ?? '');
+    if ($token === '') json_error('Token is required');
+
+    $stmt = $mysqli->prepare('SELECT user_id, email FROM two_factor_codes WHERE token = ?');
+    $stmt->bind_param('s', $token);
+    $stmt->execute();
+    $codeRecord = $stmt->get_result()->fetch_assoc();
+
+    if (!$codeRecord) {
+        json_error('Session expired. Please sign in again.', 400);
+    }
+
+    $uStmt = $mysqli->prepare('SELECT full_name, email FROM users WHERE id = ?');
+    $uStmt->bind_param('i', $codeRecord['user_id']);
+    $uStmt->execute();
+    $user = $uStmt->get_result()->fetch_assoc();
+
+    $otp = sprintf('%06d', random_int(100000, 999999));
+    $expiresAt = date('Y-m-d H:i:s', time() + 10 * 60);
+
+    $upd = $mysqli->prepare('UPDATE two_factor_codes SET otp = ?, expires_at = ? WHERE token = ?');
+    $upd->bind_param('sss', $otp, $expiresAt, $token);
+    $upd->execute();
+
+    $emailHtml = "
+    <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 14px; background: #ffffff; color: #1f2937;\">
+      <div style=\"text-align: center; margin-bottom: 20px;\">
+        <h2 style=\"color: #1a5c31; margin: 0; font-size: 24px; font-weight: 700;\">BlotterCast</h2>
+        <p style=\"color: #6b7280; font-size: 13px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em;\">Pamahalaang Barangay ng Mapulang Lupa</p>
+      </div>
+      <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 16px 0 20px;\">
+      <p style=\"font-size: 15px; margin-bottom: 12px;\">Hello <strong>" . htmlspecialchars($user['full_name'] ?? 'User') . "</strong>,</p>
+      <p style=\"font-size: 14px; color: #4b5563; line-height: 1.6; margin-bottom: 20px;\">Here is your new 6-digit 2FA verification code:</p>
+      
+      <div style=\"text-align: center; margin: 24px 0;\">
+        <div style=\"display: inline-block; background: #f0fdf4; border: 2px dashed #4fa868; border-radius: 12px; padding: 14px 32px; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1a5c31; font-family: Consolas, monospace;\">
+          {$otp}
+        </div>
+      </div>
+      
+      <p style=\"font-size: 13px; color: #6b7280; text-align: center; line-height: 1.5;\">
+        This code expires in <strong>10 minutes</strong>.
+      </p>
+    </div>";
+
+    sendBrevoEmail(
+        $codeRecord['email'],
+        $user['full_name'] ?? 'User',
+        'BlotterCast 2FA Verification Code: ' . $otp,
+        $emailHtml
+    );
+
+    json_response(['ok' => true, 'message' => 'New verification code sent!']);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'google_login') {

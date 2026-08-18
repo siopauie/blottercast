@@ -21,9 +21,17 @@ $method = $_SERVER['REQUEST_METHOD'];
 // same reasoning as the letterhead endpoint in settings.php. Every other
 // action below still requires full manage_users access.
 if ($action === 'captain_signature' && $method === 'GET') {
+    // Check system_settings for captain_name (configured via Settings > Barangay Profile)
+    $setRow = $mysqli->query("SELECT setting_value FROM system_settings WHERE setting_key = 'captain_name' LIMIT 1")->fetch_assoc();
+    $settingCaptain = trim($setRow['setting_value'] ?? '');
+
+    // Check users table for active Barangay Captain signature and fallback name
     $row = $mysqli->query("SELECT full_name, signature_path FROM users WHERE role = 'Barangay Captain' AND status = 'Active' ORDER BY id LIMIT 1")->fetch_assoc();
+    
+    $finalCaptain = ($settingCaptain !== '') ? $settingCaptain : ($row['full_name'] ?? null);
+
     json_response([
-        'fullName' => $row['full_name'] ?? null,
+        'fullName' => $finalCaptain,
         'signaturePath' => $row['signature_path'] ?? null,
     ]);
 }
