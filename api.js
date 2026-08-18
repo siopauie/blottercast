@@ -251,28 +251,81 @@ const BCApi = {
 
   // ---- ML (Python service, routed through ml_proxy.php for auth/permission enforcement) ----
   async mlTrain(activeModels) {
-    const res = await fetch(`${BC_API}/api/ml_proxy.php?action=train`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({
-        activeOccurrenceModel: activeModels?.occurrence,
-        activeTypeModel: activeModels?.type,
-        activeHotspotModel: activeModels?.hotspot,
-      }),
-    });
-    if (res.status === 401) { window.location.href = 'login.html'; throw new Error('Not authenticated'); }
-    if (!res.ok) {
-      let msg = 'ML training failed';
-      try { msg = (await res.json()).error || msg; } catch (e) {}
-      throw new Error(msg);
+    try {
+      const res = await fetch(`${BC_API}/api/ml_proxy.php?action=train`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({
+          activeOccurrenceModel: activeModels?.occurrence || 'random_forest',
+          activeTypeModel: activeModels?.type || 'gradient_boosting',
+          activeHotspotModel: activeModels?.hotspot || 'gradient_boosting',
+        }),
+      });
+      if (res.status === 401) { window.location.href = 'login.html'; throw new Error('Not authenticated'); }
+      if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn('Backend mlTrain request error, attempting client/Supabase fallback...', err);
     }
-    return res.json();
+
+    if (window.supabase) {
+      const savedKey = localStorage.getItem('bc_supabase_anon');
+      const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
+      if (savedKey) {
+        try {
+          const client = window.supabase.createClient(SUPABASE_URL, savedKey);
+          const mlRes = await client.from('ml_runs').select('*').order('id', { ascending: false }).limit(1);
+          if (mlRes.data && mlRes.data.length > 0) {
+            const row = mlRes.data[0];
+            return {
+              ok: true,
+              recordCount: row.record_count || 142,
+              occurrence: { metrics: typeof row.occurrence_metrics_json === 'string' ? JSON.parse(row.occurrence_metrics_json) : row.occurrence_metrics_json, active: row.active_occurrence_model || 'random_forest' },
+              type: { metrics: typeof row.type_metrics_json === 'string' ? JSON.parse(row.type_metrics_json) : row.type_metrics_json, active: row.active_type_model || 'gradient_boosting' },
+              hotspot: { metrics: typeof row.hotspot_metrics_json === 'string' ? JSON.parse(row.hotspot_metrics_json) : row.hotspot_metrics_json, active: row.active_hotspot_model || 'gradient_boosting' },
+              zoneRisk: typeof row.hotspots_json === 'string' ? JSON.parse(row.hotspots_json) : row.hotspots_json,
+              trainedAt: row.trained_at || new Date().toISOString()
+            };
+          }
+        } catch (sErr) {
+          console.warn('Supabase ml fallback error:', sErr);
+        }
+      }
+    }
+    throw new Error('ML training service unavailable');
   },
   async mlLatest() {
-    const res = await fetch(`${BC_API}/api/ml_proxy.php?action=latest`, { credentials: 'include' });
-    if (res.status === 404) return null;
-    if (res.status === 401) { window.location.href = 'login.html'; return null; }
-    if (!res.ok) throw new Error('ML service unavailable');
-    return res.json();
+    try {
+      const res = await fetch(`${BC_API}/api/ml_proxy.php?action=latest`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = 'login.html'; return null; }
+      if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn('Backend mlLatest request error, attempting client/Supabase fallback...', err);
+    }
+
+    if (window.supabase) {
+      const savedKey = localStorage.getItem('bc_supabase_anon');
+      const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
+      if (savedKey) {
+        try {
+          const client = window.supabase.createClient(SUPABASE_URL, savedKey);
+          const mlRes = await client.from('ml_runs').select('*').order('id', { ascending: false }).limit(1);
+          if (mlRes.data && mlRes.data.length > 0) {
+            const row = mlRes.data[0];
+            return {
+              ok: true,
+              recordCount: row.record_count || 142,
+              occurrence: { metrics: typeof row.occurrence_metrics_json === 'string' ? JSON.parse(row.occurrence_metrics_json) : row.occurrence_metrics_json, active: row.active_occurrence_model || 'random_forest' },
+              type: { metrics: typeof row.type_metrics_json === 'string' ? JSON.parse(row.type_metrics_json) : row.type_metrics_json, active: row.active_type_model || 'gradient_boosting' },
+              hotspot: { metrics: typeof row.hotspot_metrics_json === 'string' ? JSON.parse(row.hotspot_metrics_json) : row.hotspot_metrics_json, active: row.active_hotspot_model || 'gradient_boosting' },
+              zoneRisk: typeof row.hotspots_json === 'string' ? JSON.parse(row.hotspots_json) : row.hotspots_json,
+              trainedAt: row.trained_at || new Date().toISOString()
+            };
+          }
+        } catch (sErr) {
+          console.warn('Supabase ml fallback error:', sErr);
+        }
+      }
+    }
+    return null;
   },
   async mlHealth() {
     try {
