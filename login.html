@@ -554,8 +554,16 @@
           <span class="btn-text">Verify Code</span>
         </button>
 
-        <div style="text-align:center; margin-top:1rem;">
-          <a href="javascript:void(0)" onclick="backToStep1()" style="font-size:0.8rem; color:#6b7280; text-decoration:underline;">← Change email / Resend code</a>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.25rem; font-size:0.82rem;">
+          <a href="javascript:void(0)" onclick="backToStep1()" style="color:#6b7280; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;" class="hover:text-forest-700">
+            <span>←</span> Change email
+          </a>
+          <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="background:none; border:none; color:var(--green-main); font-weight:600; cursor:pointer; font-size:0.82rem; padding:0; text-decoration:none;" class="hover:underline">
+            Resend Code
+          </button>
+        </div>
+        <div id="resendFeedback" style="display:none; text-align:center; font-size:0.78rem; color:#15803d; margin-top:0.6rem; font-weight:500;">
+          ✓ New verification code sent!
         </div>
       </div>
 
@@ -764,6 +772,8 @@
   // ── Forgot Password Handlers (Step-by-Step) ──
   let activeResetIdentity = '';
   let activeResetToken = '';
+  let resendCooldownTimer = null;
+  let resendSecondsLeft = 0;
 
   function openForgotModal() {
     document.getElementById('forgotModal').classList.add('show');
@@ -775,6 +785,21 @@
   }
 
   function backToStep1() {
+    if (resendCooldownTimer) {
+      clearInterval(resendCooldownTimer);
+      resendCooldownTimer = null;
+      resendSecondsLeft = 0;
+    }
+    const resendBtn = document.getElementById('btnResendOtp');
+    if (resendBtn) {
+      resendBtn.disabled = false;
+      resendBtn.style.cursor = 'pointer';
+      resendBtn.style.opacity = '1';
+      resendBtn.textContent = 'Resend Code';
+    }
+    const feedback = document.getElementById('resendFeedback');
+    if (feedback) feedback.style.display = 'none';
+
     document.getElementById('forgotStep1').style.display = 'block';
     document.getElementById('forgotStep2').style.display = 'none';
     document.getElementById('forgotStep3').style.display = 'none';
@@ -783,6 +808,8 @@
     document.getElementById('forgotAlert2').classList.remove('show');
     document.getElementById('forgotAlert3').classList.remove('show');
     document.getElementById('forgotModalSubtitle').textContent = 'Enter your username or email to receive a 6-digit verification code.';
+    const idInput = document.getElementById('resetIdentity');
+    if (idInput) idInput.focus();
   }
 
   function toggleResetPw() {
@@ -832,11 +859,76 @@
       document.getElementById('forgotModalSubtitle').textContent = 'Enter the 6-digit code sent to your email.';
       const otpInput = document.getElementById('resetOtp');
       if (otpInput) { otpInput.value = ''; otpInput.focus(); }
+      startResendCooldown(30);
     } catch (err) {
       btn.classList.remove('loading');
       alertEl.classList.add('show');
       alertMsg.textContent = err.message || 'Could not send verification code.';
     }
+  }
+
+  // Resend OTP Code without leaving Step 2
+  async function handleResendOtp() {
+    if (resendSecondsLeft > 0) return;
+    const btn = document.getElementById('btnResendOtp');
+    const feedback = document.getElementById('resendFeedback');
+    const alertEl = document.getElementById('forgotAlert2');
+    const alertMsg = document.getElementById('forgotAlertMsg2');
+
+    alertEl.classList.remove('show');
+    if (feedback) feedback.style.display = 'none';
+
+    if (!activeResetIdentity) {
+      backToStep1();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res = await BCApi.sendResetOtp(activeResetIdentity);
+      if (res.masked_email) {
+        document.getElementById('resetMaskedEmail').textContent = res.masked_email;
+      }
+      if (feedback) {
+        feedback.textContent = '✓ New verification code sent!';
+        feedback.style.display = 'block';
+        setTimeout(() => { if (feedback) feedback.style.display = 'none'; }, 4000);
+      }
+      startResendCooldown(30);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Resend Code';
+      alertEl.classList.add('show');
+      alertMsg.textContent = err.message || 'Could not resend code. Please try again.';
+    }
+  }
+
+  function startResendCooldown(seconds) {
+    resendSecondsLeft = seconds;
+    const btn = document.getElementById('btnResendOtp');
+    if (!btn) return;
+    if (resendCooldownTimer) clearInterval(resendCooldownTimer);
+
+    btn.disabled = true;
+    btn.style.cursor = 'not-allowed';
+    btn.style.opacity = '0.6';
+    btn.textContent = `Resend Code (${resendSecondsLeft}s)`;
+
+    resendCooldownTimer = setInterval(() => {
+      resendSecondsLeft--;
+      if (resendSecondsLeft <= 0) {
+        clearInterval(resendCooldownTimer);
+        resendCooldownTimer = null;
+        btn.disabled = false;
+        btn.style.cursor = 'pointer';
+        btn.style.opacity = '1';
+        btn.textContent = 'Resend Code';
+      } else {
+        btn.textContent = `Resend Code (${resendSecondsLeft}s)`;
+      }
+    }, 1000);
   }
 
   // Step 2: Verify OTP Code
