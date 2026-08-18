@@ -500,10 +500,10 @@ function require_login(): void {
  * (login lockout, session timeout, password rules) reads one source of
  * truth instead of each guessing its own fallback.
  */
-function getSecuritySettings(): array {
+function getSecuritySettings(bool $fresh = false): array {
     static $cached = null;
-    if ($cached !== null) return $cached;
-    if (!empty($_SESSION['sec_settings']) && is_array($_SESSION['sec_settings'])) {
+    if (!$fresh && $cached !== null) return $cached;
+    if (!$fresh && !empty($_SESSION['sec_settings']) && is_array($_SESSION['sec_settings'])) {
         $cached = $_SESSION['sec_settings'];
         return $cached;
     }

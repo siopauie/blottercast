@@ -224,7 +224,36 @@ require_permission('system_settings');
 
 if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $rows = $mysqli->query('SELECT setting_key, setting_value FROM system_settings')->fetch_all(MYSQLI_ASSOC);
-    $out = [];
+    $out = [
+        'barangay_name'        => 'Barangay Mapulang Lupa',
+        'municipality'         => 'Pandi, Bulacan',
+        'region'               => 'Region III – Central Luzon',
+        'captain_name'         => 'Kapitan Jose Reyes',
+        'contact_no'           => '09170000000',
+        'email'                => 'mapulanglupa@pandi.gov.ph',
+        'date_format'          => 'MM/DD/YYYY',
+        'time_format'          => '12-Hour (AM/PM)',
+        'records_per_page'     => '6',
+        'default_language'     => 'English',
+        'risk_threshold'       => '75',
+        'spike_threshold'      => '5',
+        'notif_inapp'          => '1',
+        'notif_retrain'        => '1',
+        'two_factor_auth'      => '0',
+        'lockout_enabled'      => '1',
+        'session_timeout'      => '30',
+        'max_failed_logins'    => '5',
+        'min_password_length'  => '8',
+        'password_expiry_days' => '90',
+        'audit_trail'          => '1',
+        'data_subject_rights'  => '1',
+        'backup_frequency'     => 'Daily',
+        'backup_time'          => '02:00',
+        'backup_destination'   => 'Local Storage Device',
+        'retain_backups_days'  => '30',
+        'rto_hours'            => '4 hours',
+        'rpo_hours'            => '24 hours',
+    ];
     foreach ($rows as $r) $out[$r['setting_key']] = $r['setting_value'];
     json_response($out);
 }
@@ -241,6 +270,9 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('ss', $key, $val);
         $stmt->execute();
     }
+
+    // Invalidate security settings session cache so changes take effect immediately
+    unset($_SESSION['sec_settings']);
 
     // Synchronize active Barangay Captain user full_name if captain_name is updated
     if (!empty($d['captain_name'])) {

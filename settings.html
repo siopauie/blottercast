@@ -166,11 +166,11 @@
         <div class="space-y-0">
           <div class="toggle-row">
             <div><div class="toggle-label">In-App Notifications</div><div class="toggle-desc">Show alerts in the notification center</div></div>
-            <button class="toggle-switch on" data-setting="notif_inapp" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch on" data-setting="notif_inapp" onclick="toggleSetting(this)"></button>
           </div>
           <div class="toggle-row">
             <div><div class="toggle-label">Model Retraining Alerts</div><div class="toggle-desc">Notify when ML model retraining completes</div></div>
-            <button class="toggle-switch on" data-setting="notif_retrain" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch on" data-setting="notif_retrain" onclick="toggleSetting(this)"></button>
           </div>
         </div>
       </div>
@@ -183,11 +183,11 @@
         <div class="space-y-0">
           <div class="toggle-row">
             <div><div class="toggle-label">Two-Factor Authentication (2FA)</div><div class="toggle-desc">Require a 6-digit verification code sent to the user's registered Gmail address before completing login</div></div>
-            <button class="toggle-switch off" data-setting="two_factor_auth" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch off" data-setting="two_factor_auth" onclick="toggleSetting(this)"></button>
           </div>
           <div class="toggle-row">
             <div><div class="toggle-label">Account Lockout After Failed Attempts</div><div class="toggle-desc">Lock account after 5 consecutive failed logins</div></div>
-            <button class="toggle-switch on" data-setting="lockout_enabled" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch on" data-setting="lockout_enabled" onclick="toggleSetting(this)"></button>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4 mt-4">
@@ -214,11 +214,11 @@
         <div class="space-y-0">
           <div class="toggle-row">
             <div><div class="toggle-label">Audit Trail Logging</div><div class="toggle-desc">Log all data changes, logins, and report exports</div></div>
-            <button class="toggle-switch on" data-setting="audit_trail" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch on" data-setting="audit_trail" onclick="toggleSetting(this)"></button>
           </div>
           <div class="toggle-row">
             <div><div class="toggle-label">Data Subject Rights Module</div><div class="toggle-desc">Allow data access/correction requests from data subjects</div></div>
-            <button class="toggle-switch on" data-setting="data_subject_rights" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+            <button class="toggle-switch on" data-setting="data_subject_rights" onclick="toggleSetting(this)"></button>
           </div>
         </div>
       </div>
@@ -304,17 +304,43 @@ function switchTab(name, btn) {
   btn.classList.add('active');
 }
 
+async function toggleSetting(btn) {
+  const isCurrentlyOn = btn.classList.contains('on');
+  const newState = !isCurrentlyOn;
+  btn.classList.toggle('on', newState);
+  btn.classList.toggle('off', !newState);
+
+  const key = btn.dataset.setting;
+  if (key) {
+    try {
+      await BCApi.settingsSave({ [key]: newState ? '1' : '0' });
+      const label = key === 'two_factor_auth' ? 'Two-Factor Authentication' :
+                    key === 'lockout_enabled' ? 'Account Lockout' :
+                    key === 'notif_inapp' ? 'In-App Notifications' :
+                    key === 'notif_retrain' ? 'Retraining Alerts' :
+                    key === 'audit_trail' ? 'Audit Trail Logging' :
+                    key === 'data_subject_rights' ? 'Data Subject Rights' : 'Setting';
+      showToast(`${label} ${newState ? 'enabled' : 'disabled'}.`);
+    } catch (err) {
+      btn.classList.toggle('on', isCurrentlyOn);
+      btn.classList.toggle('off', !isCurrentlyOn);
+      showToast('Failed to update setting: ' + err.message, 'error');
+    }
+  }
+}
+
 function applySettings(values) {
+  if (!values || typeof values !== 'object') return;
   document.querySelectorAll('[data-setting]').forEach(el => {
     const key = el.dataset.setting;
     if (!(key in values)) return;
-    const val = values[key];
+    const rawVal = values[key];
+    const val = String(rawVal).trim();
     if (el.tagName === 'BUTTON' && el.classList.contains('toggle-switch')) {
-      const on = val === '1' || val === 'true';
+      const on = val === '1' || val.toLowerCase() === 'true' || rawVal === true;
       el.classList.toggle('on', on);
       el.classList.toggle('off', !on);
     } else if (el.tagName === 'SELECT') {
-      // match by value first, fall back to matching visible text
       if ([...el.options].some(o => o.value === val)) el.value = val;
       else {
         const opt = [...el.options].find(o => o.textContent.trim() === val);

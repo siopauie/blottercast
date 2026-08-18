@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     $password = $in['password'] ?? '';
     if ($username === '' || $password === '') json_error('Username and password required');
 
-    $settings = getSecuritySettings();
+    $settings = getSecuritySettings(true);
 
     $stmt = $mysqli->prepare('SELECT id, username, password, full_name, email, role, status, failed_attempts, locked_until, password_changed_at FROM users WHERE username = ? OR LOWER(email) = LOWER(?)');
     $stmt->bind_param('ss', $username, $username);
