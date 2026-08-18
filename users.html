@@ -214,7 +214,15 @@
           </select>
         </div>
       </div>
-      <div><label class="form-label">Password</label><input type="password" id="uf_password" class="form-input" placeholder="Set initial password"/></div>
+      <div>
+        <label class="form-label">Password</label>
+        <div class="relative flex items-center">
+          <input type="password" id="uf_password" class="form-input pr-10 w-full" placeholder="Set initial password"/>
+          <button type="button" id="uf_toggle_pw" onclick="toggleUserPasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-forest-400 hover:text-forest-700 transition-colors p-1 flex items-center justify-center focus:outline-none cursor-pointer" title="Toggle password visibility">
+            <span id="uf_pw_icon" data-icon="view" data-icon-size="18"></span>
+          </button>
+        </div>
+      </div>
       <div id="uf_sig_section" class="hidden border-t border-forest-100 pt-4">
         <label class="form-label">E-Signature <span class="text-forest-400 font-normal">(used on printed Barangay Clearance &amp; Certificate of Indigency)</span></label>
         <div class="flex items-center gap-4">
@@ -382,9 +390,36 @@ function renderUsers() {
   bcRenderPagination(document.getElementById('usersPaginationControls'), usersPage, totalPages, (p) => { usersPage = p; renderUsers(); });
 }
 
+function toggleUserPasswordVisibility() {
+  const input = document.getElementById('uf_password');
+  const iconSpan = document.getElementById('uf_pw_icon');
+  if (!input || !iconSpan) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    iconSpan.setAttribute('data-icon', 'viewOff');
+  } else {
+    input.type = 'password';
+    iconSpan.setAttribute('data-icon', 'view');
+  }
+  if (typeof renderIcons === 'function') {
+    renderIcons();
+  }
+}
+
+function resetPasswordVisibility() {
+  const input = document.getElementById('uf_password');
+  const iconSpan = document.getElementById('uf_pw_icon');
+  if (input) input.type = 'password';
+  if (iconSpan) {
+    iconSpan.setAttribute('data-icon', 'view');
+    if (typeof renderIcons === 'function') renderIcons();
+  }
+}
+
 function openAddUser() {
   editUserId=null; document.getElementById('userModalTitle').textContent='Add New User';
   document.getElementById('userForm').reset();
+  resetPasswordVisibility();
   document.getElementById('uf_username').disabled = false;
   document.getElementById('uf_password').placeholder='Set initial password';
   // Status is always Active for new users — hide the field
@@ -407,6 +442,7 @@ function editUser(id) {
   document.getElementById('uf_status').value=u.status;
   document.getElementById('uf_password').value='';
   document.getElementById('uf_password').placeholder='Leave blank to keep current password';
+  resetPasswordVisibility();
   updateSignatureSectionVisibility(u.role);
   renderSignaturePreview(u.signaturePath);
   openModal('userModal');
@@ -478,7 +514,22 @@ async function saveUser() {
   };
   if(!vals.name||!vals.username){await bcAlert('Please fill in required fields.');return;}
   if (vals.name && !bcIsValidName(vals.name)) { await bcAlert('Full Name should only contain letters (no numbers).'); return; }
-  if (vals.email && !bcIsValidEmail(vals.email)) { await bcAlert('Please enter a valid email address.'); return; }
+  if (vals.email) {
+    if (!bcIsValidEmail(vals.email)) {
+      await bcAlert('Please enter a valid email address.');
+      return;
+    }
+    const emailLower = vals.email.toLowerCase();
+    const duplicate = usersData.find(u =>
+      u.email &&
+      u.email.trim().toLowerCase() === emailLower &&
+      (!editUserId || u.id !== Number(editUserId))
+    );
+    if (duplicate) {
+      await bcAlert('This email address is already in use.');
+      return;
+    }
+  }
   if (vals.contact && !bcIsValidContact(vals.contact)) { await bcAlert('Contact No. should be a valid PH mobile number (e.g. 09171234567).'); return; }
   try {
     if (editUserId) {

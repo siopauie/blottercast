@@ -60,8 +60,20 @@ if ($action === 'create' && $method === 'POST') {
     $exists->execute();
     if ($exists->get_result()->fetch_assoc()) json_error('That username is already taken', 409);
 
+    $email = trim($d['email'] ?? '');
+    $email = $email === '' ? null : $email;
+    if ($email !== null) {
+        $emailExists = $mysqli->prepare('SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))');
+        $emailExists->bind_param('s', $email);
+        $emailExists->execute();
+        if ($emailExists->get_result()->fetch_assoc()) {
+            json_error('This email address is already in use.', 409);
+        }
+    }
+
     $hash = password_hash($password, PASSWORD_BCRYPT);
-    $email = $d['email'] ?? null; $contact = $d['contact'] ?? null;
+    $contact = trim($d['contact'] ?? '');
+    $contact = $contact === '' ? null : $contact;
     $role = $d['role'] ?? 'Desk Officer'; $status = $d['status'] ?? 'Active';
 
     $stmt = $mysqli->prepare('INSERT INTO users (username, password, full_name, email, contact_no, role, status, password_changed_at) VALUES (?,?,?,?,?,?,?,NOW())');
@@ -77,9 +89,22 @@ if ($action === 'update' && $method === 'PUT') {
     $id = (int)($_GET['id'] ?? 0);
     if (!$id) json_error('id required');
     $d = body();
-    $fullName = trim($d['name'] ?? ''); $email = $d['email'] ?? null; $contact = $d['contact'] ?? null;
+    $fullName = trim($d['name'] ?? '');
+    $email = trim($d['email'] ?? '');
+    $email = $email === '' ? null : $email;
+    $contact = trim($d['contact'] ?? '');
+    $contact = $contact === '' ? null : $contact;
     $role = $d['role'] ?? 'Desk Officer'; $status = $d['status'] ?? 'Active';
     if ($fullName === '') json_error('Name is required');
+
+    if ($email !== null) {
+        $emailExists = $mysqli->prepare('SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) AND id != ?');
+        $emailExists->bind_param('si', $email, $id);
+        $emailExists->execute();
+        if ($emailExists->get_result()->fetch_assoc()) {
+            json_error('This email address is already in use.', 409);
+        }
+    }
 
     if (!empty($d['password'])) {
         $minLen = getSecuritySettings()['min_password_length'];
