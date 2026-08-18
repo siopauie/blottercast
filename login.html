@@ -832,6 +832,15 @@
         const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
         await client.auth.signOut().catch(() => {});
         const res = await BCApi.googleLogin(session.user.email, fullName, session.access_token);
+        if (res && res.requires_2fa) {
+          if (btn && btnText) {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btnText.textContent = 'Continue with Google';
+          }
+          openTwoFactorModal(res.two_factor_token, res.masked_email);
+          return;
+        }
         if (res && res.user) {
           sessionStorage.setItem('bc_user', JSON.stringify(res.user));
           document.getElementById('successMsg').textContent = `Signed in as ${res.user.full_name} (${res.user.role}) — Redirecting…`;

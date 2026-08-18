@@ -484,6 +484,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'google_login') {
         json_error('This account is ' . strtolower($user['status']) . '. Contact an administrator.', 403);
     }
 
+    // Two-Factor Authentication Check for Google Login
+    $settings = getSecuritySettings(true);
+    if (!empty($settings['two_factor_auth'])) {
+        $targetEmail = !empty($user['email']) ? $user['email'] : $email;
+
+        // Ensure two_factor_codes table exists
+        $mysqli->query("CREATE TABLE IF NOT EXISTS two_factor_codes (
+            id SERIAL PRIMARY KEY,
+            user_id INT NOT NULL,
+            email VARCHAR(150) NOT NULL,
+            otp VARCHAR(10) NOT NULL,
+            token VARCHAR(64) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        $twoFactorToken = bin2hex(random_bytes(24));
+        $expiresAt = date('Y-m-d H:i:s', time() + 10 * 60); // 10 minutes expiry
+
+        $del = $mysqli->prepare('DELETE FROM two_factor_codes WHERE user_id = ?');
+        $del->bind_param('i', $user['id']);
+        $del->execute();
+
+        $ins = $mysqli->prepare('INSERT INTO two_factor_codes (user_id, email, otp, token, expires_at) VALUES (?, ?, ?, ?, ?)');
+        $ins->bind_param('issss', $user['id'], $targetEmail, $otp, $twoFactorToken, $expiresAt);
+        $ins->execute();
+
+        // Mask email for display (e.g. j***z@gmail.com)
+        $parts = explode('@', $targetEmail);
+        $namePart = $parts[0];
+        $domainPart = $parts[1] ?? '';
+        $maskedName = strlen($namePart) > 2 ? substr($namePart, 0, 1) . str_repeat('*', max(3, strlen($namePart) - 2)) . substr($namePart, -1) : substr($namePart, 0, 1) . '***';
+        $maskedEmail = $maskedName . '@' . $domainPart;
+
+        $emailHtml = "
+        <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 14px; background: #ffffff; color: #1f2937;\">
+          <div style=\"text-align: center; margin-bottom: 20px;\">
+            <h2 style=\"color: #1a5c31; margin: 0; font-size: 24px; font-weight: 700;\">BlotterCast</h2>
+            <p style=\"color: #6b7280; font-size: 13px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em;\">Pamahalaang Barangay ng Mapulang Lupa</p>
+          </div>
+          <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 16px 0 20px;\">
+          <p style=\"font-size: 15px; margin-bottom: 12px;\">Hello <strong>" . htmlspecialchars($user['full_name']) . "</strong>,</p>
+          <p style=\"font-size: 14px; color: #4b5563; line-height: 1.6; margin-bottom: 20px;\">Two-Factor Authentication is enabled for your account. Please enter the 6-digit verification code below to complete your Google sign-in:</p>
+          
+          <div style=\"text-align: center; margin: 24px 0;\">
+            <div style=\"display: inline-block; background: #f0fdf4; border: 2px dashed #4fa868; border-radius: 12px; padding: 14px 32px; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1a5c31; font-family: Consolas, monospace;\">
+              {$otp}
+            </div>
+          </div>
+          
+          <p style=\"font-size: 13px; color: #6b7280; text-align: center; line-height: 1.5;\">
+            This security code expires in <strong>10 minutes</strong>.<br/>
+            If you did not attempt to sign in, please notify your administrator.
+          </p>
+          <hr style=\"border: none; border-top: 1px solid #f3f4f6; margin: 24px 0 14px;\">
+          <p style=\"font-size: 11px; color: #9ca3af; text-align: center; margin: 0;\">
+            BlotterCast — Official Barangay Records & Intelligence System
+          </p>
+        </div>";
+
+        $mailResult = sendBrevoEmail(
+            $targetEmail,
+            $user['full_name'],
+            'BlotterCast 2FA Verification Code: ' . $otp,
+            $emailHtml
+        );
+
+        if (!$mailResult['ok']) {
+            json_error('Failed to send 2FA verification email: ' . $mailResult['error'], 500);
+        }
+
+        json_response([
+            'ok' => true,
+            'requires_2fa' => true,
+            'two_factor_token' => $twoFactorToken,
+            'masked_email' => $maskedEmail,
+            'message' => 'A 6-digit verification code has been sent to your registered Gmail address.'
+        ]);
+    }
+
     // Clear any lockout state on successful Google login and record last_login
     $now = date('Y-m-d H:i:s');
     $clear = $mysqli->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?');
