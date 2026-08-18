@@ -26,9 +26,11 @@
   }
 
   document.addEventListener('mousedown', (e) => {
-    if (activePopover && !activePopover.el.contains(e.target) && e.target !== activePopover.trigger && !activePopover.trigger.contains(e.target)) {
-      closeActivePopover();
-    }
+    if (!activePopover) return;
+    if (activePopover.el && activePopover.el.contains(e.target)) return;
+    if (activePopover.trigger && (activePopover.trigger === e.target || activePopover.trigger.contains(e.target))) return;
+    if (activePopover.wrap && (activePopover.wrap === e.target || activePopover.wrap.contains(e.target))) return;
+    closeActivePopover();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeActivePopover(); });
   window.addEventListener('resize', closeActivePopover);
@@ -47,22 +49,25 @@
 
   function positionPopover(panel, anchor) {
     const r = anchor.getBoundingClientRect();
+    panel.style.position = 'fixed';
     panel.style.left = '0px';
     panel.style.top = '0px';
-    const panelW = panel.offsetWidth || 240;
-    const panelH = panel.offsetHeight || 260;
-    let left = r.left + window.scrollX;
-    let top = r.bottom + window.scrollY + 6;
+    const panelW = panel.offsetWidth || 284;
+    const panelH = panel.offsetHeight || 300;
+    let left = r.left;
+    let top = r.bottom + 6;
     const viewportW = document.documentElement.clientWidth;
-    if (left + panelW > window.scrollX + viewportW - 8) {
-      left = window.scrollX + viewportW - panelW - 8;
+    const viewportH = window.innerHeight;
+    if (left + panelW > viewportW - 8) {
+      left = viewportW - panelW - 8;
     }
-    if (left < window.scrollX + 8) left = window.scrollX + 8;
-    if (r.bottom + panelH + 6 > window.innerHeight && r.top - panelH - 6 > 0) {
-      top = r.top + window.scrollY - panelH - 6;
+    if (left < 8) left = 8;
+    if (top + panelH > viewportH - 8 && r.top - panelH - 6 > 0) {
+      top = r.top - panelH - 6;
     }
-    panel.style.left = left + 'px';
-    panel.style.top = top + 'px';
+    panel.style.left = Math.round(left) + 'px';
+    panel.style.top = Math.round(top) + 'px';
+    panel.style.zIndex = '99999';
   }
 
   function pad2(n) { return String(n).padStart(2, '0'); }
@@ -413,22 +418,32 @@
       positionPopover(panelRef, input);
       requestAnimationFrame(() => panelRef.classList.add('open'));
       activePopover = {
-        el: panelRef, trigger: input,
+        el: panelRef, trigger: input, wrap,
         close() { panelRef.classList.remove('open'); setTimeout(() => panelRef.remove(), 120); }
       };
     }
 
     const handleTrigger = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       input.focus();
-      if (activePopover && activePopover.trigger === input) closeActivePopover();
-      else open();
+      if (activePopover && (activePopover.trigger === input || activePopover.wrap === wrap)) {
+        closeActivePopover();
+      } else {
+        open();
+      }
     };
 
     input.addEventListener('mousedown', handleTrigger);
-    if (wrap) wrap.addEventListener('mousedown', (e) => {
-      if (e.target !== input) handleTrigger(e);
-    });
+    input.addEventListener('click', handleTrigger);
+    if (wrap) {
+      wrap.addEventListener('mousedown', (e) => {
+        if (e.target !== input) handleTrigger(e);
+      });
+      wrap.addEventListener('click', (e) => {
+        if (e.target !== input) handleTrigger(e);
+      });
+    }
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
@@ -451,7 +466,7 @@
     if (input.dataset.bcTime || input.hidden) return;
     input.dataset.bcTime = '1';
     input.classList.add('bc-time-enhanced');
-    attachFieldIcon(input,
+    const wrap = attachFieldIcon(input,
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>'
     );
 
@@ -543,17 +558,33 @@
         if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
       });
       activePopover = {
-        el: panelRef, trigger: input,
+        el: panelRef, trigger: input, wrap,
         close() { panelRef.classList.remove('open'); setTimeout(() => panelRef.remove(), 120); }
       };
     }
 
-    input.addEventListener('mousedown', (e) => {
+    const handleTrigger = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       input.focus();
-      if (activePopover && activePopover.trigger === input) closeActivePopover();
-      else open();
-    });
+      if (activePopover && (activePopover.trigger === input || activePopover.wrap === wrap)) {
+        closeActivePopover();
+      } else {
+        open();
+      }
+    };
+
+    input.addEventListener('mousedown', handleTrigger);
+    input.addEventListener('click', handleTrigger);
+    if (wrap) {
+      wrap.addEventListener('mousedown', (e) => {
+        if (e.target !== input) handleTrigger(e);
+      });
+      wrap.addEventListener('click', (e) => {
+        if (e.target !== input) handleTrigger(e);
+      });
+    }
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
       if (e.key === 'Escape') closeActivePopover();

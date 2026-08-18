@@ -819,8 +819,8 @@ input[type="checkbox"]:focus-visible { outline: 2px solid var(--forest-400); out
 .bc-select-trigger.bc-select-disabled { opacity: 0.6; cursor: not-allowed; }
 
 .bc-select-panel, .bc-datepicker-panel, .bc-timepicker-panel {
-  position: absolute;
-  z-index: 1000;
+  position: fixed;
+  z-index: 99999;
   background: #fff;
   border: 1.5px solid var(--forest-100);
   border-radius: 12px;
