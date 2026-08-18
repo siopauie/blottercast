@@ -214,7 +214,7 @@
   <div class="modal-box" style="width:750px">
     <div class="flex items-center justify-between mb-6">
       <h2 class="font-display text-xl text-forest-800" id="stlModalTitle">New Settlement Record</h2>
-      <button onclick="closeModal('settlementModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+      <button type="button" onclick="closeSettlementModal()" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
     </div>
     <form id="settlementForm" class="space-y-4">
       <div id="sf_blotter_picker_wrap" class="relative">
@@ -261,7 +261,7 @@
         <div><label class="form-label">Remarks</label><input type="text" id="sf_remarks" class="form-input" placeholder="Optional notes"/></div>
       </div>
       <div class="flex justify-end gap-3 pt-2">
-        <button type="button" onclick="closeModal('settlementModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="closeSettlementModal()" class="btn-secondary">Cancel</button>
         <button type="button" onclick="saveSettlement()" class="btn-primary">Save Record</button>
       </div>
     </form>
@@ -458,12 +458,40 @@
     bcRenderPagination(document.getElementById('stlPaginationControls'), stlPage, totalPages, (p) => { stlPage = p; renderSettlements(); });
   }
 
-  function openAddSettlement() {
+  function resetSettlementForm() {
     stlEditId = null;
-    document.getElementById('stlModalTitle').textContent = 'New Settlement Record';
-    document.getElementById('settlementForm').reset();
-    document.getElementById('sf_blotter_picker_wrap').classList.remove('hidden');
+    const form = document.getElementById('settlementForm');
+    if (form) form.reset();
+
+    const ids = ['sf_blotterSearch', 'sf_blotterId', 'sf_caseNo', 'sf_caseTitle', 'sf_nature_display', 'sf_dateConfrontation', 'sf_dateSettlement', 'sf_dateExecution', 'sf_mainPoint', 'sf_remarks'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
     clearBlotterCasePicker();
+
+    const selects = ['sf_actionTaken', 'sf_status'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.selectedIndex = 0;
+        el.value = '';
+      }
+    });
+
+    const pickerWrap = document.getElementById('sf_blotter_picker_wrap');
+    if (pickerWrap) pickerWrap.classList.remove('hidden');
+  }
+
+  function closeSettlementModal() {
+    resetSettlementForm();
+    closeModal('settlementModal');
+  }
+
+  function openAddSettlement() {
+    resetSettlementForm();
+    document.getElementById('stlModalTitle').textContent = 'New Settlement Record';
     openModal('settlementModal');
 
     // Asynchronously populate case number preview and blotter options in the background
@@ -533,7 +561,7 @@
       try {
         await BCApi.update('settlements', stlEditId, vals);
         showToast('Settlement record updated!');
-        closeModal('settlementModal');
+        closeSettlementModal();
         await loadSettlements();
       } catch (err) {
         showToast(err.message, 'error');
@@ -559,7 +587,7 @@
     try {
       await BCApi.create('settlements', vals);
       showToast('Settlement record added!');
-      closeModal('settlementModal');
+      closeSettlementModal();
       await loadSettlements();
     } catch (err) {
       showToast(err.message, 'error');
@@ -583,6 +611,21 @@
       </div>`).join('');
     openModal('stlViewModal');
   }
+
+  // Ensure form completely resets whenever modal is closed, dismissed, or cancelled
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'settlementModal') {
+      resetSettlementForm();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('settlementModal');
+      if (modal && modal.classList.contains('open')) {
+        closeSettlementModal();
+      }
+    }
+  });
 
   (async function () {
     requireAuth();

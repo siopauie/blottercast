@@ -226,7 +226,7 @@
   <div class="modal-box max-w-2xl" style="width: 720px;">
     <div class="flex items-center justify-between mb-5">
       <h2 class="font-display text-xl text-forest-800" id="modalTitle">New Blotter Entry</h2>
-      <button onclick="closeModal('blotterModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+      <button type="button" onclick="closeBlotterModal()" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
     </div>
     <form id="blotterForm" class="space-y-4">
       <input type="hidden" id="editId"/>
@@ -328,7 +328,7 @@
 
       <!-- Action Buttons -->
       <div class="flex justify-end gap-3 pt-3">
-        <button type="button" onclick="closeModal('blotterModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="closeBlotterModal()" class="btn-secondary">Cancel</button>
         <button type="button" onclick="saveBlotter()" class="btn-primary">Save Entry</button>
       </div>
     </form>
@@ -579,21 +579,59 @@
     bcRenderPagination(document.getElementById('paginationControls'), currentPage, totalPages, (p) => { currentPage = p; renderTable(); });
   }
 
-  async function openAdd() {
+  function resetBlotterForm() {
     editingId = null;
-    document.getElementById('modalTitle').textContent = 'New Blotter Entry';
-    document.getElementById('blotterForm').reset();
+    const form = document.getElementById('blotterForm');
+    if (form) form.reset();
+
+    const ids = [
+      'f_docketNo', 'f_dateFiled', 'f_complainant', 'f_complainantId',
+      'f_complainantSearch', 'f_complainantFreeText', 'f_complainantAddr',
+      'f_respondent', 'f_respondentId', 'f_respondentSearch',
+      'f_respondentFreeText', 'f_respondentAddr', 'f_nature'
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
     bcResidentPickerClear('f_complainantSearch');
     bcResidentPickerClear('f_respondentSearch');
-    document.getElementById('f_complainantOutside').checked = false;
-    document.getElementById('f_complainantSearch').classList.remove('hidden');
-    document.getElementById('f_complainantFreeText').classList.add('hidden');
-    document.getElementById('f_complainantFreeText').value = '';
-    document.getElementById('f_respondentOutside').checked = false;
-    document.getElementById('f_respondentSearch').classList.remove('hidden');
-    document.getElementById('f_respondentFreeText').classList.add('hidden');
-    document.getElementById('f_respondentFreeText').value = '';
+
+    const complainantOutside = document.getElementById('f_complainantOutside');
+    if (complainantOutside) complainantOutside.checked = false;
+    const compSearch = document.getElementById('f_complainantSearch');
+    if (compSearch) compSearch.classList.remove('hidden');
+    const compFree = document.getElementById('f_complainantFreeText');
+    if (compFree) compFree.classList.add('hidden');
+
+    const respondentOutside = document.getElementById('f_respondentOutside');
+    if (respondentOutside) respondentOutside.checked = false;
+    const respSearch = document.getElementById('f_respondentSearch');
+    if (respSearch) respSearch.classList.remove('hidden');
+    const respFree = document.getElementById('f_respondentFreeText');
+    if (respFree) respFree.classList.add('hidden');
+
     _updateOutsideToggleAvailability();
+
+    const selects = ['f_type', 'f_status'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.selectedIndex = 0;
+        el.value = '';
+      }
+    });
+  }
+
+  function closeBlotterModal() {
+    resetBlotterForm();
+    closeModal('blotterModal');
+  }
+
+  async function openAdd() {
+    resetBlotterForm();
+    document.getElementById('modalTitle').textContent = 'New Blotter Entry';
     openModal('blotterModal');
 
     // Show what the Docket No. will be, rather than leaving it blank
@@ -786,7 +824,7 @@
         await BCApi.create('blotter', vals);
         showToast('New blotter entry added!');
       }
-      closeModal('blotterModal');
+      closeBlotterModal();
       await loadBlotter();
     } catch (err) {
       showToast(err.message, 'error');
@@ -808,6 +846,21 @@
       </div>`).join('');
     openModal('viewModal');
   }
+
+  // Ensure form completely resets whenever modal is closed, dismissed, or cancelled
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'blotterModal') {
+      resetBlotterForm();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('blotterModal');
+      if (modal && modal.classList.contains('open')) {
+        closeBlotterModal();
+      }
+    }
+  });
 
   async function handleBlotterImportFile(e) {
     const file = e.target.files[0];
