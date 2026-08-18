@@ -307,7 +307,7 @@
 
         document.getElementById('statPending').textContent = stats.pendingSettlements;
 
-        document.getElementById('statResolved').textContent = Math.round(stats.incidentCount * stats.resolutionRate / 100);
+        document.getElementById('statResolved').textContent = stats.resolvedCount ?? 0;
         document.getElementById('statResolvedSub').textContent = stats.resolutionRate + '% resolution rate';
 
         // Resolution rate donut (circumference = 2 * PI * r, r=52 -> 326.7)
@@ -328,7 +328,8 @@
           tbody.innerHTML = '<tr><td colspan="4">No blotter entries yet.</td></tr>';
         }
         stats.recentBlotter.forEach(r => {
-          const statusClass = r.status === 'Resolved' ? 'badge-resolved' : r.status === 'Ongoing' ? 'badge-ongoing' : 'badge-pending';
+          const s = (r.status || '').toLowerCase();
+          const statusClass = s === 'resolved' ? 'badge-resolved' : s === 'ongoing' ? 'badge-ongoing' : 'badge-pending';
           tbody.innerHTML += `
             <tr>
               <td class="font-semibold text-forest-700">${r.docket_no}</td>

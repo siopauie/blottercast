@@ -25,16 +25,21 @@ if ($action === 'dashboard') {
             (SELECT COUNT(*) FROM blotter_records) AS blotter_count,
             (SELECT COUNT(*) FROM incidents) AS incident_count,
             (SELECT COUNT(*) FROM incidents WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)) AS week_count,
-            (SELECT COUNT(*) FROM settlements WHERE status='Pending') AS pending_stl,
-            (SELECT COUNT(*) FROM incidents WHERE status IN ('Resolved','Closed')) AS resolved_count"
+            (SELECT COUNT(*) FROM settlements WHERE LOWER(status)='pending') AS pending_stl,
+            (SELECT COUNT(*) FROM blotter_records WHERE LOWER(status)='resolved') AS blotter_resolved,
+            (SELECT COUNT(*) FROM incidents WHERE LOWER(status) IN ('resolved','closed')) AS incident_resolved"
     );
     $counts = $countsRes ? $countsRes->fetch_assoc() : [];
     $blotterCount = (int)($counts['blotter_count'] ?? 0);
     $incidentCount = (int)($counts['incident_count'] ?? 0);
     $weekCount = (int)($counts['week_count'] ?? 0);
     $pendingStl = (int)($counts['pending_stl'] ?? 0);
-    $resolved = (int)($counts['resolved_count'] ?? 0);
-    $resRate = $incidentCount > 0 ? round($resolved / $incidentCount * 100) : 0;
+    $blotterResolved = (int)($counts['blotter_resolved'] ?? 0);
+    $incidentResolved = (int)($counts['incident_resolved'] ?? 0);
+    $resolvedCount = $blotterResolved + $incidentResolved;
+
+    $totalCases = $blotterCount + $incidentCount;
+    $resRate = $totalCases > 0 ? round(($resolvedCount / $totalCases) * 100) : 0;
     
     $recent = $mysqli->query('SELECT * FROM blotter_records ORDER BY date_filed DESC, id DESC LIMIT 8')->fetch_all(MYSQLI_ASSOC);
 
@@ -43,6 +48,7 @@ if ($action === 'dashboard') {
         'incidentCount' => $incidentCount,
         'weekCount' => $weekCount,
         'pendingSettlements' => $pendingStl,
+        'resolvedCount' => $resolvedCount,
         'resolutionRate' => (int)$resRate,
         'recentBlotter' => $recent,
     ]);
