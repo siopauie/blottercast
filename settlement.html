@@ -457,23 +457,22 @@
     bcRenderPagination(document.getElementById('stlPaginationControls'), stlPage, totalPages, (p) => { stlPage = p; renderSettlements(); });
   }
 
-  async function openAddSettlement() {
-    stlEditId=null; document.getElementById('stlModalTitle').textContent='New Settlement Record';
+  function openAddSettlement() {
+    stlEditId = null;
+    document.getElementById('stlModalTitle').textContent = 'New Settlement Record';
     document.getElementById('settlementForm').reset();
     document.getElementById('sf_blotter_picker_wrap').classList.remove('hidden');
     clearBlotterCasePicker();
-    document.getElementById('sf_caseNo').value = 'Loading…';
-    try {
-      const { seqNo } = await BCApi.peekSeq('settlements');
-      document.getElementById('sf_caseNo').value = seqNo;
-    } catch (err) {
-      document.getElementById('sf_caseNo').value = '';
-    }
-    try { await loadBlotterOptionsForPicker(); } catch (err) { showToast('Could not load blotter records: ' + err.message, 'error'); }
-    if (blotterOptions.length === 0) {
-      showToast('Every blotter case already has a settlement, or no blotter records exist yet.', 'error');
-    }
     openModal('settlementModal');
+
+    // Asynchronously populate case number preview and blotter options in the background
+    const caseNoField = document.getElementById('sf_caseNo');
+    caseNoField.value = 'Loading…';
+    BCApi.peekSeq('settlements').then(({ seqNo }) => {
+      if (stlEditId === null) caseNoField.value = seqNo || '';
+    }).catch(() => { caseNoField.value = ''; });
+
+    loadBlotterOptionsForPicker().catch(() => {});
   }
 
   function editSettlement(id) {
@@ -596,7 +595,8 @@
   }
 
   (async function () {
-    await requireAuth();
+    requireAuth();
+    loadBlotterOptionsForPicker().catch(() => {});
     try { await loadSettlements(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
   })();
 </script>
