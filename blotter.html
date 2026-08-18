@@ -853,6 +853,12 @@
     requireAuth();
     loadCensusResidentsForBlotterPickers().catch(() => {});
     try { await loadBlotter(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
+
+    // Auto-open New Blotter Entry modal if navigated from Quick Actions
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'new' || params.get('new') === '1' || window.location.hash === '#new') {
+      openAdd();
+    }
   })();
 </script>
 </body>

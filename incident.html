@@ -528,6 +528,12 @@
   (async function () {
     await requireAuth();
     try { await loadIncidents(); } catch (err) { showToast('Could not load records: ' + err.message, 'error'); }
+
+    // Auto-open New Incident Report modal if navigated from Quick Actions
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'new' || params.get('new') === '1' || window.location.hash === '#new') {
+      openAddIncident();
+    }
   })();
 </script>
 </body>
