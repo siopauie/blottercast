@@ -198,6 +198,80 @@ function bcIsValidEmail(str) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((str || '').trim());
 }
 
+// ── Global Time & Date Format Settings ─────────────────────
+function bcGetTimeFormat() {
+  const cached = localStorage.getItem('bc_time_format');
+  if (cached) return cached;
+  return (window._bcPublicSettings && window._bcPublicSettings.time_format) || '12-Hour (AM/PM)';
+}
+
+function bcIs12Hour() {
+  const fmt = bcGetTimeFormat();
+  return !fmt || fmt.toLowerCase().includes('12');
+}
+
+function bcFormatTime(timeVal, formatOverride) {
+  if (!timeVal) return '';
+  let h = 0, m = 0;
+  if (typeof timeVal === 'string') {
+    const s = timeVal.trim();
+    if (s.includes('T') || s.includes(' ')) {
+      let norm = s;
+      if (!norm.includes('T') && norm.includes(' ')) norm = norm.replace(' ', 'T');
+      const d = new Date(norm);
+      if (!isNaN(d.getTime())) {
+        h = d.getHours();
+        m = d.getMinutes();
+      } else {
+        const parts = s.split(/[- :T]/);
+        if (parts.length >= 5) {
+          h = parseInt(parts[3], 10) || 0;
+          m = parseInt(parts[4], 10) || 0;
+        }
+      }
+    } else {
+      const parts = s.split(':');
+      if (parts.length >= 1) {
+        h = parseInt(parts[0], 10) || 0;
+        m = parseInt(parts[1] || '0', 10) || 0;
+      }
+    }
+  } else if (timeVal instanceof Date) {
+    h = timeVal.getHours();
+    m = timeVal.getMinutes();
+  }
+
+  const is12 = formatOverride !== undefined ? formatOverride.toLowerCase().includes('12') : bcIs12Hour();
+  if (!is12) {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+function bcFormatDateTime(dateVal) {
+  if (!dateVal) return '';
+  let d;
+  if (typeof dateVal === 'string') {
+    let s = dateVal.trim();
+    if (!s.includes('T') && s.includes(' ')) s = s.replace(' ', 'T');
+    d = new Date(s);
+  } else {
+    d = new Date(dateVal);
+  }
+  if (!d || isNaN(d.getTime())) return String(dateVal);
+  const is12 = bcIs12Hour();
+  return d.toLocaleString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: is12 ? 'numeric' : '2-digit',
+    minute: '2-digit',
+    hour12: is12
+  });
+}
+
 // True if dateStr (the "YYYY-MM-DD" value an <input type="date"> gives
 // you) falls after today, in local time — used to block birth dates,
 // filing dates, etc. that shouldn't be set in the future.
@@ -226,8 +300,16 @@ function bcIsBeforeDate(dateStr, minDateStr) {
 // behavior as bcIsFutureDate).
 function bcIsFutureDateTime(dateStr, timeStr) {
   if (!dateStr) return false;
-  const dt = new Date(`${dateStr}T${timeStr || '00:00'}:00`);
-  return dt.getTime() > Date.now();
+  let time = timeStr ? timeStr.trim() : '00:00:00';
+  if (time.length === 5) time += ':00';
+  const dt = new Date(`${dateStr}T${time}`);
+  if (isNaN(dt.getTime())) return false;
+  return dt.getTime() > (Date.now() + 30000);
+}
+
+// Automatically sync public system settings in the background
+if (typeof window !== 'undefined' && window.BCApi && BCApi.getPublicSettings) {
+  BCApi.getPublicSettings().catch(() => {});
 }
 
 // ── Forced password change (Security > Password Expiry (days)) ─────

@@ -410,7 +410,7 @@ async function loadBackupHistory() {
           <td class="text-xs">${(r.size_bytes/1024).toFixed(0)} KB</td>
           <td><span class="badge ${r.status==='Success'?'badge-resolved':'badge-not-complied'}">${r.status}</span></td>
           <td class="text-xs text-forest-400">${r.created_by||''}</td>
-          <td class="text-xs text-forest-400">${new Date(r.created_at).toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</td>
+          <td class="text-xs text-forest-400">${bcFormatDateTime(r.created_at)}</td>
           <td>${r.status==='Success' ? `<a href="api/settings.php?action=download_backup&file=${encodeURIComponent(r.file_name)}" class="btn-secondary text-xs px-3 py-1 inline-flex items-center gap-1"><span data-icon="download" data-icon-size="14"></span> Download</a>` : ''}</td>
         </tr>`).join('');
   } catch (err) {

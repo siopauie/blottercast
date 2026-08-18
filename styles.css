@@ -992,9 +992,11 @@ input.bc-time-enhanced::-webkit-calendar-picker-indicator { opacity: 0; cursor: 
 }
 .bc-dp-today-btn:hover, .bc-dp-clear-btn:hover { background: var(--forest-100); }
 
-.bc-timepicker-panel { width: 168px; }
+.bc-timepicker-panel { width: 170px; }
+.bc-timepicker-panel.bc-tp-12h { width: 232px; }
 .bc-tp-cols { display: flex; gap: 4px; max-height: 200px; }
-.bc-tp-col { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
+.bc-tp-col { flex: 1; min-width: 48px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
+.bc-tp-col-ampm { min-width: 48px; max-width: 58px; }
 .bc-tp-item {
   border: none;
   background: transparent;
@@ -1004,9 +1006,16 @@ input.bc-time-enhanced::-webkit-calendar-picker-indicator { opacity: 0; cursor: 
   color: #111827;
   cursor: pointer;
   transition: background 0.1s ease;
+  text-align: center;
 }
-.bc-tp-item:hover { background: var(--forest-50); }
-.bc-tp-item-active { background: var(--forest-600); color: #fff; font-weight: 600; }
+.bc-tp-item:hover:not(:disabled) { background: var(--forest-50); }
+.bc-tp-item-active { background: var(--forest-600) !important; color: #fff !important; font-weight: 600; }
+.bc-tp-item:disabled, .bc-tp-item-disabled {
+  opacity: 0.28;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  background: transparent !important;
+}
 
 /* ---------------- Scrollbar ---------------- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

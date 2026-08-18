@@ -246,6 +246,18 @@ const BCApi = {
   // ---- settings & backup ----
   settingsList() { return this._fetchCached(`${BC_API}/api/settings.php?action=list`, 30000); },
   letterheadInfo() { return this._fetchCached(`${BC_API}/api/settings.php?action=letterhead`, 60000); },
+  getPublicSettings() {
+    return this._fetchCached(`${BC_API}/api/settings.php?action=public`, 60000).then(settings => {
+      if (settings && settings.time_format) {
+        localStorage.setItem('bc_time_format', settings.time_format);
+      }
+      if (settings && settings.date_format) {
+        localStorage.setItem('bc_date_format', settings.date_format);
+      }
+      window._bcPublicSettings = settings;
+      return settings;
+    }).catch(() => ({}));
+  },
   getMlModel() { return this._fetch(`${BC_API}/api/settings.php?action=ml_model`); },
   autoBackupCheck() { return this._fetch(`${BC_API}/api/settings.php?action=auto_backup_check`); },
   setMlModel(task, model) {
@@ -257,8 +269,15 @@ const BCApi = {
     const res = await this._fetch(`${BC_API}/api/settings.php?action=save`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values),
     });
+    if (values && values.time_format) {
+      localStorage.setItem('bc_time_format', values.time_format);
+    }
+    if (values && values.date_format) {
+      localStorage.setItem('bc_date_format', values.date_format);
+    }
     this.invalidateCache('settings');
     this.invalidateCache('letterhead');
+    this.invalidateCache('public');
     this.invalidateCache('captain_signature');
     this.invalidateCache('users');
     return res;

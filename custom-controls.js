@@ -458,6 +458,31 @@
   }
   function fmtTimeVal(h, m) { return `${pad2(h)}:${pad2(m)}`; }
 
+  function getTimeSettingIs12Hour() {
+    if (typeof bcIs12Hour === 'function') return bcIs12Hour();
+    const stored = localStorage.getItem('bc_time_format');
+    return !stored || stored.toLowerCase().includes('12');
+  }
+
+  function getAssociatedDate(input) {
+    const targetSel = input.getAttribute('data-date-target');
+    if (targetSel) {
+      const targetEl = document.querySelector(targetSel);
+      if (targetEl && targetEl.value) return targetEl.value;
+    }
+    const form = input.closest('form');
+    if (form) {
+      const dateEl = form.querySelector('input[type="date"]');
+      if (dateEl && dateEl.value) return dateEl.value;
+    }
+    const modal = input.closest('.modal-box') || input.closest('.modal-overlay');
+    if (modal) {
+      const dateEl = modal.querySelector('input[type="date"]');
+      if (dateEl && dateEl.value) return dateEl.value;
+    }
+    return null;
+  }
+
   function enhanceTimeInput(input) {
     if (input.dataset.bcTime || input.hidden) return;
     input.dataset.bcTime = '1';
@@ -469,48 +494,197 @@
     let panelRef;
 
     function build() {
-      const t = parseTimeVal(input.value) || { h: new Date().getHours(), m: 0 };
+      const is12 = getTimeSettingIs12Hour();
+      const rawVal = input.value;
+      const parsed = parseTimeVal(rawVal);
+      const now = new Date();
+      const curH = now.getHours();
+      const curM = now.getMinutes();
+
+      let t = parsed ? { ...parsed } : { h: curH, m: Math.floor(curM / 5) * 5 };
+
+      // Associated date check for future time prevention
+      const assocDate = getAssociatedDate(input);
+      let isToday = false;
+      let isFutureDate = false;
+      if (assocDate) {
+        const todayStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+        isToday = (assocDate === todayStr);
+        const d = new Date(assocDate + 'T00:00:00');
+        const tZero = new Date(); tZero.setHours(0, 0, 0, 0);
+        isFutureDate = (d.getTime() > tZero.getTime());
+      }
+      if (!assocDate && (input.dataset.noFuture !== undefined || input.hasAttribute('data-no-future'))) {
+        isToday = true;
+      }
+
       const panel = document.createElement('div');
-      panel.className = 'bc-timepicker-panel';
+      panel.className = 'bc-timepicker-panel' + (is12 ? ' bc-tp-12h' : '');
 
       const cols = document.createElement('div');
       cols.className = 'bc-tp-cols';
 
-      const hourCol = document.createElement('div');
-      hourCol.className = 'bc-tp-col';
-      for (let h = 0; h < 24; h++) {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'bc-tp-item' + (h === t.h ? ' bc-tp-item-active' : '');
-        item.textContent = pad2(h);
-        item.onclick = () => {
-          input.value = fmtTimeVal(h, t.m);
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-          rebuild();
-        };
-        hourCol.appendChild(item);
+      if (is12) {
+        // 12-Hour Mode: Hours (1–12), Minutes (00–55), AM/PM
+        let period = t.h >= 12 ? 'PM' : 'AM';
+        let h12 = t.h % 12 === 0 ? 12 : t.h % 12;
+
+        // 1. Hour Column (1–12)
+        const hourCol = document.createElement('div');
+        hourCol.className = 'bc-tp-col';
+        for (let h = 1; h <= 12; h++) {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'bc-tp-item' + (h === h12 ? ' bc-tp-item-active' : '');
+          item.textContent = pad2(h);
+
+          const h24 = (h % 12) + (period === 'PM' ? 12 : 0);
+          let disabled = isFutureDate;
+          if (isToday && h24 > curH) disabled = true;
+
+          if (disabled) {
+            item.disabled = true;
+            item.classList.add('bc-tp-item-disabled');
+            item.title = 'Cannot select a future time';
+          } else {
+            item.onclick = () => {
+              const newH24 = (h % 12) + (period === 'PM' ? 12 : 0);
+              input.value = fmtTimeVal(newH24, t.m);
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              rebuild();
+            };
+          }
+          hourCol.appendChild(item);
+        }
+
+        // 2. Minute Column
+        const minCol = document.createElement('div');
+        minCol.className = 'bc-tp-col';
+        const minuteSet = new Set([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
+        minuteSet.add(t.m);
+        const curH24 = (h12 % 12) + (period === 'PM' ? 12 : 0);
+        Array.from(minuteSet).sort((a, b) => a - b).forEach(m => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'bc-tp-item' + (m === t.m ? ' bc-tp-item-active' : '');
+          item.textContent = pad2(m);
+
+          let disabled = isFutureDate;
+          if (isToday) {
+            if (curH24 > curH) disabled = true;
+            else if (curH24 === curH && m > curM) disabled = true;
+          }
+
+          if (disabled) {
+            item.disabled = true;
+            item.classList.add('bc-tp-item-disabled');
+            item.title = 'Cannot select a future time';
+          } else {
+            item.onclick = () => {
+              input.value = fmtTimeVal(curH24, m);
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              rebuild();
+            };
+          }
+          minCol.appendChild(item);
+        });
+
+        // 3. AM / PM Column
+        const ampmCol = document.createElement('div');
+        ampmCol.className = 'bc-tp-col bc-tp-col-ampm';
+        ['AM', 'PM'].forEach(p => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'bc-tp-item' + (p === period ? ' bc-tp-item-active' : '');
+          item.textContent = p;
+
+          let disabled = isFutureDate;
+          if (isToday && p === 'PM' && curH < 12) {
+            disabled = true;
+          }
+
+          if (disabled) {
+            item.disabled = true;
+            item.classList.add('bc-tp-item-disabled');
+            item.title = 'Cannot select a future time';
+          } else {
+            item.onclick = () => {
+              let newH24 = (h12 % 12) + (p === 'PM' ? 12 : 0);
+              if (isToday && newH24 > curH) newH24 = curH;
+              input.value = fmtTimeVal(newH24, t.m);
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              rebuild();
+            };
+          }
+          ampmCol.appendChild(item);
+        });
+
+        cols.append(hourCol, minCol, ampmCol);
+      } else {
+        // 24-Hour Mode: Hours (00–23), Minutes (00–55), No AM/PM column
+        const hourCol = document.createElement('div');
+        hourCol.className = 'bc-tp-col';
+        for (let h = 0; h < 24; h++) {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'bc-tp-item' + (h === t.h ? ' bc-tp-item-active' : '');
+          item.textContent = pad2(h);
+
+          let disabled = isFutureDate;
+          if (isToday && h > curH) disabled = true;
+
+          if (disabled) {
+            item.disabled = true;
+            item.classList.add('bc-tp-item-disabled');
+            item.title = 'Cannot select a future time';
+          } else {
+            item.onclick = () => {
+              input.value = fmtTimeVal(h, t.m);
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              rebuild();
+            };
+          }
+          hourCol.appendChild(item);
+        }
+
+        const minCol = document.createElement('div');
+        minCol.className = 'bc-tp-col';
+        const minuteSet = new Set([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
+        minuteSet.add(t.m);
+        Array.from(minuteSet).sort((a, b) => a - b).forEach(m => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'bc-tp-item' + (m === t.m ? ' bc-tp-item-active' : '');
+          item.textContent = pad2(m);
+
+          let disabled = isFutureDate;
+          if (isToday) {
+            if (t.h > curH) disabled = true;
+            else if (t.h === curH && m > curM) disabled = true;
+          }
+
+          if (disabled) {
+            item.disabled = true;
+            item.classList.add('bc-tp-item-disabled');
+            item.title = 'Cannot select a future time';
+          } else {
+            item.onclick = () => {
+              input.value = fmtTimeVal(t.h, m);
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              rebuild();
+            };
+          }
+          minCol.appendChild(item);
+        });
+
+        cols.append(hourCol, minCol);
       }
 
-      const minCol = document.createElement('div');
-      minCol.className = 'bc-tp-col';
-      const minuteSet = new Set([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
-      minuteSet.add(t.m);
-      Array.from(minuteSet).sort((a, b) => a - b).forEach(m => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'bc-tp-item' + (m === t.m ? ' bc-tp-item-active' : '');
-        item.textContent = pad2(m);
-        item.onclick = () => {
-          input.value = fmtTimeVal(t.h, m);
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-          rebuild();
-        };
-        minCol.appendChild(item);
-      });
-
-      cols.append(hourCol, minCol);
       panel.appendChild(cols);
 
       const footer = document.createElement('div');
@@ -539,8 +713,9 @@
       positionPopover(panelRef, input);
       panelRef.classList.add('open');
       if (activePopover && activePopover.trigger === input) activePopover.el = panelRef;
-      const active = panelRef.querySelector('.bc-tp-item-active');
-      if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
+      panelRef.querySelectorAll('.bc-tp-item-active').forEach(active => {
+        if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
+      });
     }
 
     function open() {
@@ -550,8 +725,9 @@
       positionPopover(panelRef, input);
       requestAnimationFrame(() => {
         panelRef.classList.add('open');
-        const active = panelRef.querySelector('.bc-tp-item-active');
-        if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
+        panelRef.querySelectorAll('.bc-tp-item-active').forEach(active => {
+          if (active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
+        });
       });
       activePopover = {
         el: panelRef, trigger: input, wrap,

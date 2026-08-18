@@ -208,14 +208,19 @@ if ($action === 'ml_model' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     json_response(['ok' => true]);
 }
 
-// Non-sensitive letterhead info (captain name, barangay name) is readable
-// by any signed-in user — certificates need it regardless of role — while
-// every other action below still requires full system_settings access.
-if ($action === 'letterhead' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $stmt = $mysqli->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('captain_name','barangay_name')");
+// Non-sensitive public system settings (captain name, barangay name, time_format, date_format)
+// are readable by any signed-in user — certificates and dynamic time formatting need it regardless of role —
+// while every other action below still requires full system_settings access.
+if (($action === 'letterhead' || $action === 'public') && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $stmt = $mysqli->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('captain_name','barangay_name','time_format','date_format')");
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $out = [];
+    $out = [
+        'captain_name'  => 'Kapitan Jose Reyes',
+        'barangay_name' => 'Barangay Mapulang Lupa',
+        'time_format'   => '12-Hour (AM/PM)',
+        'date_format'   => 'MM/DD/YYYY'
+    ];
     foreach ($rows as $r) $out[$r['setting_key']] = $r['setting_value'];
     json_response($out);
 }

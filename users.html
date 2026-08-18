@@ -297,13 +297,17 @@ function formatUserDateTime(raw) {
     d = new Date(raw);
   }
   if (!d || isNaN(d.getTime())) return 'Never';
+  if (typeof bcFormatDateTime === 'function') {
+    const formatted = bcFormatDateTime(raw);
+    return formatted || 'Never';
+  }
   return d.toLocaleString('en-PH', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-    hour: 'numeric',
+    hour: (typeof bcIs12Hour === 'function' && !bcIs12Hour()) ? '2-digit' : 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: (typeof bcIs12Hour === 'function') ? bcIs12Hour() : true
   });
 }
 
