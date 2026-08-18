@@ -120,11 +120,19 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         "SELECT n.*, (nr.notification_id IS NOT NULL) AS is_read
          FROM notifications n
          LEFT JOIN notification_reads nr ON nr.notification_id = n.id AND nr.user_id = ?
-         ORDER BY n.created_at DESC LIMIT ?"
+         ORDER BY n.created_at DESC, n.id DESC LIMIT ?"
     );
     $stmt->bind_param('ii', $userId, $limit);
     $stmt->execute();
-    json_response($stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    foreach ($rows as &$r) {
+        $r['is_read'] = !empty($r['is_read']);
+        $ts = !empty($r['created_at']) ? strtotime($r['created_at']) : time();
+        $r['created_ts'] = $ts;
+        $r['created_iso'] = date('c', $ts);
+    }
+    unset($r);
+    json_response($rows);
 }
 
 if ($action === 'unread_count' && $_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -136,14 +144,19 @@ if ($action === 'unread_count' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     );
     $stmt->bind_param('i', $userId);
     $stmt->execute();
-    json_response(['count' => (int)($stmt->get_result()->fetch_assoc()['c'] ?? 0)]);
+    $count = (int)($stmt->get_result()->fetch_assoc()['c'] ?? 0);
+    json_response(['count' => $count]);
 }
 
 if ($action === 'mark_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_GET['id'] ?? 0);
+    if (!$id) {
+        $b = body();
+        $id = (int)($b['id'] ?? 0);
+    }
     if (!$id) json_error('id required');
     try {
-        $stmt = $mysqli->prepare('INSERT INTO notification_reads (user_id, notification_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id)');
+        $stmt = $mysqli->prepare('INSERT INTO notification_reads (user_id, notification_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE read_at=CURRENT_TIMESTAMP');
         $stmt->bind_param('ii', $userId, $id);
         $stmt->execute();
     } catch (\Throwable $e) {}
@@ -155,7 +168,7 @@ if ($action === 'mark_all_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $mysqli->prepare(
             'INSERT INTO notification_reads (user_id, notification_id)
              SELECT ?, id FROM notifications
-             ON DUPLICATE KEY UPDATE user_id=VALUES(user_id)'
+             ON DUPLICATE KEY UPDATE read_at=CURRENT_TIMESTAMP'
         );
         $stmt->bind_param('i', $userId);
         $stmt->execute();

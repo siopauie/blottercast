@@ -566,10 +566,28 @@ function _confirmExportFilter() {
 const NOTIF_SEVERITY_ICON = { critical: 'warning', warning: 'clock', info: 'bell' };
 const NOTIF_SEVERITY_COLOR = { critical: '#dc2626', warning: '#d97706', info: '#23703c' };
 
-function timeAgo(dateStr) {
-  if (!dateStr) return 'just now';
-  const ts = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T')).getTime();
-  if (isNaN(ts)) return 'just now';
+function timeAgo(dateVal, fallbackTs) {
+  if (!dateVal && !fallbackTs) return 'just now';
+  let ts = 0;
+  if (typeof fallbackTs === 'number' && fallbackTs > 0) {
+    ts = fallbackTs * 1000;
+  } else if (typeof dateVal === 'number' && dateVal > 0) {
+    ts = dateVal > 1e11 ? dateVal : dateVal * 1000;
+  } else if (typeof dateVal === 'string' && dateVal.trim() !== '') {
+    let s = dateVal.trim();
+    if (!s.includes('T') && s.includes(' ')) {
+      s = s.replace(' ', 'T');
+    }
+    ts = new Date(s).getTime();
+    if (isNaN(ts)) {
+      const parts = dateVal.split(/[- :T]/);
+      if (parts.length >= 6) {
+        ts = new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]).getTime();
+      }
+    }
+  }
+  if (!ts || isNaN(ts)) return 'just now';
+
   const diffMs = Date.now() - ts;
   const seconds = Math.max(0, Math.floor(diffMs / 1000));
   if (seconds < 45) return 'just now';
@@ -580,58 +598,28 @@ function timeAgo(dateStr) {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
   const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(days / 365);
+  return `${years}y ago`;
 }
 
-function getLocalReadNotifs() {
-  try {
-    return JSON.parse(localStorage.getItem('bc_read_notifs') || '[]');
-  } catch (e) {
-    return [];
-  }
-}
-
-function setLocalNotifRead(id) {
-  try {
-    const list = getLocalReadNotifs();
-    const strId = String(id);
-    if (!list.includes(strId)) {
-      list.push(strId);
-      localStorage.setItem('bc_read_notifs', JSON.stringify(list));
-    }
-  } catch (e) {}
-}
-
-function setLocalAllNotifsRead(ids) {
-  try {
-    const list = getLocalReadNotifs();
-    ids.forEach(id => {
-      const strId = String(id);
-      if (!list.includes(strId)) list.push(strId);
-    });
-    localStorage.setItem('bc_read_notifs', JSON.stringify(list));
-    localStorage.setItem('bc_all_notifs_read_ts', String(Date.now()));
-  } catch (e) {}
+function updateDynamicNotifTimestamps() {
+  document.querySelectorAll('#notifList [data-notif-id]').forEach(el => {
+    const timeSpan = el.querySelector('.notif-time');
+    if (!timeSpan) return;
+    const createdAt = el.getAttribute('data-created-at');
+    const createdTs = Number(el.getAttribute('data-created-ts') || 0);
+    timeSpan.textContent = timeAgo(createdAt, createdTs);
+  });
 }
 
 async function refreshNotifBadge() {
   const badge = document.getElementById('notifBadge');
   if (!badge) return;
   try {
-    const items = await BCApi.notifList(30);
-    const localRead = getLocalReadNotifs();
-    const allReadTs = Number(localStorage.getItem('bc_all_notifs_read_ts') || 0);
-
-    const unreadCount = (items || []).filter(n => {
-      if (localRead.includes(String(n.id))) return false;
-      if (allReadTs > 0) {
-        const notifTs = new Date(n.created_at.includes('T') ? n.created_at : n.created_at.replace(' ', 'T')).getTime();
-        if (!isNaN(notifTs) && notifTs <= allReadTs) return false;
-      }
-      return (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
-    }).length;
-
-    badge.classList.toggle('hidden', unreadCount === 0);
+    const unreadData = await BCApi.notifUnreadCount();
+    const count = typeof unreadData?.count === 'number' ? unreadData.count : 0;
+    badge.classList.toggle('hidden', count === 0);
   } catch (e) {
     const unreadInDom = document.querySelectorAll('#notifList .is-unread').length;
     badge.classList.toggle('hidden', unreadInDom === 0);
@@ -650,34 +638,26 @@ async function toggleNotifPanel() {
   list.innerHTML = '<div class="px-4 py-6 text-center text-forest-400 text-sm">Loading notifications…</div>';
   try {
     const items = await BCApi.notifList(30);
-    const localRead = getLocalReadNotifs();
-    const allReadTs = Number(localStorage.getItem('bc_all_notifs_read_ts') || 0);
 
     if (!items || items.length === 0) {
       list.innerHTML = '<div class="px-4 py-8 text-center text-forest-400 text-sm">No notifications yet.</div>';
     } else {
       list.innerHTML = items.map(n => {
-        let isUnread = (Number(n.is_read) === 0 || n.is_read === false || n.is_read === '0');
-        if (localRead.includes(String(n.id))) isUnread = false;
-        if (allReadTs > 0) {
-          const notifTs = new Date(n.created_at.includes('T') ? n.created_at : n.created_at.replace(' ', 'T')).getTime();
-          if (!isNaN(notifTs) && notifTs <= allReadTs) isUnread = false;
-        }
-
+        const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === '0');
         const bgClass = isUnread ? 'bg-[#f0f9f2] is-unread' : 'bg-white is-read';
         const dotHtml = isUnread ? '<span class="notif-dot w-2 h-2 rounded-full bg-forest-500 flex-shrink-0 mt-1.5"></span>' : '';
-        const timeStr = timeAgo(n.created_at);
+        const timeStr = timeAgo(n.created_iso || n.created_at, n.created_ts);
         const icon = NOTIF_SEVERITY_ICON[n.severity] || 'bell';
         const color = NOTIF_SEVERITY_COLOR[n.severity] || '#23703c';
 
         return `
-          <a href="${n.link || '#'}" data-notif-id="${n.id}" onclick="markNotifRead(event, ${n.id}, '${n.link || ''}')"
+          <a href="${n.link || '#'}" data-notif-id="${n.id}" data-created-at="${n.created_iso || n.created_at || ''}" data-created-ts="${n.created_ts || ''}" onclick="markNotifRead(event, ${n.id}, '${n.link || ''}')"
              class="flex items-start gap-3 px-4 py-3 border-b border-forest-50 transition-colors hover:bg-forest-100/50 ${bgClass}">
             <span style="color:${color}" data-icon="${icon}" data-icon-size="16" class="flex-shrink-0 mt-0.5"></span>
             <span class="flex-1 min-w-0">
               <span class="block text-sm font-semibold text-forest-800 truncate">${n.title}</span>
               <span class="block text-xs text-forest-600 mt-0.5 leading-relaxed">${n.body}</span>
-              <span class="block text-xs text-forest-400 mt-1 font-medium">${timeStr}</span>
+              <span class="notif-time block text-xs text-forest-400 mt-1 font-medium">${timeStr}</span>
             </span>
             ${dotHtml}
           </a>`;
@@ -690,9 +670,7 @@ async function toggleNotifPanel() {
 }
 
 async function markNotifRead(e, id, link) {
-  setLocalNotifRead(id);
-
-  // Optimistic UI state update: switch from green to white background and remove green dot
+  // Optimistic UI state update: switch from subtle green to white background and remove green dot
   const item = (e && e.currentTarget) ? e.currentTarget : document.querySelector(`[data-notif-id="${id}"]`);
   if (item) {
     item.classList.remove('bg-[#f0f9f2]', 'bg-forest-50/60', 'is-unread');
@@ -715,9 +693,6 @@ async function markNotifRead(e, id, link) {
 }
 
 async function markAllNotifsRead() {
-  const allIds = Array.from(document.querySelectorAll('#notifList [data-notif-id]')).map(el => el.dataset.notifId);
-  setLocalAllNotifsRead(allIds);
-
   // Optimistic UI state update: clear all unread backgrounds and green dots immediately
   const unreadItems = document.querySelectorAll('#notifList .is-unread');
   unreadItems.forEach(item => {
@@ -744,9 +719,13 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Periodic notification badge sync every 45 seconds & on window focus
-setInterval(refreshNotifBadge, 45000);
-window.addEventListener('focus', refreshNotifBadge);
+// Periodic notification badge sync and dynamic timestamp updates
+setInterval(refreshNotifBadge, 30000);
+setInterval(updateDynamicNotifTimestamps, 20000);
+window.addEventListener('focus', () => {
+  refreshNotifBadge();
+  updateDynamicNotifTimestamps();
+});
 
 // ── Resident search-picker (replaces the old <select> dropdown) ────
 // Shared by Clearance, Certificate of Residency, and Certificate of
