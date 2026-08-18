@@ -434,12 +434,8 @@
       }
     };
 
-    input.addEventListener('mousedown', handleTrigger);
     input.addEventListener('click', handleTrigger);
     if (wrap) {
-      wrap.addEventListener('mousedown', (e) => {
-        if (e.target !== input) handleTrigger(e);
-      });
       wrap.addEventListener('click', (e) => {
         if (e.target !== input) handleTrigger(e);
       });
@@ -574,12 +570,8 @@
       }
     };
 
-    input.addEventListener('mousedown', handleTrigger);
     input.addEventListener('click', handleTrigger);
     if (wrap) {
-      wrap.addEventListener('mousedown', (e) => {
-        if (e.target !== input) handleTrigger(e);
-      });
       wrap.addEventListener('click', (e) => {
         if (e.target !== input) handleTrigger(e);
       });
