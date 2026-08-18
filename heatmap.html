@@ -391,6 +391,12 @@
             weight: WEIGHTS[r.priority] || 0.6,
           };
         });
+
+      // Dynamically populate category filter options
+      const cats = Array.from(new Set(incidents.map(i => i.category).filter(Boolean))).sort();
+      const currentVal = categoryFilter.value;
+      categoryFilter.innerHTML = '<option value="all">All Categories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      if (cats.includes(currentVal)) categoryFilter.value = currentVal;
     }
 
     const map = L.map('map', {
