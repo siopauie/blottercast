@@ -590,6 +590,17 @@ async function removeUser(id) {
     showToast('Could not load users: ' + err.message, 'error');
   }
 })();
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'bc_time_format' || e.key === 'bc_date_format') {
+    renderUsers();
+    renderAuditLog();
+  }
+});
+window.addEventListener('bc:settings-updated', () => {
+  renderUsers();
+  renderAuditLog();
+});
 </script>
 </body>
 </html>

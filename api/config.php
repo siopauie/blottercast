@@ -107,8 +107,8 @@ class BlotterPdoStmtAdapter {
 
     public function bind_param(string $types, &...$args): bool {
         $this->boundParams = [];
-        foreach ($args as &$val) {
-            $this->boundParams[] = &$val;
+        foreach ($args as $idx => &$argRef) {
+            $this->boundParams[$idx] = &$argRef;
         }
         return true;
     }
@@ -116,12 +116,14 @@ class BlotterPdoStmtAdapter {
     public function execute(?array $params = null): bool {
         try {
             if ($params !== null) {
+                @$this->stmt->closeCursor();
                 $res = $this->stmt->execute($params);
             } else {
                 $execParams = [];
                 foreach ($this->boundParams as $v) {
                     $execParams[] = $v;
                 }
+                @$this->stmt->closeCursor();
                 $res = $this->stmt->execute($execParams);
             }
             $this->affected_rows = $this->stmt->rowCount();

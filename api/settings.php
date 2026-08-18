@@ -267,13 +267,16 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $d = body();
     if (!$d) json_error('No settings provided');
 
-    $stmt = $mysqli->prepare('INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?)
-                               ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
     foreach ($d as $key => $value) {
-        $key = preg_replace('/[^a-z0-9_]/i', '', (string)$key); // keep keys safe
+        $cleanKey = preg_replace('/[^a-z0-9_]/i', '', (string)$key); // keep keys safe
+        if ($cleanKey === '') continue;
         $val = (string)$value;
-        $stmt->bind_param('ss', $key, $val);
-        $stmt->execute();
+        $stmt = $mysqli->prepare('INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?)
+                                   ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+        if ($stmt) {
+            $stmt->bind_param('ss', $cleanKey, $val);
+            $stmt->execute();
+        }
     }
 
     // Invalidate security settings session cache so changes take effect immediately

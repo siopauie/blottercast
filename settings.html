@@ -126,19 +126,35 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Date Format</label>
-            <select class="form-input" data-setting="date_format"><option>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select>
+            <select class="form-input" data-setting="date_format">
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
           </div>
           <div>
             <label class="form-label">Time Format</label>
-            <select class="form-input" data-setting="time_format"><option>12-Hour (AM/PM)</option><option>24-Hour</option></select>
+            <select class="form-input" data-setting="time_format">
+              <option value="12-Hour (AM/PM)">12-Hour (AM/PM)</option>
+              <option value="24-Hour">24-Hour</option>
+            </select>
           </div>
           <div>
             <label class="form-label">Records Per Page</label>
-            <select class="form-input" data-setting="records_per_page"><option>5</option><option selected>6</option><option>10</option><option>20</option><option>50</option></select>
+            <select class="form-input" data-setting="records_per_page">
+              <option value="5">5</option>
+              <option value="6" selected>6</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
           </div>
           <div>
             <label class="form-label">Default Language</label>
-            <select class="form-input" data-setting="default_language"><option>English</option><option>Filipino</option></select>
+            <select class="form-input" data-setting="default_language">
+              <option value="English">English</option>
+              <option value="Filipino">Filipino</option>
+            </select>
           </div>
         </div>
       </div>
@@ -231,7 +247,11 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Backup Frequency</label>
-            <select class="form-input" data-setting="backup_frequency"><option selected>Daily</option><option>Every 12 hours</option><option>Weekly</option></select>
+            <select class="form-input" data-setting="backup_frequency">
+              <option value="Daily" selected>Daily</option>
+              <option value="Every 12 hours">Every 12 hours</option>
+              <option value="Weekly">Weekly</option>
+            </select>
           </div>
           <div>
             <label class="form-label">Backup Time</label>
@@ -239,7 +259,11 @@
           </div>
           <div>
             <label class="form-label">Backup Destination</label>
-            <select class="form-input" data-setting="backup_destination"><option>Local Storage Device</option><option>External Drive</option><option>Both</option></select>
+            <select class="form-input" data-setting="backup_destination">
+              <option value="Local Storage Device">Local Storage Device</option>
+              <option value="External Drive">External Drive</option>
+              <option value="Both">Both</option>
+            </select>
           </div>
           <div>
             <label class="form-label">Retain Backups For (days)</label>
@@ -296,6 +320,32 @@
 <script src="app.js"></script>
 <script src="icons.js"></script>
 <script src="custom-controls.js"></script>
+  <!-- SETTINGS SAVED / CHANGE CONFIRMATION MODAL -->
+  <div id="settingsChangeModal" class="modal-overlay" onclick="if(event.target===this) closeModal('settingsChangeModal')">
+    <div class="modal-box max-w-md p-6 text-center space-y-4">
+      <div class="w-14 h-14 mx-auto rounded-full bg-forest-50 border border-forest-100 flex items-center justify-center text-forest-700">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-forest-900" id="settingsModalTitle">Settings Updated</h3>
+        <p class="text-xs text-forest-500 mt-1" id="settingsModalSubtitle">The system preferences have been saved and applied.</p>
+      </div>
+
+      <!-- Breakdown of updated settings -->
+      <div id="settingsChangeList" class="bg-forest-50/70 rounded-xl p-3.5 border border-forest-100 text-left text-xs space-y-2 max-h-60 overflow-y-auto">
+        <!-- Dynamic list of changes -->
+      </div>
+
+      <div class="pt-2 flex justify-center">
+        <button type="button" class="btn-primary px-8 py-2 text-sm font-medium rounded-lg" onclick="closeModal('settingsChangeModal')">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
 <script>
 function switchTab(name, btn) {
   document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
@@ -303,6 +353,39 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.remove('hidden');
   btn.classList.add('active');
 }
+
+let savedSettingsState = {};
+
+const FRIENDLY_SETTING_LABELS = {
+  barangay_name: 'Barangay Name',
+  municipality: 'Municipality / City',
+  region: 'Region',
+  captain_name: 'Barangay Captain',
+  contact_no: 'Contact Number',
+  email: 'Email Address',
+  date_format: 'Date Format',
+  time_format: 'Time Format',
+  records_per_page: 'Records Per Page',
+  default_language: 'Default Language',
+  risk_threshold: 'Risk Alert Threshold',
+  spike_threshold: 'Spike Anomaly Threshold',
+  notif_inapp: 'In-App Notifications',
+  notif_retrain: 'Retraining Alerts',
+  two_factor_auth: 'Two-Factor Authentication',
+  lockout_enabled: 'Account Lockout',
+  session_timeout: 'Session Timeout',
+  max_failed_logins: 'Max Failed Logins',
+  min_password_length: 'Min Password Length',
+  password_expiry_days: 'Password Expiry',
+  audit_trail: 'Audit Trail Logging',
+  data_subject_rights: 'Data Subject Rights',
+  backup_frequency: 'Backup Frequency',
+  backup_time: 'Backup Time',
+  backup_destination: 'Backup Destination',
+  retain_backups_days: 'Retain Backups',
+  rto_hours: 'RTO Target',
+  rpo_hours: 'RPO Target'
+};
 
 async function toggleSetting(btn) {
   const isCurrentlyOn = btn.classList.contains('on');
@@ -314,6 +397,7 @@ async function toggleSetting(btn) {
   if (key) {
     try {
       await BCApi.settingsSave({ [key]: newState ? '1' : '0' });
+      savedSettingsState[key] = newState ? '1' : '0';
       const label = key === 'two_factor_auth' ? 'Two-Factor Authentication' :
                     key === 'lockout_enabled' ? 'Account Lockout' :
                     key === 'notif_inapp' ? 'In-App Notifications' :
@@ -331,6 +415,7 @@ async function toggleSetting(btn) {
 
 function applySettings(values) {
   if (!values || typeof values !== 'object') return;
+  savedSettingsState = { ...values };
   document.querySelectorAll('[data-setting]').forEach(el => {
     const key = el.dataset.setting;
     if (!(key in values)) return;
@@ -341,11 +426,13 @@ function applySettings(values) {
       el.classList.toggle('on', on);
       el.classList.toggle('off', !on);
     } else if (el.tagName === 'SELECT') {
-      if ([...el.options].some(o => o.value === val)) el.value = val;
-      else {
+      if ([...el.options].some(o => o.value === val)) {
+        el.value = val;
+      } else {
         const opt = [...el.options].find(o => o.textContent.trim() === val);
         if (opt) el.value = opt.value;
       }
+      el.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
       el.value = val;
     }
@@ -366,7 +453,6 @@ function collectSettings() {
 }
 
 async function saveSettings() {
-  const btn = document.querySelector('[onclick="saveSettings()"]');
   const values = collectSettings();
   if (values.contact_no && !bcIsValidContact(values.contact_no)) {
     showToast('Contact Number should be a valid PH mobile number (e.g. 09171234567).', 'error'); return;
@@ -377,11 +463,84 @@ async function saveSettings() {
   if (values.captain_name && !bcIsValidName(values.captain_name)) {
     showToast('Barangay Captain name should only contain letters (no numbers).', 'error'); return;
   }
+
+  // Identify modified settings
+  const changes = [];
+  for (const [k, v] of Object.entries(values)) {
+    const oldV = savedSettingsState[k];
+    if (oldV !== undefined && String(oldV).trim() !== String(v).trim()) {
+      changes.push({
+        key: k,
+        label: FRIENDLY_SETTING_LABELS[k] || k,
+        oldVal: oldV,
+        newVal: v
+      });
+    }
+  }
+
+  const saveBtn = document.querySelector('[onclick="saveSettings()"]');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block mr-1"></span> Saving…';
+  }
+
   try {
     await BCApi.settingsSave(values);
+
+    // Save directly into localStorage and window state for immediate sync
+    if (values.time_format) {
+      localStorage.setItem('bc_time_format', values.time_format);
+    }
+    if (values.date_format) {
+      localStorage.setItem('bc_date_format', values.date_format);
+    }
+    window._bcPublicSettings = {
+      ...(window._bcPublicSettings || {}),
+      time_format: values.time_format,
+      date_format: values.date_format,
+      captain_name: values.captain_name,
+      barangay_name: values.barangay_name
+    };
+
+    // Broadcast update across open windows and tabs
+    window.dispatchEvent(new CustomEvent('bc:settings-updated', { detail: values }));
+
+    // Update baseline state
+    savedSettingsState = { ...values };
+
+    // Render change summary in the pop-up modal
+    const listEl = document.getElementById('settingsChangeList');
+    if (changes.length > 0) {
+      listEl.innerHTML = changes.map(c => `
+        <div class="flex items-center justify-between py-1.5 border-b border-forest-100/60 last:border-0">
+          <span class="font-semibold text-forest-700">${c.label}</span>
+          <div class="flex items-center gap-1.5 text-right font-mono text-xs">
+            <span class="line-through text-forest-400 opacity-70">${c.oldVal || 'None'}</span>
+            <span class="text-forest-400">→</span>
+            <span class="text-forest-800 font-bold text-forest-700">${c.newVal}</span>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('settingsModalSubtitle').textContent = `${changes.length} setting${changes.length > 1 ? 's' : ''} successfully updated and applied.`;
+    } else {
+      listEl.innerHTML = `
+        <div class="text-center py-2 text-forest-600">
+          <span class="font-medium">All settings are up to date and active.</span>
+        </div>
+      `;
+      document.getElementById('settingsModalSubtitle').textContent = 'System preferences and configurations have been synced.';
+    }
+
+    openModal('settingsChangeModal');
     showToast('Settings saved successfully!');
   } catch (err) {
     showToast(err.message, 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<span data-icon="save" data-icon-size="16"></span> Save Changes';
+      if (window.lucide && lucide.createIcons) lucide.createIcons();
+    }
   }
 }
 
