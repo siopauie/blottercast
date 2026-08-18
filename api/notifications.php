@@ -38,6 +38,7 @@ function generateNotifications($mysqli): void {
 
     // 1) New incidents (last 7 days, not already alerted)
     try {
+        $now = date('Y-m-d H:i:s');
         $stmt = $mysqli->query(
             "SELECT id, report_no, location, zone_id, category, priority FROM incidents
              WHERE incident_date >= (CURDATE() - INTERVAL 7 DAY)
@@ -51,8 +52,8 @@ function generateNotifications($mysqli): void {
                 $zStr = !empty($r['zone_id']) ? " ({$r['zone_id']})" : '';
                 $body = "{$r['report_no']}: {$r['category']} at {$r['location']}{$zStr}";
                 $sev = $isHigh ? 'critical' : 'warning';
-                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('new_incident', ?, ?, ?, 'incident.html', 'incidents', ?)");
-                $ins->bind_param('sssi', $title, $body, $sev, $r['id']);
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id, created_at) VALUES ('new_incident', ?, ?, ?, 'incident.html', 'incidents', ?, ?)");
+                $ins->bind_param('sssis', $title, $body, $sev, $r['id'], $now);
                 $ins->execute();
             }
         }
@@ -60,6 +61,7 @@ function generateNotifications($mysqli): void {
 
     // 2) Settlements still Pending after 14+ days since filing
     try {
+        $now = date('Y-m-d H:i:s');
         $stmt = $mysqli->query(
             "SELECT id, case_no, case_title FROM settlements
              WHERE status = 'Pending' AND date_filed <= (CURDATE() - INTERVAL 14 DAY)
@@ -70,8 +72,8 @@ function generateNotifications($mysqli): void {
             foreach ($stmt->fetch_all(MYSQLI_ASSOC) as $r) {
                 $title = 'Settlement follow-up overdue';
                 $body = "{$r['case_no']}" . ($r['case_title'] ? " ({$r['case_title']})" : '') . ' has been pending for 14+ days';
-                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('settlement_overdue', ?, ?, 'warning', 'settlement.html', 'settlements', ?)");
-                $ins->bind_param('ssi', $title, $body, $r['id']);
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id, created_at) VALUES ('settlement_overdue', ?, ?, 'warning', 'settlement.html', 'settlements', ?, ?)");
+                $ins->bind_param('ssis', $title, $body, $r['id'], $now);
                 $ins->execute();
             }
         }
@@ -102,8 +104,9 @@ function generateNotifications($mysqli): void {
                 $pct = round($h['meanDailyProb'] * 100);
                 $title = 'Elevated incident risk forecast';
                 $body = "{$zoneStr} is forecast at {$pct}% daily incident probability, above the configured threshold";
-                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES ('high_risk_zone', ?, ?, 'warning', 'predictions.html', 'ml_runs', ?)");
-                $ins->bind_param('ssi', $title, $body, $refId);
+                $now = date('Y-m-d H:i:s');
+                $ins = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id, created_at) VALUES ('high_risk_zone', ?, ?, 'warning', 'predictions.html', 'ml_runs', ?, ?)");
+                $ins->bind_param('ssis', $title, $body, $refId, $now);
                 $ins->execute();
             }
         }
@@ -127,7 +130,26 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
         $r['is_read'] = !empty($r['is_read']);
-        $ts = !empty($r['created_at']) ? strtotime($r['created_at']) : time();
+        $raw = trim((string)($r['created_at'] ?? ''));
+        if ($raw === '') {
+            $ts = time();
+        } else {
+            if (preg_match('/[+-]\d{2}(:\d{2})?$|Z$/i', $raw)) {
+                $ts = strtotime($raw);
+            } else {
+                $parsed = strtotime($raw);
+                $diff = time() - $parsed;
+                // If it was stored in UTC (shifted into past by ~8 hours / ~28800s),
+                // but under UTC interpretation it occurred recently:
+                $parsedUtc = strtotime($raw . ' UTC');
+                if ($diff >= 25200 && $diff <= 32400 && abs(time() - $parsedUtc) < 7200) {
+                    $ts = $parsedUtc;
+                } else {
+                    $ts = $parsed;
+                }
+            }
+            if ($ts === false || $ts <= 0) $ts = time();
+        }
         $r['created_ts'] = $ts;
         $r['created_iso'] = date('c', $ts);
     }

@@ -356,6 +356,7 @@ function db(bool $allowFailure = false) {
                     PDO::ATTR_EMULATE_PREPARES => true,
                     PDO::ATTR_PERSISTENT => true
                 ]);
+                $pdo->exec("SET TIME ZONE 'Asia/Manila'");
                 $conn = new BlotterPdoAdapter($pdo);
             } catch (PDOException $e) {
                 if ($allowFailure) return null;
@@ -376,6 +377,7 @@ function db(bool $allowFailure = false) {
                 json_error('Database connection error: ' . ($conn->connect_error ?: 'Could not connect to host'), 500);
             }
             $conn->set_charset('utf8mb4');
+            $conn->query("SET time_zone = '+08:00'");
         }
     }
     return $conn;

@@ -56,8 +56,9 @@ require __DIR__ . '/nextseq.php';
 
 function logSystemNotification($mysqli, $type, $title, $body, $severity, $link, $refTable, $refId): void {
     try {
-        $stmt = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('ssssssi', $type, $title, $body, $severity, $link, $refTable, $refId);
+        $now = date('Y-m-d H:i:s');
+        $stmt = $mysqli->prepare("INSERT INTO notifications (type, title, body, severity, link, ref_table, ref_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('ssssssis', $type, $title, $body, $severity, $link, $refTable, $refId, $now);
         $stmt->execute();
     } catch (\Throwable $e) {}
 }
