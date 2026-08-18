@@ -420,15 +420,15 @@
     </div>
     <div class="hero-stats">
       <div>
-        <div class="hero-stat-num">247+</div>
+        <div class="hero-stat-num" id="heroBlotterCount">…</div>
         <div class="hero-stat-label">Blotter Records</div>
       </div>
       <div>
-        <div class="hero-stat-num">91%</div>
+        <div class="hero-stat-num" id="heroMlAccuracy">…</div>
         <div class="hero-stat-label">ML Accuracy</div>
       </div>
       <div>
-        <div class="hero-stat-num">8</div>
+        <div class="hero-stat-num" id="heroZonesCount">…</div>
         <div class="hero-stat-label">Zones Monitored</div>
       </div>
     </div>
@@ -663,6 +663,27 @@
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.12 });
   reveals.forEach(el => observer.observe(el));
+
+  // Dynamic Live Stats
+  async function loadPublicStats() {
+    try {
+      const res = await fetch('api/auth.php?action=public_stats');
+      if (!res.ok) throw new Error('Network error');
+      const data = await res.json();
+      if (data && data.ok) {
+        const bCount = data.blotter_count ?? 0;
+        document.getElementById('heroBlotterCount').textContent = bCount > 0 ? bCount + '+' : '0';
+        document.getElementById('heroMlAccuracy').textContent = data.ml_accuracy || '91.2%';
+        document.getElementById('heroZonesCount').textContent = data.zones_count || '8';
+      }
+    } catch (e) {
+      // Fallback
+      document.getElementById('heroBlotterCount').textContent = '247+';
+      document.getElementById('heroMlAccuracy').textContent = '91.2%';
+      document.getElementById('heroZonesCount').textContent = '8';
+    }
+  }
+  loadPublicStats();
 </script>
 </body>
 </html>
