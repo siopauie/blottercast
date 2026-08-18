@@ -1,23 +1,27 @@
 -- ============================================================
 -- BlotterCast — Seed Dataset for Machine Learning Predictions
--- Compatible with Supabase (PostgreSQL) and MySQL / phpMyAdmin
+-- Compatible with Supabase (PostgreSQL)
 -- Paste and run this script in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/_/sql/new
 -- ============================================================
 
--- 1. Ensure Zones Exist
-INSERT INTO zones (zone_id, zone_name, description) VALUES
-  ('Zone 1', 'Plaza & Barangay Hall Vicinity', 'Commercial & institutional center'),
-  ('Zone 2', 'Purok 4 & Chapel', 'High density residential area'),
-  ('Zone 3', 'Market & Terminal Area', 'Public market, jeepney & tricycle stops'),
-  ('Zone 4', 'Back Road & Southeast Homes', 'Outer residential and access paths'),
-  ('Zone 5', 'North Residential Cluster', 'Interior residential sector'),
-  ('Zone 6', 'West Boundary & Farmlands', 'Perimeter agricultural area'),
-  ('Zone 7', 'Covered Court & School Line', 'Sports complex and school perimeter'),
-  ('Zone 8', 'East Road Junction', 'Main intersection and retail strip')
-ON CONFLICT (zone_id) DO NOTHING;
+-- 1. Reference: Barangay Zones
+INSERT INTO zones (zone_id, label, lat, lng, weight) VALUES
+  ('Zone 1', 'Plaza & Barangay Hall Vicinity', 14.8836, 120.9655, 0.220),
+  ('Zone 2', 'Purok 4 & Chapel', 14.8824, 120.9648, 0.140),
+  ('Zone 3', 'Market & Terminal Area', 14.8845, 120.9663, 0.190),
+  ('Zone 4', 'Back Road & Southeast Homes', 14.8818, 120.9660, 0.070),
+  ('Zone 5', 'North Residential Cluster', 14.8852, 120.9650, 0.110),
+  ('Zone 6', 'West Boundary & Farmlands', 14.8860, 120.9635, 0.060),
+  ('Zone 7', 'Covered Court & School Line', 14.8842, 120.9641, 0.180),
+  ('Zone 8', 'East Road Junction', 14.8826, 120.9670, 0.130)
+ON CONFLICT (zone_id) DO UPDATE SET
+  label = EXCLUDED.label,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  weight = EXCLUDED.weight;
 
--- 2. Insert 140+ Structured Historical Incident Reports
+-- 2. Insert Structured Historical Incident Reports
 INSERT INTO incidents (report_no, incident_date, time_reported, hour, zone_id, location, lat, lng, category, description, reporter, officer, priority, status) VALUES
   ('IR-2025-001', '2025-09-02', '21:30:00', 21, 'Zone 1', 'Near Barangay Hall', 14.8836, 120.9655, 'Physical Assault', 'Verbal argument escalated into fistfight outside bakery', 'Roberto Reyes', 'PO1 Cruz', 'High', 'Resolved'),
   ('IR-2025-002', '2025-09-04', '14:15:00', 14, 'Zone 3', 'Market area', 14.8845, 120.9663, 'Theft', 'Stolen mobile phone from market stall customer', 'Maria Santos', 'PO2 Lim', 'Medium', 'Closed'),
