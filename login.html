@@ -703,11 +703,99 @@
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="api.js"></script>
 <script src="icons.js"></script>
 <script>
-  // ── Supabase OAuth Setup ──
+  // ── Google Identity Services (Direct Branded Login) ──
+  const GOOGLE_CLIENT_ID = '362507343436-o7agh2rgv2an9c11ubmnog5codjo858r.apps.googleusercontent.com';
+  let googleTokenClient = null;
+
+  function initGoogleAuth() {
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+      try {
+        googleTokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            if (tokenResponse.error) {
+              const alert = document.getElementById('loginAlert');
+              const alertText = document.getElementById('loginAlertMsg');
+              if (alert) alert.classList.add('show');
+              if (alertText) alertText.textContent = tokenResponse.error_description || 'Google sign-in was cancelled.';
+              resetGoogleBtn();
+              return;
+            }
+            if (tokenResponse.access_token) {
+              await handleGoogleAccessToken(tokenResponse.access_token);
+            }
+          },
+        });
+      } catch (e) {
+        console.warn('Could not initialize Google token client:', e);
+      }
+    }
+  }
+
+  function resetGoogleBtn() {
+    const btn = document.getElementById('googleBtn');
+    const btnText = document.getElementById('googleBtnText');
+    if (btn && btnText) {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      btnText.textContent = 'Continue with Google';
+    }
+  }
+
+  async function handleGoogleAccessToken(accessToken) {
+    const alert = document.getElementById('loginAlert');
+    const alertText = document.getElementById('loginAlertMsg');
+    const btn = document.getElementById('googleBtn');
+    const btnText = document.getElementById('googleBtnText');
+
+    try {
+      if (btn && btnText) {
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+        btnText.textContent = 'Verifying Google account…';
+      }
+
+      // Fetch user profile from Google API directly
+      const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!userinfoRes.ok) throw new Error('Could not fetch user profile from Google.');
+      const profile = await userinfoRes.json();
+      const email = profile.email;
+      const fullName = profile.name || profile.given_name || '';
+
+      const res = await BCApi.googleLogin(email, fullName, accessToken);
+      if (res && res.requires_2fa) {
+        resetGoogleBtn();
+        openTwoFactorModal(res.two_factor_token, res.masked_email);
+        return;
+      }
+
+      if (res && res.user) {
+        sessionStorage.setItem('bc_user', JSON.stringify(res.user));
+        document.getElementById('successMsg').textContent = `Signed in as ${res.user.full_name} (${res.user.role}) — Redirecting…`;
+        document.getElementById('successOverlay').classList.add('show');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
+        return;
+      }
+    } catch (err) {
+      resetGoogleBtn();
+      if (alert && alertText) {
+        alert.classList.add('show');
+        alertText.textContent = err.message || 'Google login failed.';
+      }
+    }
+  }
+
+  window.addEventListener('load', initGoogleAuth);
+
+  // ── Supabase OAuth Fallback Setup ──
   const SUPABASE_URL = 'https://fzvepwddggfendczjecg.supabase.co';
   let sbClient = null;
 
@@ -740,8 +828,18 @@
   async function handleGoogleLogin() {
     const alert = document.getElementById('loginAlert');
     const alertText = document.getElementById('loginAlertMsg');
-    alert.classList.remove('show');
+    if (alert) alert.classList.remove('show');
 
+    // 1. First priority: Direct Google Identity Services (shows blottercast.vercel.app directly)
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+      if (!googleTokenClient) initGoogleAuth();
+      if (googleTokenClient) {
+        googleTokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      }
+    }
+
+    // 2. Fallback: Supabase OAuth
     const client = await initSupabase();
     if (!client) {
       const key = prompt('Please paste your Supabase Project Anon Key (found in Supabase Dashboard -> Project Settings -> API):');
@@ -749,16 +847,19 @@
         localStorage.setItem('bc_supabase_anon', key.trim());
         sbClient = window.supabase.createClient(SUPABASE_URL, key.trim());
       } else {
-        alert.classList.add('show');
-        if (alertText) alertText.textContent = 'Supabase Anon Key is required to enable Google Login.';
+        if (alert) alert.classList.add('show');
+        if (alertText) alertText.textContent = 'Google login service initialization failed.';
         return;
       }
     }
 
     const btn = document.getElementById('googleBtn');
-    btn.style.opacity = '0.7';
-    btn.style.pointerEvents = 'none';
-    document.getElementById('googleBtnText').textContent = 'Connecting to Google…';
+    if (btn) {
+      btn.style.opacity = '0.7';
+      btn.style.pointerEvents = 'none';
+    }
+    const btnText = document.getElementById('googleBtnText');
+    if (btnText) btnText.textContent = 'Connecting to Google…';
 
     try {
       const { data, error } = await sbClient.auth.signInWithOAuth({
@@ -769,10 +870,8 @@
       });
       if (error) throw error;
     } catch (err) {
-      btn.style.opacity = '1';
-      btn.style.pointerEvents = 'auto';
-      document.getElementById('googleBtnText').textContent = 'Continue with Google';
-      alert.classList.add('show');
+      resetGoogleBtn();
+      if (alert) alert.classList.add('show');
       if (alertText) alertText.textContent = err.message || 'Google login failed.';
     }
   }
