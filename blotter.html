@@ -389,6 +389,18 @@
   }
 
   async function loadBlotter() {
+    const tbody = document.getElementById('blotterTableBody');
+    if (tbody && !blotterData.length) {
+      tbody.innerHTML = `
+        <tr class="animate-pulse">
+          <td colspan="10" class="text-center py-10 text-forest-500">
+            <div class="flex items-center justify-center gap-3">
+              <span class="w-5 h-5 rounded-full border-2 border-forest-500 border-t-transparent animate-spin"></span>
+              <span class="font-medium text-sm">Loading blotter records…</span>
+            </div>
+          </td>
+        </tr>`;
+    }
     const raw = await BCApi.list('blotter');
     blotterData = raw.map(mapRow);
     renderSummaryCards();

@@ -198,7 +198,16 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="incidentTableBody"></tbody>
+          <tbody id="incidentTableBody">
+            <tr class="animate-pulse">
+              <td colspan="11" class="text-center py-10 text-forest-500">
+                <div class="flex items-center justify-center gap-3">
+                  <span class="w-5 h-5 rounded-full border-2 border-forest-500 border-t-transparent animate-spin"></span>
+                  <span class="font-medium text-sm">Loading incident reports…</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
@@ -311,6 +320,18 @@
   }
 
   async function loadIncidents() {
+    const tbody = document.getElementById('incidentTableBody');
+    if (tbody && !incidentData.length) {
+      tbody.innerHTML = `
+        <tr class="animate-pulse">
+          <td colspan="11" class="text-center py-10 text-forest-500">
+            <div class="flex items-center justify-center gap-3">
+              <span class="w-5 h-5 rounded-full border-2 border-forest-500 border-t-transparent animate-spin"></span>
+              <span class="font-medium text-sm">Loading incident reports…</span>
+            </div>
+          </td>
+        </tr>`;
+    }
     const raw = await BCApi.list('incidents');
     incidentData = raw.map(mapIncident);
     updateSummary();

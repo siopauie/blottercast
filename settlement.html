@@ -185,7 +185,16 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="settlementTableBody"></tbody>
+          <tbody id="settlementTableBody">
+            <tr class="animate-pulse">
+              <td colspan="8" class="text-center py-10 text-forest-500">
+                <div class="flex items-center justify-center gap-3">
+                  <span class="w-5 h-5 rounded-full border-2 border-forest-500 border-t-transparent animate-spin"></span>
+                  <span class="font-medium text-sm">Loading settlement records…</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
@@ -292,6 +301,18 @@
   }
 
   async function loadSettlements() {
+    const tbody = document.getElementById('settlementTableBody');
+    if (tbody && !settlementData.length) {
+      tbody.innerHTML = `
+        <tr class="animate-pulse">
+          <td colspan="8" class="text-center py-10 text-forest-500">
+            <div class="flex items-center justify-center gap-3">
+              <span class="w-5 h-5 rounded-full border-2 border-forest-500 border-t-transparent animate-spin"></span>
+              <span class="font-medium text-sm">Loading settlement records…</span>
+            </div>
+          </td>
+        </tr>`;
+    }
     const raw = await BCApi.list('settlements');
     settlementData = raw.map(mapSettlement);
     updateStlSummary();
