@@ -1,27 +1,36 @@
 -- ============================================================
--- BlotterCast — Seed Dataset for Machine Learning Predictions
--- Compatible with Supabase (PostgreSQL)
--- Paste and run this script in your Supabase SQL Editor:
+-- BlotterCast — PostgreSQL Seed Script for Supabase
+-- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/_/sql/new
 -- ============================================================
 
--- 1. Reference: Barangay Zones
+-- 1. Barangay Zones (Exact Schema Columns: zone_id, label, lat, lng, weight)
 INSERT INTO zones (zone_id, label, lat, lng, weight) VALUES
-  ('Zone 1', 'Plaza & Barangay Hall Vicinity', 14.8836, 120.9655, 0.220),
-  ('Zone 2', 'Purok 4 & Chapel', 14.8824, 120.9648, 0.140),
-  ('Zone 3', 'Market & Terminal Area', 14.8845, 120.9663, 0.190),
-  ('Zone 4', 'Back Road & Southeast Homes', 14.8818, 120.9660, 0.070),
-  ('Zone 5', 'North Residential Cluster', 14.8852, 120.9650, 0.110),
-  ('Zone 6', 'West Boundary & Farmlands', 14.8860, 120.9635, 0.060),
-  ('Zone 7', 'Covered Court & School Line', 14.8842, 120.9641, 0.180),
-  ('Zone 8', 'East Road Junction', 14.8826, 120.9670, 0.130)
+  ('Zone 1', 'Zone 1 – Barangay Hall Area',    14.8836, 120.9655, 0.220),
+  ('Zone 2', 'Zone 2 – Purok 4 & Chapel',      14.8824, 120.9648, 0.140),
+  ('Zone 3', 'Zone 3 – Market Area',           14.8845, 120.9663, 0.190),
+  ('Zone 4', 'Zone 4 – Southeast Residential', 14.8818, 120.9660, 0.070),
+  ('Zone 5', 'Zone 5 – Northern Cluster',      14.8852, 120.9650, 0.110),
+  ('Zone 6', 'Zone 6 – West Boundary',         14.8830, 120.9636, 0.060),
+  ('Zone 7', 'Zone 7 – Basketball Court Area', 14.8842, 120.9641, 0.180),
+  ('Zone 8', 'Zone 8 – East Road Junction',    14.8826, 120.9670, 0.130)
 ON CONFLICT (zone_id) DO UPDATE SET
   label = EXCLUDED.label,
   lat = EXCLUDED.lat,
   lng = EXCLUDED.lng,
   weight = EXCLUDED.weight;
 
--- 2. Insert Structured Historical Incident Reports
+-- 2. Sample Census Residents (for Complainant / Respondent references)
+INSERT INTO census_records (resident_no, last_name, first_name, middle_name, date_of_birth, sex, civil_status, zone_id, address, household_no, contact_no, voter_status, occupation) VALUES
+  ('RES-2026-001', 'Reyes', 'Roberto', 'Santos', '1985-04-12', 'Male', 'Married', 'Zone 1', '104 Plaza Road', 'HH-001', '0917-111-0001', 'Registered', 'Store Owner'),
+  ('RES-2026-002', 'Bautista', 'Felix', 'Cruz', '1990-08-23', 'Male', 'Single', 'Zone 1', '45 Interior Alley', 'HH-002', '0917-111-0002', 'Registered', 'Driver'),
+  ('RES-2026-003', 'Santos', 'Maria', 'Gomez', '1982-11-05', 'Female', 'Married', 'Zone 3', '12 Market Street', 'HH-003', '0917-111-0003', 'Registered', 'Vendor'),
+  ('RES-2026-004', 'Garcia', 'Carlos', 'Lopez', '1994-02-18', 'Male', 'Single', 'Zone 3', '88 Rizal Avenue', 'HH-004', '0917-111-0004', 'Registered', 'Mechanic'),
+  ('RES-2026-005', 'Mendoza', 'Elena', 'Diaz', '1988-06-30', 'Female', 'Married', 'Zone 2', '201 Purok 4', 'HH-005', '0917-111-0005', 'Registered', 'Teacher'),
+  ('RES-2026-006', 'Villanueva', 'Marco', 'Ramos', '1992-09-14', 'Male', 'Single', 'Zone 2', '205 Purok 4', 'HH-006', '0917-111-0006', 'Registered', 'Electrician')
+ON CONFLICT (resident_no) DO NOTHING;
+
+-- 3. Historical Incident Reports
 INSERT INTO incidents (report_no, incident_date, time_reported, hour, zone_id, location, lat, lng, category, description, reporter, officer, priority, status) VALUES
   ('IR-2025-001', '2025-09-02', '21:30:00', 21, 'Zone 1', 'Near Barangay Hall', 14.8836, 120.9655, 'Physical Assault', 'Verbal argument escalated into fistfight outside bakery', 'Roberto Reyes', 'PO1 Cruz', 'High', 'Resolved'),
   ('IR-2025-002', '2025-09-04', '14:15:00', 14, 'Zone 3', 'Market area', 14.8845, 120.9663, 'Theft', 'Stolen mobile phone from market stall customer', 'Maria Santos', 'PO2 Lim', 'Medium', 'Closed'),
@@ -71,7 +80,7 @@ INSERT INTO incidents (report_no, incident_date, time_reported, hour, zone_id, l
   ('IR-2026-125', '2026-08-15', '14:30:00', 14, 'Zone 3', 'Market area', 14.8845, 120.9663, 'Theft', 'Stolen handbag from vegetable vendor stall', 'Maria Santos', 'PO2 Lim', 'Medium', 'Resolved')
 ON CONFLICT (report_no) DO NOTHING;
 
--- 3. Insert Historical Blotter Records (Katarungang Pambarangay)
+-- 4. Historical Blotter Records (Katarungang Pambarangay)
 INSERT INTO blotter_records (docket_no, date_filed, complainant, complainant_addr, respondent, respondent_addr, nature, case_type, status, zone_id) VALUES
   ('KP-2025-010', '2025-09-03', 'Reyes, Roberto', '104 Plaza Road, Zone 1', 'Bautista, Felix', '45 Interior Alley, Zone 1', 'Physical Assault', 'CRIM', 'Resolved', 'Zone 1'),
   ('KP-2025-015', '2025-09-06', 'Santos, Maria', '12 Market St., Zone 3', 'Garcia, Carlos', '88 Rizal Ave, Zone 3', 'Theft', 'CRIM', 'Resolved', 'Zone 3'),
