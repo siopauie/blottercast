@@ -713,3 +713,33 @@ function bcResidentPickerClear(inputId) {
   if (list) list.classList.add('hidden');
   picker.onPick(null);
 }
+
+// ── Auto-Scale Certificate Preview to fit screen/laptop ─────
+function bcFitCertificatePreviews() {
+  document.querySelectorAll('.cert-sheet').forEach(sheet => {
+    const parent = sheet.parentElement;
+    if (!parent) return;
+    const availWidth = parent.clientWidth;
+    if (!availWidth) return;
+    const baseWidth = 680;
+    const scale = Math.min(1, availWidth / baseWidth);
+    sheet.style.transform = `scale(${scale})`;
+    sheet.style.transformOrigin = 'top center';
+    const baseHeight = baseWidth * (2539 / 1795);
+    parent.style.height = `${baseHeight * scale}px`;
+  });
+}
+
+window.addEventListener('resize', bcFitCertificatePreviews);
+window.addEventListener('load', bcFitCertificatePreviews);
+document.addEventListener('DOMContentLoaded', () => {
+  bcFitCertificatePreviews();
+  setTimeout(bcFitCertificatePreviews, 100);
+  setTimeout(bcFitCertificatePreviews, 400);
+  if (window.ResizeObserver) {
+    document.querySelectorAll('#certPrint, .cert-sheet').forEach(el => {
+      new ResizeObserver(() => bcFitCertificatePreviews()).observe(el.parentElement || el);
+    });
+  }
+});
+
