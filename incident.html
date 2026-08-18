@@ -227,7 +227,7 @@
   <div class="modal-box" style="width:700px">
     <div class="flex items-center justify-between mb-6">
       <h2 class="font-display text-xl text-forest-800" id="incModalTitle">New Incident Report</h2>
-      <button onclick="closeModal('incidentModal')" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
+      <button type="button" onclick="closeIncidentModal()" class="modal-close-btn"><span data-icon="x" data-icon-size="18"></span></button>
     </div>
     <form id="incidentForm" class="space-y-4">
       <div class="grid grid-cols-3 gap-4">
@@ -280,7 +280,7 @@
         </select>
       </div>
       <div class="flex justify-end gap-3 pt-2">
-        <button type="button" onclick="closeModal('incidentModal')" class="btn-secondary">Cancel</button>
+        <button type="button" onclick="closeIncidentModal()" class="btn-secondary">Cancel</button>
         <button type="button" onclick="saveIncident()" class="btn-primary">Save Report</button>
       </div>
     </form>
@@ -416,8 +416,16 @@
     const selects = ['if_zone', 'if_category', 'if_priority', 'if_status'];
     selects.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.selectedIndex = 0;
+      if (el) {
+        el.selectedIndex = 0;
+        el.value = '';
+      }
     });
+  }
+
+  function closeIncidentModal() {
+    resetIncidentForm();
+    closeModal('incidentModal');
   }
 
   async function openAddIncident() {
@@ -500,8 +508,7 @@
         await BCApi.create('incidents', vals);
         showToast('Incident report added! It now feeds the heat map, trends, and predictions.');
       }
-      resetIncidentForm();
-      closeModal('incidentModal');
+      closeIncidentModal();
       await loadIncidents();
     } catch (err) {
       showToast(err.message, 'error');
@@ -524,6 +531,21 @@
       </div>`).join('');
     openModal('incViewModal');
   }
+
+  // Ensure form completely resets whenever modal is closed, dismissed, or cancelled
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'incidentModal') {
+      resetIncidentForm();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const incModal = document.getElementById('incidentModal');
+      if (incModal && incModal.classList.contains('open')) {
+        closeIncidentModal();
+      }
+    }
+  });
 
   (async function () {
     await requireAuth();
