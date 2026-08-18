@@ -18,7 +18,9 @@ $type = $_GET['type'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'PUT') require_permission('edit_records');
-if ($method === 'DELETE') require_permission('delete_records');
+if ($method === 'DELETE') {
+    json_error('Deleting records is not permitted in the system.', 403);
+}
 
 // Age in whole years as of today, from a 'YYYY-MM-DD' date of birth string.
 // Returns null if $dob is empty/unparseable (age-based comparisons are then

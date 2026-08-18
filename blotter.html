@@ -568,7 +568,6 @@
             <div class="row-actions">
               <button onclick="viewRecord(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
               <button onclick="editRecord(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
-              <button onclick="deleteRecord(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
             </div>
           </td>
         </tr>`).join('');
@@ -788,17 +787,6 @@
         showToast('New blotter entry added!');
       }
       closeModal('blotterModal');
-      await loadBlotter();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  async function deleteRecord(id) {
-    if (!(await bcConfirm('Delete this blotter entry? This cannot be undone.', { title: 'Delete Blotter Entry', okLabel: 'Delete', danger: true }))) return;
-    try {
-      await BCApi.remove('blotter', id);
-      showToast('Entry deleted.');
       await loadBlotter();
     } catch (err) {
       showToast(err.message, 'error');

@@ -449,7 +449,6 @@
             <div class="row-actions">
               <button onclick="viewSettlement(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
               <button onclick="editSettlement(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
-              <button onclick="deleteSettlement(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
             </div>
           </td>
         </tr>`).join('');
@@ -561,17 +560,6 @@
       await BCApi.create('settlements', vals);
       showToast('Settlement record added!');
       closeModal('settlementModal');
-      await loadSettlements();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  async function deleteSettlement(id) {
-    if (!(await bcConfirm('Delete this settlement record? This cannot be undone.', { title: 'Delete Settlement Record', okLabel: 'Delete', danger: true }))) return;
-    try {
-      await BCApi.remove('settlements', id);
-      showToast('Record deleted.');
       await loadSettlements();
     } catch (err) {
       showToast(err.message, 'error');

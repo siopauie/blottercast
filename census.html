@@ -391,7 +391,6 @@ function renderResidents(){
             : `<button onclick="issueDoc(${r.id})" class="icon-btn" title="Issue Document"><span data-icon="reports" data-icon-size="16"></span></button>`
           }
           <button onclick="editResident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
-          <button onclick="deleteResident(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
         </div>
       </td>
     </tr>`).join('');
@@ -501,16 +500,6 @@ async function saveResident(){
       showToast('Resident added!');
     }
     closeModal('residentModal');
-    await loadResidents();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-async function deleteResident(id){
-  if (!(await bcConfirm('Remove this resident from Census? This cannot be undone.', { title: 'Remove Resident', okLabel: 'Remove', danger: true }))) return;
-  try {
-    await BCApi.docDelete('census', id);
-    showToast('Resident removed.');
     await loadResidents();
   } catch (err) {
     showToast(err.message, 'error');

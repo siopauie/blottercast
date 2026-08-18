@@ -17,7 +17,9 @@ $type = $_GET['type'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'PUT') require_permission('edit_records');
-if ($method === 'DELETE') require_permission('delete_records');
+if ($method === 'DELETE') {
+    json_error('Deleting records is not permitted in the system.', 403);
+}
 
 function zoneCoords($mysqli, string $zoneId): array {
     $stmt = $mysqli->prepare('SELECT lat, lng FROM zones WHERE zone_id = ?');

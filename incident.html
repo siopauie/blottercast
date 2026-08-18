@@ -393,7 +393,6 @@
             <div class="row-actions">
               <button onclick="viewIncident(${r.id})" class="icon-btn" title="View"><span data-icon="view" data-icon-size="16"></span></button>
               <button onclick="editIncident(${r.id})" class="icon-btn edit" data-perm="edit_records" title="Edit"><span data-icon="edit" data-icon-size="16"></span></button>
-              <button onclick="deleteIncident(${r.id})" class="icon-btn danger" data-perm="delete_records" title="Delete"><span data-icon="trash" data-icon-size="16"></span></button>
             </div>
           </td>
         </tr>`).join('');
@@ -479,17 +478,6 @@
         showToast('Incident report added! It now feeds the heat map, trends, and predictions.');
       }
       closeModal('incidentModal');
-      await loadIncidents();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  async function deleteIncident(id) {
-    if (!(await bcConfirm('Delete this incident report? This cannot be undone.', { title: 'Delete Incident Report', okLabel: 'Delete', danger: true }))) return;
-    try {
-      await BCApi.remove('incidents', id);
-      showToast('Report deleted.');
       await loadIncidents();
     } catch (err) {
       showToast(err.message, 'error');
